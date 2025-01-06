@@ -1,15 +1,28 @@
+OBJ := ./obj
+BIN := ./bin
+SRC := ./src
+SRCS := $(wildcard $(SRC)/*.c)
+OBJS := $(patsubst $(SRC)/%.c,$(OBJ)/%.o,$(SRCS))
+LDLIBS := -lm
+
 default: compile
 
-compile: client server
+compile: uno
 
-client: client.o
-	@gcc -o client client.o
+client: uno
+	@./uno client
 
-server: server.o
-	@gcc -o server server.o
+server: uno
+	@./uno server
 
-client.o: src/client.c
-	@gcc -c src/client.c
+uno: $(OBJS) | $(BIN)
+	@gcc $^ -o $@
 
-server.o: src/server.c
-	@gcc -c src/server.c
+$(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
+	gcc -c $< -o $@
+
+$(BIN) $(OBJ):
+	mkdir $@
+
+clean:
+	@rm -rf ./obj
