@@ -11,8 +11,7 @@ This document must be updated daily by EACH group member.
 
 ## Kevin Lin
 
-### 2024-01-06 - Brief description
-Expanded description including how much time was spent on task.
+### 2024-01-06 - Added new file and functions
+Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
 
 ### 2024-01-07 - Brief description
-Expanded description including how much time was spent on task.
