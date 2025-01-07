@@ -8,40 +8,40 @@
 #define ALLOCATE(size) \
     if (offset + (size) > current_send_buf_size) {              \
         current_send_buf_size *= 2;                                \
-        send_buffer = realloc(send_buffer, current_send_buf_size); \
+        buffer = realloc(buffer, current_send_buf_size); \
     }
 
 #define NET_BEGIN_FN() \
     int offset = *p_offset; \
-    void *send_buffer = *p_send_buffer; \
+    void *buffer = *p_send_buffer; \
     size_t current_send_buf_size = *p_size;
 
 #define NET_END_FN() \
     *p_offset = offset; \
-    *p_send_buffer = send_buffer; \
+    *p_send_buffer = buffer; \
     *p_size = current_send_buf_size;
 
-#define NET_BEGIN_SEND_BUFFER()                            \
+#define NET_BEGIN_BUFFER()                            \
     size_t current_send_buf_size = sizeof(char) * 512; \
-    void *send_buffer = malloc(current_send_buf_size); \
+    void *buffer = malloc(current_send_buf_size); \
     int offset = 0;
 
 #define NET_SEND_VALUE(data)                                                 \
     size_t data_size = sizeof((data));                             \
     ALLOCATE(data_size)                                            \
-    memcpy(send_buffer + offset, &(data), data_size);               \
+    memcpy(buffer + offset, &(data), data_size);               \
     offset += data_size;
 
 #define NET_SEND_PTR(ptr, size) \
     ALLOCATE(size) \
-    memcpy(send_buffer + offset, (ptr), (size));               \
+    memcpy(buffer + offset, (ptr), (size));               \
     offset += (size); \
 
 #define NET_TRANSMIT_SEND_BUFFER(send_fd) \
-    write((send_fd), send_buffer, offset);
+    write((send_fd), buffer, offset);
 
-#define NET_END_SEND_BUFFER() \
-    free(send_buffer);
+#define NET_END_BUFFER() \
+    free(buffer);
 
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {

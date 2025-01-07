@@ -46,11 +46,8 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
     net_event_queue->events[net_event_queue->event_count++] = event;
 }
 
-/*
-
-*/
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
-    NET_BEGIN_SEND_BUFFER()
+    NET_BEGIN_BUFFER()
     NET_SEND_VALUE(net_event_queue->event_count)
 
     for (int i = 0; i < net_event_queue->event_count; ++i) {
@@ -60,20 +57,22 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         void *args = event_to_send->args;
 
         NetEventHandler *handler = g_net_event_handlers[protocol];
-        
+
         NET_SEND_VALUE(protocol)
 
         if (handler->write_fn == NULL) {
             printf("uh oh\n");
         }
-        handler->write_fn(args, &send_buffer, &offset, &current_send_buf_size);
+        handler->write_fn(args, &buffer, &offset, &current_send_buf_size);
     }
 
     NET_TRANSMIT_SEND_BUFFER(send_fd)
-    NET_END_SEND_BUFFER()
+    NET_END_BUFFER()
 }
 
-void recv_event_queue(NetEventQueue *net_event_queue) {}
+void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
+    int event_count;
+}
 
 void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
     NetEventHandler *existing_handler = g_net_event_handlers[protocol];
@@ -95,11 +94,18 @@ void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
 void bind_recv_event(NetProtocol protocol, NetEventReader reader) {
     NetEventHandler *existing_handler = g_net_event_handlers[protocol];
     if (existing_handler != NULL) {
-        printf("NetEventHandler already has a bound reader\n");
+        if (existing_handler->read_fn != NULL) {
+            printf("NetEventHandler already has a bound reader\n");
+            return;
+        }
+
+        existing_handler->read_fn = reader;
         return;
     }
 
-    existing_handler->read_fn = reader;
+    g_net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
+    g_net_event_handlers[protocol]->protocol = protocol;
+    g_net_event_handlers[protocol]->read_fn = reader;
 }
 
 void net_init() {
