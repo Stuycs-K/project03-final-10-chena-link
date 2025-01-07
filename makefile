@@ -10,9 +10,10 @@ SRCS := $(shell find . -name "*.c")
 # Replace .c file paths by replacing .c with .o and ./src with ./obj
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 
-EXE := $(BIN)/uno
-
+CFLAGS := -Wall
 LDLIBS := -lm
+
+EXE := $(BIN)/uno
 
 .PHONY: client server clean
 
@@ -27,7 +28,7 @@ server: $(EXE)
 	@./$(EXE) server
 
 $(EXE): $(OBJS) | $(BIN)
-	@gcc $^ -o $@ $(LDLIBS)
+	@gcc $(CFLAGS) $^ -o $@ $(LDLIBS)
 
 $(OBJ)/%.o: $(SRC)/%.c $(OBJ)
 	@gcc -c $< -o $@
@@ -42,5 +43,4 @@ $(OBJ):
 	done;
 
 clean:
-	@rm -rf ./obj ./bin
-	@find . -name "*.o" -type f -delete
+	@rm -rf $(OBJ) $(BIN)

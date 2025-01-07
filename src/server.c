@@ -2,5 +2,7 @@
 #include "network/gserver.h"
 
 void server_main() {
-    gserver_init();
+    GServer *gserver = gserver_new();
+
+    gserver_init(gserver);
 }
