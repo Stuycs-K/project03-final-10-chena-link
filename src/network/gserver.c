@@ -32,6 +32,11 @@ void gsubserver_init(GSubserver *gsubserver) {
 
     printf("CONNECTION MADE WITH CLIENT!\n");
 
+    while (1) {
+        printf("server hello\n");
+        usleep(1000000);
+    }
+
     exit(EXIT_SUCCESS);
 }
 

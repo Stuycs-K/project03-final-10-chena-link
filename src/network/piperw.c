@@ -7,41 +7,84 @@
 
 #include "piperw.h"
 
-// Holy hell
-void recv_event(int recv_fd) {
-    char recv_buffer[2048];
+NetEventHandler *g_net_event_handlers[PROTOCOL_COUNT];
 
-    void *args = malloc(sizeof(recv_buffer) - sizeof(NetProtocol));
+NetEventQueue *net_event_queue_new() {
+    NetEventQueue *net_event_queue = malloc(sizeof(NetEventQueue));
 
-    ssize_t bytes_read = read(recv_fd, &recv_buffer, sizeof(recv_buffer));
-    if (bytes_read <= 0) {
+    net_event_queue->event_count = 0;
+    net_event_queue->max_events = 255;
+
+    net_event_queue->events = malloc(sizeof(NetEvent *) * net_event_queue->max_events);
+
+    return net_event_queue;
+}
+
+void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
+    if (net_event_queue->event_count >= net_event_queue->max_events) {
+        printf("Queue full! Dropping event\n");
         return;
     }
 
-    // Read protocol
-    NetProtocol protocol;
-    memcpy(&protocol, (void *)recv_buffer, sizeof(NetProtocol));
-
-    // Read the rest of the data into the args buffer
-    memcpy(args, (void *)recv_buffer + sizeof(NetProtocol), sizeof(recv_buffer) - sizeof(NetProtocol));
+    net_event_queue->events[net_event_queue->event_count++] = event;
 }
 
-// Events are sent with a protocol header, defined in the NetProtocol enum.
-void send_event(int send_fd, NetProtocol protocol, void *args) {
-    void *send_buffer = malloc(sizeof(args) + sizeof(protocol));
-    memcpy(send_buffer, &protocol, sizeof(protocol));
-    memcpy(send_buffer + sizeof(protocol), args, sizeof(args));
+/*
 
-    ssize_t bytes_written = write(send_fd, send_buffer, sizeof(send_buffer));
-    if (bytes_written <= 0) {
-        // Do something
+*/
+void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
+    BEGIN_SEND_BUFFER()
+    SEND(net_event_queue->event_count)
+
+    for (int i = 0; i < net_event_queue->event_count; ++i) {
+        NetEvent *event_to_send = net_event_queue->events[i];
+
+        NetProtocol protocol = event_to_send->protocol;
+        void *args = event_to_send->args;
+
+        NetEventHandler *handler = g_net_event_handlers[protocol];
+        printf("%d\n", handler->protocol);
+        if (handler->write_fn == NULL) {
+            printf("uh oh\n");
+        }
+        handler->write_fn(args, send_buffer, offset, current_send_buf_size);
     }
 
-    free(send_buffer);
+    TRANSMIT_SEND_BUFFER(send_fd)
+    END_SEND_BUFFER()
 }
 
-void bind_send_event(NetProtocol protocol, int (*write_fn)(int, void *, void *)) {
+void recv_event_queue(NetEventQueue *net_event_queue) {}
+
+void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
+    NetEventHandler *existing_handler = g_net_event_handlers[protocol];
+    if (existing_handler != NULL) {
+        if (existing_handler->write_fn != NULL) {
+            printf("NetEventHandler already has a bound writer\n");
+            return;
+        }
+
+        existing_handler->write_fn = writer;
+        return;
+    }
+
+    g_net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
+    g_net_event_handlers[protocol]->protocol = protocol;
+    g_net_event_handlers[protocol]->write_fn = writer;
 }
 
-void bind_recv_event(NetProtocol protocol, int (*read_fn)(int, void *, void *)) {
+void bind_recv_event(NetProtocol protocol, NetEventReader reader) {
+    NetEventHandler *existing_handler = g_net_event_handlers[protocol];
+    if (existing_handler != NULL) {
+        printf("NetEventHandler already has a bound reader\n");
+        return;
+    }
+
+    existing_handler->read_fn = reader;
+}
+
+void net_init() {
+    for (int i = 0; i < PROTOCOL_COUNT; ++i) {
+        g_net_event_handlers[i] = NULL;
+    }
 }
