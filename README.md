@@ -1,15 +1,18 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Vh67aNdh)
-# PROJECT NAME HERE
+# Uno
 
-### GROUP NAME HERE
+### AK-47
 
-Group Members Here
+Alan Chen, Kevin Lin
        
 ### Project Description:
-
-Explain what is this project.
+Multiplayer uno game
   
 ### Instructions:
 
-How does the user install/compile/run the program.
+#### Compilation:
+First, run `make` or `make compile` to compile the project. Hopefully, there shouldn't be any problems.
+Next, set up a server with `make server`.
+To play, open up a new terminal and run `make client`.
+
 How does the user interact with this program?

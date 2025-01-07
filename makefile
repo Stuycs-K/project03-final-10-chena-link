@@ -1,28 +1,46 @@
+SHELL := bash
+
 OBJ := ./obj
 BIN := ./bin
 SRC := ./src
-SRCS := $(wildcard $(SRC)/*.c)
-OBJS := $(patsubst $(SRC)/%.c,$(OBJ)/%.o,$(SRCS))
+
+# Recursively get all .c files
+SRCS := $(shell find . -name "*.c")
+
+# Replace .c file paths by replacing .c with .o and ./src with ./obj
+OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
+
+CFLAGS := -Wall
 LDLIBS := -lm
+
+EXE := $(BIN)/uno
+
+.PHONY: client server clean
 
 default: compile
 
-compile: uno
+compile: $(EXE)
 
-client: uno
-	@./uno client
+client: $(EXE)
+	@./$(EXE) client
 
-server: uno
-	@./uno server
+server: $(EXE)
+	@./$(EXE) server
 
-uno: $(OBJS) | $(BIN)
-	@gcc $^ -o $@
+$(EXE): $(OBJS) | $(BIN)
+	@gcc $(CFLAGS) $^ -o $@ $(LDLIBS)
 
-$(OBJ)/%.o: $(SRC)/%.c | $(OBJ)
-	gcc -c $< -o $@
+$(OBJ)/%.o: $(SRC)/%.c $(OBJ)
+	@gcc -c $< -o $@
 
-$(BIN) $(OBJ):
-	mkdir $@
+$(BIN):
+	@mkdir $@
+
+$(OBJ):
+	@mkdir $@
+	@for dir in src/*/ ; do \
+		mkdir -p obj/$${dir#*/} ; \
+	done;
 
 clean:
-	@rm -rf ./obj
+	@rm -rf $(OBJ) $(BIN)

@@ -2,18 +2,19 @@
 
 This document must be updated daily by EACH group member.
 
-## Player 1
+## Alan Chen
 
-### 2024-01-02 - Brief description
-Expanded description including how much time was spent on task.
+### 2024-01-06 - Project setup
+* Write makefile, create skeleton network files and copy over pipe networking lab, main.c. Done in class.
+* Finish the makefile. ~2 hours because makefiles are really dumb.
+* Client-server handshake works. 20 minutes.
+* GServer and GSubserver basics. 1 hour.
 
-### 2024-01-03 - Brief description
-Expanded description including how much time was spent on task.
+### 2024-01-07 - Brief description
 
-## Player 2
+## Kevin Lin
 
-### 2024-01-02 - Brief description
-Expanded description including how much time was spent on task.
+### 2024-01-06 - Added new file and functions
+Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
 
-### 2024-01-03 - Brief description
-Expanded description including how much time was spent on task.
+### 2024-01-07 - Brief description
