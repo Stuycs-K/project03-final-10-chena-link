@@ -4,4 +4,7 @@
 void client_main(void) {
     int net_fds[2];
     client_handshake("TEMP", net_fds);
+
+    while (1) {
+    }
 }
