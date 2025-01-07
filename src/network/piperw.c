@@ -9,7 +9,6 @@
 
 NetEventHandler *g_net_event_handlers[PROTOCOL_COUNT];
 
-/*
 NetBuffer *net_buffer_new() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
 
@@ -20,11 +19,14 @@ NetBuffer *net_buffer_new() {
     return new_net_buffer;
 }
 
+void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
+    write(target_fd, net_buffer->buffer, net_buffer->offset);
+}
+
 void free_net_buffer(NetBuffer *net_buffer) {
     free(net_buffer->buffer);
     free(net_buffer);
 }
-*/
 
 NetEventQueue *net_event_queue_new() {
     NetEventQueue *net_event_queue = malloc(sizeof(NetEventQueue));
@@ -47,8 +49,8 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
 }
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
-    NET_BEGIN_BUFFER()
-    NET_SEND_VALUE(net_event_queue->event_count)
+    NetBuffer *nb = net_buffer_new();
+    NET_BUFFER_WRITE_VALUE(nb, net_event_queue->event_count) // Write event count
 
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event_to_send = net_event_queue->events[i];
@@ -58,19 +60,22 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
 
         NetEventHandler *handler = g_net_event_handlers[protocol];
 
-        NET_SEND_VALUE(protocol)
+        NET_BUFFER_WRITE_VALUE(nb, protocol) // Write the event's protocol
 
         if (handler->write_fn == NULL) {
-            printf("uh oh\n");
+            printf("Protocol handler has no write function attached!\n");
+            return;
         }
-        handler->write_fn(args, &buffer, &offset, &current_send_buf_size);
+        handler->write_fn(nb, args);
     }
 
-    NET_TRANSMIT_SEND_BUFFER(send_fd)
-    NET_END_BUFFER()
+    transmit_net_buffer(nb, send_fd);
+    free_net_buffer(nb);
 }
 
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
+    NetBuffer *nb = net_buffer_new();
+
     int event_count;
 }
 

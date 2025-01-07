@@ -5,43 +5,19 @@
 #ifndef PIPERW_H
 #define PIPERW_H
 
-#define ALLOCATE(size) \
-    if (offset + (size) > current_send_buf_size) {              \
-        current_send_buf_size *= 2;                                \
-        buffer = realloc(buffer, current_send_buf_size); \
+#define NET_BUFFER_ALLOC(nb, alloc_size)                  \
+    if ((nb)->offset + (alloc_size) > (nb)->size) {       \
+        (nb)->size *= 2;                                  \
+        (nb)->buffer = realloc((nb)->buffer, (nb)->size); \
     }
 
-#define NET_BEGIN_FN() \
-    int offset = *p_offset; \
-    void *buffer = *p_send_buffer; \
-    size_t current_send_buf_size = *p_size;
+#define NET_BUFFER_WRITE(nb, ptr, size)                 \
+    NET_BUFFER_ALLOC(nb, size)                          \
+    memcpy((nb)->buffer + (nb)->offset, (ptr), (size)); \
+    (nb)->offset += (size);
 
-#define NET_END_FN() \
-    *p_offset = offset; \
-    *p_send_buffer = buffer; \
-    *p_size = current_send_buf_size;
-
-#define NET_BEGIN_BUFFER()                            \
-    size_t current_send_buf_size = sizeof(char) * 512; \
-    void *buffer = malloc(current_send_buf_size); \
-    int offset = 0;
-
-#define NET_SEND_VALUE(data)                                                 \
-    size_t data_size = sizeof((data));                             \
-    ALLOCATE(data_size)                                            \
-    memcpy(buffer + offset, &(data), data_size);               \
-    offset += data_size;
-
-#define NET_SEND_PTR(ptr, size) \
-    ALLOCATE(size) \
-    memcpy(buffer + offset, (ptr), (size));               \
-    offset += (size); \
-
-#define NET_TRANSMIT_SEND_BUFFER(send_fd) \
-    write((send_fd), buffer, offset);
-
-#define NET_END_BUFFER() \
-    free(buffer);
+#define NET_BUFFER_WRITE_VALUE(nb, value) \
+    NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
@@ -50,16 +26,15 @@ enum NetProtocol {
     PROTOCOL_COUNT,
 };
 
-// Returns the size of data written
-typedef void (*NetEventWriter)(void *args, void **p_send_buffer, int *p_offset, size_t *p_size);
-typedef int (*NetEventReader)(void *recv);
-
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {
     size_t size;
     void *buffer;
     int offset;
 };
+
+typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
+typedef int (*NetEventReader)(NetBuffer *nb);
 
 typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
