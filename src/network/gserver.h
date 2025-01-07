@@ -10,9 +10,8 @@
 // GSubserver handles communication with ONE client.
 typedef struct GSubserver GSubserver;
 struct GSubserver {
-    pid_t pid;
+    pid_t pid; // Process ID this connection is running on
 
-    // If any 3 of the following are -1, the subserver is considered inactive
     int client_id;
     int send_fd;
     int recv_fd;
@@ -23,7 +22,7 @@ struct GServer {
     int max_clients;
     int current_clients;
 
-    int id;
+    int id; // Given by the central server
 
     char *name;
 

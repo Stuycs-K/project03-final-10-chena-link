@@ -6,6 +6,7 @@
 #include "gserver.h"
 #include "pipehandshake.h"
 #include "pipenet.h"
+#include "pipenetevents.h"
 
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
@@ -20,6 +21,8 @@ GSubserver *gsubserver_new(int client_id) {
 
 // Finishes the server handshake
 void gsubserver_init(GSubserver *gsubserver) {
+    NetEventQueue *net_recv_queue = net_event_queue_new();
+
     gsubserver->pid = getpid();
 
     int send_fd = server_handshake(gsubserver->recv_fd);
@@ -33,9 +36,30 @@ void gsubserver_init(GSubserver *gsubserver) {
     printf("CONNECTION MADE WITH CLIENT!\n");
 
     while (1) {
-        printf("server hello\n");
-        usleep(1000000);
+        empty_net_event_queue(net_recv_queue);
+
+        printf("lets read\n");
+        char *raw_recv_buffer = malloc(sizeof(char) * 4096);
+        ssize_t bytes_read = read(gsubserver->recv_fd, raw_recv_buffer, 4096);
+
+        if (bytes_read <= 0) {
+            if (bytes_read == 0) {
+                // CLIENT DISCONNECT!
+                break;
+            }
+        }
+
+        recv_event_queue(net_recv_queue, raw_recv_buffer);
+
+        printf("RECV Count: %d 1Protocol: %d\n", net_recv_queue->event_count, net_recv_queue->events[0]->protocol);
+
+        NetEvent *event = net_recv_queue->events[0];
+        NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
+        printf("n: %d\n", nargs->id);
+        // usleep(1000000);
     }
+
+    printf("CLIENT DISCONNECT\n");
 
     exit(EXIT_SUCCESS);
 }

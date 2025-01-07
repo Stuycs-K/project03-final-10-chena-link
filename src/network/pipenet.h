@@ -34,16 +34,14 @@ struct NetBuffer {
 };
 
 typedef enum NetProtocol NetProtocol;
-
-typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
-typedef void *(*NetEventReader)(NetBuffer *nb);
-
-typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
 
     PROTOCOL_COUNT,
 };
+
+typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
+typedef void *(*NetEventReader)(NetBuffer *nb);
 
 typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
@@ -75,11 +73,11 @@ NetEventQueue *net_event_queue_new();
 
 void insert_event(NetEventQueue *net_event_queue, NetEvent *event);
 
+void empty_net_event_queue(NetEventQueue *net_event_queue);
+
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd);
 
-void bind_send_event(NetProtocol protocol, NetEventWriter writer);
-
-void bind_recv_event(NetProtocol protocol, NetEventReader reader);
+void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer);
 
 void net_init();
 

@@ -28,7 +28,10 @@ NetBuffer *net_buffer_recv(void *buffer) {
 }
 
 void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
-    write(target_fd, net_buffer->buffer, net_buffer->offset);
+    ssize_t bytes_written = write(target_fd, net_buffer->buffer, net_buffer->offset);
+    if (bytes_written <= 0) {
+        printf("That can't be right\n");
+    }
 }
 
 void free_net_buffer(NetBuffer *net_buffer) {
@@ -63,7 +66,7 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
     net_event_queue->events[net_event_queue->event_count++] = event;
 }
 
-void empty_queue(NetEventQueue *net_event_queue) {
+void empty_net_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         free(net_event_queue->events[i]);
         net_event_queue->events[i] = NULL;
