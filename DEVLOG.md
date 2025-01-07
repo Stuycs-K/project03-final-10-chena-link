@@ -8,6 +8,7 @@ This document must be updated daily by EACH group member.
 * Write makefile, create skeleton network files and copy over pipe networking lab, main.c. Done in class.
 * Finish the makefile. ~2 hours because makefiles are really dumb.
 * Client-server handshake works. 20 minutes.
+* GServer and GSubserver basics. 1 hour.
 
 ### 2024-01-07 - Brief description
 

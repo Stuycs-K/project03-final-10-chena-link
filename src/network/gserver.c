@@ -5,6 +5,7 @@
 
 #include "gserver.h"
 #include "pipehandshake.h"
+#include "piperw.h"
 
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
@@ -30,9 +31,6 @@ void gsubserver_init(GSubserver *gsubserver) {
     }
 
     printf("CONNECTION MADE WITH CLIENT!\n");
-
-    while (1) {
-    }
 
     exit(EXIT_SUCCESS);
 }
@@ -124,6 +122,7 @@ void gserver_init(GServer *gserver) {
         if (pid == 0) {
             gsubserver_init(subserver);
         } else {
+            gserver->subservers[subserver->client_id]->pid = pid;
         }
     }
 }
