@@ -5,7 +5,7 @@
 
 #include "gserver.h"
 #include "pipehandshake.h"
-#include "piperw.h"
+#include "pipenet.h"
 
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));

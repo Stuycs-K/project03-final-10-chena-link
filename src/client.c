@@ -4,20 +4,8 @@
 
 #include "client.h"
 #include "network/pipehandshake.h"
-#include "network/piperw.h"
-
-typedef struct PeriodicHandshakeArgs PeriodicHandshakeArgs;
-struct PeriodicHandshakeArgs {
-    int n;
-};
-
-void write_test(NetBuffer *nb, void *args) {
-    PeriodicHandshakeArgs *pargs = (PeriodicHandshakeArgs *)args;
-
-    NET_BUFFER_WRITE_VALUE(nb, pargs->n)
-
-    printf("OFFSET %d\n", nb->offset);
-}
+#include "network/pipenet.h"
+#include "network/pipenetevents.h"
 
 void client_main(void) {
     int net_fds[2];
@@ -26,17 +14,14 @@ void client_main(void) {
     net_init();
     NetEventQueue *net_event_queue = net_event_queue_new();
 
-    bind_send_event(PERIODIC_HANDSHAKE, write_test);
+    NetArgs_PeriodicHandshake test_args;
+    test_args.id = 120;
 
-    NetEvent test_event;
-    test_event.protocol = PERIODIC_HANDSHAKE;
+    NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, &test_args);
 
-    PeriodicHandshakeArgs test_args;
-    test_args.n = 120;
-    test_event.args = &test_args;
-
-    insert_event(net_event_queue, &test_event);
-    insert_event(net_event_queue, &test_event);
+    insert_event(net_event_queue, test_event);
+    insert_event(net_event_queue, test_event);
+    insert_event(net_event_queue, test_event);
 
     send_event_queue(net_event_queue, STDOUT_FILENO);
 

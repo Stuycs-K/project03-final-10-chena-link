@@ -1,19 +1,27 @@
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 
-#include "piperw.h"
+#include "pipenet.h"
+#include "pipenetevents.h"
 
 NetEventHandler *g_net_event_handlers[PROTOCOL_COUNT];
 
-NetBuffer *net_buffer_new() {
+NetBuffer *net_buffer_send() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
 
     new_net_buffer->size = 512;
     new_net_buffer->buffer = malloc(sizeof(char) * 512);
+    new_net_buffer->offset = 0;
+
+    return new_net_buffer;
+}
+
+NetBuffer *net_buffer_recv(void *buffer) {
+    NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
+
+    new_net_buffer->size = 0;
+    new_net_buffer->buffer = buffer;
     new_net_buffer->offset = 0;
 
     return new_net_buffer;
@@ -26,6 +34,13 @@ void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
 void free_net_buffer(NetBuffer *net_buffer) {
     free(net_buffer->buffer);
     free(net_buffer);
+}
+
+NetEvent *net_event_new(NetProtocol protocol, void *args) {
+    NetEvent *net_event = malloc(sizeof(NetEvent));
+    net_event->protocol = protocol;
+    net_event->args = args;
+    return net_event;
 }
 
 NetEventQueue *net_event_queue_new() {
@@ -48,8 +63,17 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
     net_event_queue->events[net_event_queue->event_count++] = event;
 }
 
+void empty_queue(NetEventQueue *net_event_queue) {
+    for (int i = 0; i < net_event_queue->event_count; ++i) {
+        free(net_event_queue->events[i]);
+        net_event_queue->events[i] = NULL;
+    }
+
+    net_event_queue->event_count = 0;
+}
+
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
-    NetBuffer *nb = net_buffer_new();
+    NetBuffer *nb = net_buffer_send();
     NET_BUFFER_WRITE_VALUE(nb, net_event_queue->event_count) // Write event count
 
     for (int i = 0; i < net_event_queue->event_count; ++i) {
@@ -73,10 +97,28 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
     free_net_buffer(nb);
 }
 
+// Populates a NetEventQueue with deserialized NetEvents
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
-    NetBuffer *nb = net_buffer_new();
+    NetBuffer *nb = net_buffer_recv(recv_buffer);
 
     int event_count;
+    NET_BUFFER_READ_VALUE(nb, event_count)
+
+    for (int i = 0; i < event_count; ++i) {
+        NetProtocol protocol;
+        NET_BUFFER_READ_VALUE(nb, protocol);
+
+        NetEventHandler *handler = g_net_event_handlers[protocol];
+        if (handler->read_fn == NULL) {
+            printf("Protocol handler has no read function attached!\n");
+            return;
+        }
+
+        void *data = handler->read_fn(nb);
+        insert_event(net_event_queue, net_event_new(protocol, data));
+    }
+
+    free_net_buffer(nb);
 }
 
 void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
@@ -117,4 +159,7 @@ void net_init() {
     for (int i = 0; i < PROTOCOL_COUNT; ++i) {
         g_net_event_handlers[i] = NULL;
     }
+
+    bind_send_event(PERIODIC_HANDSHAKE, send_periodic_handshake);
+    bind_recv_event(PERIODIC_HANDSHAKE, recv_periodic_handshake);
 }
