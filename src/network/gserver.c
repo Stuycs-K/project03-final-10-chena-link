@@ -17,11 +17,17 @@ GSubserver *gsubserver_new(int client_id) {
     return gsubserver;
 }
 
+// Finishes the server handshake
 void gsubserver_init(GSubserver *gsubserver) {
     gsubserver->pid = getpid();
 
     int send_fd = server_handshake(gsubserver->recv_fd);
-    gsubserver->send_fd = send_fd;
+
+    // Handshake failed. Abort.
+    if (send_fd == -1) {
+        printf("Failed handshake\n");
+        exit(EXIT_FAILURE);
+    }
 
     printf("CONNECTION MADE WITH CLIENT!\n");
 
@@ -69,6 +75,23 @@ int gserver_get_free_client_id(GServer *gserver) {
     return -1;
 }
 
+GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd) {
+    int client_id = gserver_get_free_client_id(gserver);
+
+    // TODO: Send a kick message (this shouldn't be possible anyways)
+    if (client_id == -1) {
+        printf("Could not assign the client to a valid ID\n");
+        return NULL;
+    }
+
+    GSubserver *chosen_subserver = gserver->subservers[client_id];
+    chosen_subserver->recv_fd = recv_fd;
+
+    gserver->current_clients++;
+
+    return chosen_subserver;
+}
+
 static void handle_sigint(int signo) {
     if (signo != SIGINT) {
         return;
@@ -85,22 +108,21 @@ void gserver_init(GServer *gserver) {
     int to_client;
 
     while (1) {
-        from_client = server_setup(get_client_to_server_fifo_name());
-
-        int client_id = gserver_get_free_client_id(gserver);
-
-        // TODO: Send a kick message
-        if (client_id == -1) {
+        // TODO: Reverse the order and send connection failure messages
+        if (gserver->current_clients >= gserver->max_clients) {
             continue;
         }
+        from_client = server_setup(get_client_to_server_fifo_name());
 
-        GSubserver *chosen_subserver = gserver->subservers[client_id];
-        chosen_subserver->recv_fd = from_client;
+        GSubserver *subserver = gserver_handle_connection(gserver, from_client);
+        if (subserver == NULL) {
+            continue;
+        }
 
         pid_t pid = fork();
 
         if (pid == 0) {
-            gsubserver_init(chosen_subserver);
+            gsubserver_init(subserver);
         } else {
         }
     }

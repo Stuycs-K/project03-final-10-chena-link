@@ -21,6 +21,7 @@ int server_setup(char *client_to_server_fifo) {
     printf("[SERVER]: Waiting for connection...\n");
 
     int from_client = open(client_to_server_fifo, O_RDONLY, 0);
+    fatal_assert(from_client, "Open client PP fail\n");
 
     printf("[SERVER]: Client connected\n");
 
@@ -52,7 +53,7 @@ int server_handshake(int from_client) {
 
     if (ack_value != syn_ack_value + 1) {
         printf("[SERVER]: Invalid ACK received. Handshake failed\n");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     printf("[SERVER]: Handshake complete\n");
