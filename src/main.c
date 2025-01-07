@@ -1,6 +1,8 @@
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "debug/debug.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -13,4 +15,6 @@ int main(int argc, char *argv[]) {
     } else if (!strcmp(mode, "server")) {
         printf("server\n");
     }
+
+    fatal_assert(-1, "Yikes %d\n", 100);
 }

@@ -8,14 +8,13 @@
 #include <time.h>
 #include <unistd.h>
 
-#define NET_DEBUG
+#include "pipehandshake.h"
 
-#include "pipenet.h"
+#define HANDSHAKE_DEBUG
 
 int server_setup(char *client_to_server_fifo) {
     remove(client_to_server_fifo);
 
-    // Make named pipe
     int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
 
     printf("[SERVER]: Created WKP\n");
@@ -39,18 +38,15 @@ int server_handshake(int from_client) {
     printf("[SERVER]: Received SYN: %s\n", syn);
 
     int downstream = open(syn, O_WRONLY, 0);
-    ASSERT(downstream, "Server open PP")
 
     int syn_ack_value = rand();
     ssize_t bytes = write(downstream, &syn_ack_value, sizeof(syn_ack_value));
-    ASSERT(bytes, "Server write SYN-ACK")
 
     printf("[SERVER]: Sent SYN-ACK: %d\n", syn_ack_value);
     printf("[SERVER]: Waiting for ACK...\n");
 
     int ack_value;
     bytes = read(from_client, &ack_value, sizeof(ack_value));
-    ASSERT(bytes, "Server read ACK")
 
     printf("[SERVER]: Received ACK: %d\n", ack_value);
 

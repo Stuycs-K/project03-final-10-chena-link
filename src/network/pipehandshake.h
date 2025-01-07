@@ -1,7 +1,7 @@
-#ifndef PIPENET
-#define PIPENET
+#ifndef PIPEHANDSHAKE
+#define PIPEHANDSHAKE
 
-#define CLIENT_TO_SERVER_PIPE "wkp"
+#define HANDSHAKE_BUFFER_SIZE 12
 
 int server_setup();
 
