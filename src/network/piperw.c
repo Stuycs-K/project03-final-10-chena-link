@@ -9,6 +9,23 @@
 
 NetEventHandler *g_net_event_handlers[PROTOCOL_COUNT];
 
+/*
+NetBuffer *net_buffer_new() {
+    NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
+
+    new_net_buffer->size = 512;
+    new_net_buffer->buffer = malloc(sizeof(char) * 512);
+    new_net_buffer->offset = 0;
+
+    return new_net_buffer;
+}
+
+void free_net_buffer(NetBuffer *net_buffer) {
+    free(net_buffer->buffer);
+    free(net_buffer);
+}
+*/
+
 NetEventQueue *net_event_queue_new() {
     NetEventQueue *net_event_queue = malloc(sizeof(NetEventQueue));
 
@@ -43,11 +60,13 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         void *args = event_to_send->args;
 
         NetEventHandler *handler = g_net_event_handlers[protocol];
-        printf("%d\n", handler->protocol);
+        
+        NET_SEND_VALUE(protocol)
+
         if (handler->write_fn == NULL) {
             printf("uh oh\n");
         }
-        handler->write_fn(args, send_buffer, offset, current_send_buf_size);
+        handler->write_fn(args, &send_buffer, &offset, &current_send_buf_size);
     }
 
     NET_TRANSMIT_SEND_BUFFER(send_fd)

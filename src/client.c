@@ -11,11 +11,17 @@ struct PeriodicHandshakeArgs {
     int n;
 };
 
-void write_test(void *args, void *send_buffer, int offset, size_t current_send_buf_size) {
-    PeriodicHandshakeArgs *pargs = (PeriodicHandshakeArgs *)args;
-    NET_SEND_VALUE(pargs->n);
 
-    printf("send\n");
+void write_test(void *args, void **p_send_buffer, int *p_offset, size_t *p_size) {
+    NET_BEGIN_FN()
+
+    PeriodicHandshakeArgs *pargs = (PeriodicHandshakeArgs *)args;
+
+    NET_SEND_VALUE(pargs->n)
+
+    printf("OFFSET %d\n", offset);
+
+    NET_END_FN()
 }
 
 void client_main(void) {
@@ -34,6 +40,7 @@ void client_main(void) {
     test_args.n = 120;
     test_event.args = &test_args;
 
+    insert_event(net_event_queue, &test_event);
     insert_event(net_event_queue, &test_event);
 
     send_event_queue(net_event_queue, STDOUT_FILENO);

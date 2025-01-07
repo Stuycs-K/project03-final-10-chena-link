@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #ifndef PIPERW_H
 #define PIPERW_H
@@ -9,6 +10,16 @@
         current_send_buf_size *= 2;                                \
         send_buffer = realloc(send_buffer, current_send_buf_size); \
     }
+
+#define NET_BEGIN_FN() \
+    int offset = *p_offset; \
+    void *send_buffer = *p_send_buffer; \
+    size_t current_send_buf_size = *p_size;
+
+#define NET_END_FN() \
+    *p_offset = offset; \
+    *p_send_buffer = send_buffer; \
+    *p_size = current_send_buf_size;
 
 #define NET_BEGIN_SEND_BUFFER()                            \
     size_t current_send_buf_size = sizeof(char) * 512; \
@@ -40,8 +51,15 @@ enum NetProtocol {
 };
 
 // Returns the size of data written
-typedef void (*NetEventWriter)(void *args, void *send_buffer, int offset, size_t current_send_buf_size);
+typedef void (*NetEventWriter)(void *args, void **p_send_buffer, int *p_offset, size_t *p_size);
 typedef int (*NetEventReader)(void *recv);
+
+typedef struct NetBuffer NetBuffer;
+struct NetBuffer {
+    size_t size;
+    void *buffer;
+    int offset;
+};
 
 typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
