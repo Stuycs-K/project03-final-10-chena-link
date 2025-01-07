@@ -4,24 +4,32 @@
 #ifndef PIPERW_H
 #define PIPERW_H
 
-#define BEGIN_SEND_BUFFER()                            \
+#define ALLOCATE(size) \
+    if (offset + (size) > current_send_buf_size) {              \
+        current_send_buf_size *= 2;                                \
+        send_buffer = realloc(send_buffer, current_send_buf_size); \
+    }
+
+#define NET_BEGIN_SEND_BUFFER()                            \
     size_t current_send_buf_size = sizeof(char) * 512; \
     void *send_buffer = malloc(current_send_buf_size); \
     int offset = 0;
 
-#define SEND(data)                                                 \
+#define NET_SEND_VALUE(data)                                                 \
     size_t data_size = sizeof((data));                             \
-    if (offset + data_size > current_send_buf_size) {              \
-        current_send_buf_size *= 2;                                \
-        send_buffer = realloc(send_buffer, current_send_buf_size); \
-    }                                                              \
-    memset(send_buffer + offset, (data), data_size);               \
+    ALLOCATE(data_size)                                            \
+    memcpy(send_buffer + offset, &(data), data_size);               \
     offset += data_size;
 
-#define TRANSMIT_SEND_BUFFER(send_fd) \
+#define NET_SEND_PTR(ptr, size) \
+    ALLOCATE(size) \
+    memcpy(send_buffer + offset, (ptr), (size));               \
+    offset += (size); \
+
+#define NET_TRANSMIT_SEND_BUFFER(send_fd) \
     write((send_fd), send_buffer, offset);
 
-#define END_SEND_BUFFER() \
+#define NET_END_SEND_BUFFER() \
     free(send_buffer);
 
 typedef enum NetProtocol NetProtocol;

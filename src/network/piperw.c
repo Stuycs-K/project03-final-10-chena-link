@@ -33,8 +33,8 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
 
 */
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
-    BEGIN_SEND_BUFFER()
-    SEND(net_event_queue->event_count)
+    NET_BEGIN_SEND_BUFFER()
+    NET_SEND_VALUE(net_event_queue->event_count)
 
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event_to_send = net_event_queue->events[i];
@@ -50,8 +50,8 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         handler->write_fn(args, send_buffer, offset, current_send_buf_size);
     }
 
-    TRANSMIT_SEND_BUFFER(send_fd)
-    END_SEND_BUFFER()
+    NET_TRANSMIT_SEND_BUFFER(send_fd)
+    NET_END_SEND_BUFFER()
 }
 
 void recv_event_queue(NetEventQueue *net_event_queue) {}
