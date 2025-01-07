@@ -10,7 +10,7 @@ struct card{
 
 int main() {
   srand(getpid());
-    return 0;
+  return 0;
 }
 //Draws a card
 void draw(){

@@ -28,7 +28,15 @@ struct GServer {
     char *name;
 
     GSubserver **subservers; // List of subserver connections
+    struct card p1[100];
+    struct card p2[100];
 };
+
+typedef struct card card;
+struct card{
+  int color;
+  int num;
+}
 
 char *get_client_to_server_fifo_name();
 

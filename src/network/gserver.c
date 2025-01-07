@@ -7,6 +7,7 @@
 #include "pipehandshake.h"
 #include "piperw.h"
 
+//Makes a new subserver/client
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
 
@@ -55,8 +56,8 @@ GServer *gserver_new() {
     gserver->max_clients = 2;
     gserver->current_clients = 0;
     gserver->id = 0;
-
     gserver->name = NULL;
+    gserver->p1 = generate_cards(7);
 
     // Populate with inactive subservers
     gserver->subservers = malloc(sizeof(GSubserver *) * gserver->max_clients);
@@ -130,4 +131,33 @@ void gserver_init(GServer *gserver) {
             gserver->subservers[subserver->client_id]->pid = pid;
         }
     }
+}
+
+//Generates num cards
+card * generate_cards(int num){
+  card deck[num];
+  for(int i = 0; i < num; i ++){
+    deck[i] = generate_card();
+  }
+  return deck;
+}
+//Generates 1 card
+card generate_card(){
+  srand(time(NULL));
+  card drawn;
+  drawn.color = rand()%4;
+  drawn.num = rand()%10;
+  return drawn;
+}
+
+//Plays a card
+//Probably going to look for a card in the array until the information matches
+card play_card(card * cards, card played){
+  while (cards[i] != NULL){
+    if(played.num == cards[i].num && played.color == cards[i].color){
+      cards[i] == NULL;
+      return cards;
+    }
+  }
+  return cards;
 }
