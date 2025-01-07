@@ -95,6 +95,4 @@ void client_handshake(char *client_to_server_fifo, int *fd_pair) {
 
     printf("[CLIENT]: Sent ACK: %d\n", ack_value);
     printf("[CLIENT]: Handshake complete\n");
-
-    return from_server;
 }
