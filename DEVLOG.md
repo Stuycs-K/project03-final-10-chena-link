@@ -5,7 +5,8 @@ This document must be updated daily by EACH group member.
 ## Alan Chen
 
 ### 2024-01-06 - Project setup
-* Write makefile, create skeleton network files and copy over pipe networking lab, main.c (in class)
+* Write makefile, create skeleton network files and copy over pipe networking lab, main.c. Done in class.
+* Finish the makefile. ~2 hours because makefiles are really dumb.
 
 ### 2024-01-07 - Brief description
 
