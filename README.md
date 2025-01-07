@@ -10,5 +10,9 @@ Multiplayer uno game
   
 ### Instructions:
 
-How does the user install/compile/run the program.
+#### Compilation:
+First, run `make` or `make compile` to compile the project. Hopefully, there shouldn't be any problems.
+Next, set up a server with `make server`.
+To play, open up a new terminal and run `make client`.
+
 How does the user interact with this program?
