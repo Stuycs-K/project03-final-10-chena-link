@@ -6,8 +6,7 @@
 Alan Chen, Kevin Lin
        
 ### Project Description:
-
-Explain what is this project.
+Multiplayer uno game
   
 ### Instructions:
 
