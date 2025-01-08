@@ -8,12 +8,6 @@
 #ifndef GSERVER_H
 #define GSERVER_H
 
-typedef struct card card;
-struct card{
-  int color;
-  int num;
-};
-
 // GSubserver handles communication with ONE client.
 typedef struct GSubserver GSubserver;
 struct GSubserver {
@@ -22,7 +16,6 @@ struct GSubserver {
     int client_id;
     int send_fd;
     int recv_fd;
-    struct card deck[100];
     NetEvent *handshake_event; // Handshake to complete
 };
 
