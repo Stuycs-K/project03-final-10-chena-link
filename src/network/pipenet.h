@@ -12,12 +12,21 @@
     }
 
 #define NET_BUFFER_WRITE(nb, ptr, size)                 \
-    NET_BUFFER_ALLOC(nb, size)                          \
+    NET_BUFFER_ALLOC(nb, (size))                        \
     memcpy((nb)->buffer + (nb)->offset, (ptr), (size)); \
     (nb)->offset += (size);
 
 #define NET_BUFFER_WRITE_VALUE(nb, value) \
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
+
+// Write string length + string bytes
+// Uses a scope so that len gets cleaned up
+#define NET_BUFFER_WRITE_STRING(nb, string)   \
+    {                                         \
+        size_t len = strlen((string));        \
+        NET_BUFFER_WRITE_VALUE((nb), len)     \
+        NET_BUFFER_WRITE((nb), (string), len) \
+    }
 
 #define NET_BUFFER_READ(nb, ptr, size)                  \
     memcpy((ptr), (nb)->buffer + (nb)->offset, (size)); \
@@ -25,6 +34,15 @@
 
 #define NET_BUFFER_READ_VALUE(nb, var) \
     NET_BUFFER_READ((nb), &(var), sizeof(var))
+
+//
+// Uses a scope so that len gets cleaned up
+#define NET_BUFFER_READ_STRING(nb, string)     \
+    {                                          \
+        size_t len;                            \
+        NET_BUFFER_READ_VALUE((nb), (len))     \
+        NET_BUFFER_READ((nb), (string), (len)) \
+    }
 
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {
@@ -41,7 +59,7 @@ enum NetProtocol {
 };
 
 typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
-typedef void *(*NetEventReader)(NetBuffer *nb);
+typedef void *(*NetEventReader)(NetBuffer *nb, void *args);
 
 typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
@@ -65,8 +83,6 @@ struct NetEventQueue {
     NetEvent **events;
 };
 
-extern NetEventHandler *g_net_event_handlers[];
-
 NetEvent *net_event_new(NetProtocol protocol, void *args);
 
 NetEventQueue *net_event_queue_new();
@@ -77,7 +93,11 @@ void empty_net_event_queue(NetEventQueue *net_event_queue);
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd);
 
+void send_event_immediate(NetEvent *event, int send_fd);
+
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer);
+
+NetEvent *recv_event_immediate(void *recv_buffer, NetEvent *recv_event);
 
 void net_init();
 

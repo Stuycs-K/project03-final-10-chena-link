@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include "gserver.h"
@@ -59,7 +60,7 @@ void gsubserver_init(GSubserver *gsubserver) {
             printf("n: %d\n", nargs->id);
         }
 
-        // usleep(1000000);
+        usleep(1000000);
     }
 
     printf("CLIENT DISCONNECT\n");
@@ -79,6 +80,7 @@ char *get_client_to_server_fifo_name() {
 GServer *gserver_new() {
     GServer *gserver = malloc(sizeof(GServer));
 
+    gserver->status = WAITING_FOR_PLAYERS;
     gserver->max_clients = 2;
     gserver->current_clients = 0;
     gserver->id = 0;
@@ -92,6 +94,35 @@ GServer *gserver_new() {
     }
 
     return gserver;
+}
+
+void gserver_set_max_clients(GServer *gserver, int max_clients) {
+    int old_max_clients = gserver->max_clients;
+
+    // Don't do anything if we're not changing anything
+    if (old_max_clients == max_clients) {
+        return;
+    }
+
+    // Can't make server accomodate less players than it already has
+    if (gserver->current_clients > max_clients) {
+        return;
+    }
+
+    int is_expanding = max_clients > old_max_clients;
+
+    if (is_expanding) {
+        gserver->subservers = realloc(gserver->subservers, sizeof(GSubserver *) * max_clients);
+        for (int i = old_max_clients - 1; i < max_clients; ++i) {
+            gserver->subservers[i] = gsubserver_new(i);
+        }
+    } else {
+        for (int i = old_max_clients - 1; i >= max_clients - 1; --i) {
+            free(gserver->subservers[i]);
+        }
+
+        gserver->subservers = realloc(gserver->subservers, sizeof(GSubserver *) * max_clients);
+    }
 }
 
 // -1 indicates the server is full
@@ -135,14 +166,14 @@ void gserver_init(GServer *gserver) {
     signal(SIGINT, handle_sigint);
 
     int from_client;
-    int to_client;
 
     while (1) {
-        // TODO: Reverse the order and send connection failure messages
+        from_client = server_connect(get_client_to_server_fifo_name());
+
+        // A client connected, but the server is full!
         if (gserver->current_clients >= gserver->max_clients) {
             continue;
         }
-        from_client = server_setup(get_client_to_server_fifo_name());
 
         GSubserver *subserver = gserver_handle_connection(gserver, from_client);
         if (subserver == NULL) {

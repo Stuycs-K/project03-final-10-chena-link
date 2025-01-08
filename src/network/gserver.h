@@ -17,8 +17,18 @@ struct GSubserver {
     int recv_fd;
 };
 
+typedef enum GServerStatus GServerStatus;
+enum GServerStatus {
+    WAITING_FOR_PLAYERS, // Not reached max_clients
+    FULL,                // Server has reached max_clients
+    STARTING,            // Host has started countdown
+    GAME_IN_PROGRESS,    // We're playing the game
+};
+
 typedef struct GServer GServer;
 struct GServer {
+    GServerStatus status;
+
     int max_clients;
     int current_clients;
 

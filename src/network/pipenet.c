@@ -5,7 +5,7 @@
 #include "pipenet.h"
 #include "pipenetevents.h"
 
-NetEventHandler *g_net_event_handlers[PROTOCOL_COUNT];
+NetEventHandler *net_event_handlers[PROTOCOL_COUNT];
 
 NetBuffer *net_buffer_send() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
@@ -88,16 +88,26 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         NetProtocol protocol = event_to_send->protocol;
         void *args = event_to_send->args;
 
-        NetEventHandler *handler = g_net_event_handlers[protocol];
+        NetEventHandler *handler = net_event_handlers[protocol];
 
         NET_BUFFER_WRITE_VALUE(nb, protocol) // Write the event's protocol
-
-        if (handler->write_fn == NULL) {
-            printf("Protocol handler has no write function attached!\n");
-            return;
-        }
         handler->write_fn(nb, args);
     }
+
+    transmit_net_buffer(nb, send_fd);
+    free_net_buffer(nb);
+}
+
+void send_event_immediate(NetEvent *event, int send_fd) {
+    NetBuffer *nb = net_buffer_send();
+
+    NetProtocol protocol = event->protocol;
+    void *args = event->args;
+
+    NetEventHandler *handler = net_event_handlers[protocol];
+
+    NET_BUFFER_WRITE_VALUE(nb, protocol)
+    handler->write_fn(nb, args);
 
     transmit_net_buffer(nb, send_fd);
     free_net_buffer(nb);
@@ -114,21 +124,35 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
         NetProtocol protocol;
         NET_BUFFER_READ_VALUE(nb, protocol);
 
-        NetEventHandler *handler = g_net_event_handlers[protocol];
-        if (handler->read_fn == NULL) {
-            printf("Protocol handler has no read function attached!\n");
-            return;
-        }
+        NetEventHandler *handler = net_event_handlers[protocol];
 
-        void *data = handler->read_fn(nb);
+        void *data = handler->read_fn(nb, NULL);
         insert_event(net_event_queue, net_event_new(protocol, data));
     }
 
     free_net_buffer(nb);
 }
 
+NetEvent *recv_event_immediate(void *recv_buffer, NetEvent *recv_event) {
+    NetBuffer *nb = net_buffer_recv(recv_buffer);
+
+    NetProtocol protocol;
+    NET_BUFFER_READ_VALUE(nb, protocol);
+
+    NetEventHandler *handler = net_event_handlers[protocol];
+
+    void *data;
+    if (recv_event == NULL) { // Create our own NetEvent
+        data = handler->read_fn(nb, NULL);
+        return net_event_new(protocol, data);
+    } else {
+        data = handler->read_fn(nb, recv_event->args);
+        return recv_event;
+    }
+}
+
 void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
-    NetEventHandler *existing_handler = g_net_event_handlers[protocol];
+    NetEventHandler *existing_handler = net_event_handlers[protocol];
     if (existing_handler != NULL) {
         if (existing_handler->write_fn != NULL) {
             printf("NetEventHandler already has a bound writer\n");
@@ -139,13 +163,13 @@ void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
         return;
     }
 
-    g_net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
-    g_net_event_handlers[protocol]->protocol = protocol;
-    g_net_event_handlers[protocol]->write_fn = writer;
+    net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
+    net_event_handlers[protocol]->protocol = protocol;
+    net_event_handlers[protocol]->write_fn = writer;
 }
 
 void bind_recv_event(NetProtocol protocol, NetEventReader reader) {
-    NetEventHandler *existing_handler = g_net_event_handlers[protocol];
+    NetEventHandler *existing_handler = net_event_handlers[protocol];
     if (existing_handler != NULL) {
         if (existing_handler->read_fn != NULL) {
             printf("NetEventHandler already has a bound reader\n");
@@ -156,14 +180,14 @@ void bind_recv_event(NetProtocol protocol, NetEventReader reader) {
         return;
     }
 
-    g_net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
-    g_net_event_handlers[protocol]->protocol = protocol;
-    g_net_event_handlers[protocol]->read_fn = reader;
+    net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
+    net_event_handlers[protocol]->protocol = protocol;
+    net_event_handlers[protocol]->read_fn = reader;
 }
 
 void net_init() {
     for (int i = 0; i < PROTOCOL_COUNT; ++i) {
-        g_net_event_handlers[i] = NULL;
+        net_event_handlers[i] = NULL;
     }
 
     bind_send_event(PERIODIC_HANDSHAKE, send_periodic_handshake);

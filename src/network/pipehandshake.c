@@ -10,10 +10,12 @@
 
 #include "../debug/debug.h"
 #include "pipehandshake.h"
+#include "pipenet.h"
+#include "pipenetevents.h"
 
 #define HANDSHAKE_DEBUG
 
-int server_setup(char *client_to_server_fifo) {
+int server_connect(char *client_to_server_fifo) {
     remove(client_to_server_fifo);
 
     int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
@@ -21,7 +23,6 @@ int server_setup(char *client_to_server_fifo) {
     printf("[SERVER]: Waiting for connection...\n");
 
     int from_client = open(client_to_server_fifo, O_RDONLY, 0);
-    fatal_assert(from_client, "Open client PP fail\n");
 
     printf("[SERVER]: Client connected\n");
 
@@ -33,12 +34,18 @@ int server_setup(char *client_to_server_fifo) {
 int server_handshake(int from_client) {
     printf("[SERVER]: Waiting for SYN...\n");
 
-    char syn[HANDSHAKE_BUFFER_SIZE];
-    read(from_client, syn, sizeof(syn));
+    char recv_buffer[512];
+    read(from_client, recv_buffer, sizeof(recv_buffer));
 
-    printf("[SERVER]: Received SYN: %s\n", syn);
+    NetEvent *handshake = recv_event_immediate(recv_buffer, NULL);
+    char *to_client_pipe_name = ((NetArgs_InitialHandshake *)(handshake->args))->to_client_pipe_name;
 
-    int downstream = open(syn, O_WRONLY, 0);
+    // char syn[HANDSHAKE_BUFFER_SIZE];
+    //  read(from_client, syn, sizeof(syn));
+
+    printf("[SERVER]: Received SYN: %s\n", to_client_pipe_name);
+
+    int downstream = open(to_client_pipe_name, O_WRONLY, 0);
 
     int syn_ack_value = rand();
     ssize_t bytes = write(downstream, &syn_ack_value, sizeof(syn_ack_value));
@@ -59,6 +66,18 @@ int server_handshake(int from_client) {
     printf("[SERVER]: Handshake complete\n");
 
     return downstream;
+}
+
+int client_setup(char *client_to_server_fifo) {
+    pid_t client_pid = getpid();
+    char pid_string[HANDSHAKE_BUFFER_SIZE];
+    snprintf(pid_string, sizeof(pid_string), "%d", client_pid);
+    remove(pid_string); // Just in case
+
+    int mkfifo_ret = mkfifo(pid_string, 0644);
+
+    int to_server = open(client_to_server_fifo, O_WRONLY, 0);
+    return to_server;
 }
 
 void client_handshake(char *client_to_server_fifo, int *fd_pair) {
