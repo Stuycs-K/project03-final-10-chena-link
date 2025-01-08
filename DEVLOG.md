@@ -10,7 +10,9 @@ This document must be updated daily by EACH group member.
 * Client-server handshake works. 20 minutes.
 * GServer and GSubserver basics. 1 hour.
 
-### 2024-01-07 - Brief description
+### 2024-01-07 - Pipe network messaging
+* Improve pipe network macros. Done in class.
+* Implement basic messaging by queueing NetEvents of different protocols into a NetEventQueue. After a fixed timestep, they're written to a NetBuffer, which is exported with write. 1.5 hours.
 
 ## Kevin Lin
 

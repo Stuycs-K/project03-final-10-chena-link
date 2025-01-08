@@ -53,9 +53,12 @@ void gsubserver_init(GSubserver *gsubserver) {
 
         printf("RECV Count: %d 1Protocol: %d\n", net_recv_queue->event_count, net_recv_queue->events[0]->protocol);
 
-        NetEvent *event = net_recv_queue->events[0];
-        NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
-        printf("n: %d\n", nargs->id);
+        for (int i = 0; i < net_recv_queue->event_count; ++i) {
+            NetEvent *event = net_recv_queue->events[i];
+            NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
+            printf("n: %d\n", nargs->id);
+        }
+
         // usleep(1000000);
     }
 

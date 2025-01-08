@@ -68,7 +68,10 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
 
 void empty_net_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
+        NetEvent *event = net_event_queue->events[i];
+        free(event->args);
         free(net_event_queue->events[i]);
+
         net_event_queue->events[i] = NULL;
     }
 

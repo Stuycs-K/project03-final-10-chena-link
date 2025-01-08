@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -17,14 +18,18 @@ void client_main(void) {
     net_init();
     NetEventQueue *net_send_queue = net_event_queue_new();
 
-    NetArgs_PeriodicHandshake test_args;
-    test_args.id = 120;
-
     while (1) {
         empty_net_event_queue(net_send_queue);
 
-        NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, &test_args);
-        insert_event(net_send_queue, test_event);
+        for (int i = 0; i < 2; ++i) {
+            NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
+            test_args->id = rand();
+
+            printf("rand: %d\n", test_args->id);
+            NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
+
+            insert_event(net_send_queue, test_event);
+        }
 
         send_event_queue(net_send_queue, to_server);
 
