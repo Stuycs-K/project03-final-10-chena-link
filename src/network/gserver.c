@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
@@ -9,7 +10,8 @@
 
 #include "gserver.h"
 #include "pipehandshake.h"
-#include "piperw.h"
+#include "pipenet.h"
+#include "pipenetevents.h"
 
 //Makes a new subserver/client
 GSubserver *gsubserver_new(int client_id) {
@@ -20,27 +22,59 @@ GSubserver *gsubserver_new(int client_id) {
     gsubserver->recv_fd = -1;
     gsubserver->pid = -1;
 
+    gsubserver->handshake_event = NULL;
+
     return gsubserver;
 }
 
-// Finishes the server handshake
+/*
+    Finishes the server handshake.
+    Then, receives all client network signals.
+*/
 void gsubserver_init(GSubserver *gsubserver) {
+    NetEventQueue *net_recv_queue = net_event_queue_new();
+
     gsubserver->pid = getpid();
 
-    int send_fd = server_handshake(gsubserver->recv_fd);
+    int status = server_complete_handshake(gsubserver->recv_fd, gsubserver->send_fd, gsubserver->handshake_event);
 
-    // Handshake failed. Abort.
-    if (send_fd == -1) {
-        printf("Failed handshake\n");
+    free_handshake_event(gsubserver->handshake_event);
+    gsubserver->handshake_event = NULL;
+
+    if (status == -1) {
+        printf("ACK Fail\n");
         exit(EXIT_FAILURE);
     }
 
     printf("CONNECTION MADE WITH CLIENT!\n");
 
     while (1) {
-        printf("server hello\n");
+        empty_net_event_queue(net_recv_queue);
+
+        char *raw_recv_buffer = malloc(sizeof(char) * 4096);
+        ssize_t bytes_read = read(gsubserver->recv_fd, raw_recv_buffer, 4096);
+
+        if (bytes_read <= 0) {
+            if (bytes_read == 0) {
+                // CLIENT DISCONNECT!
+                break;
+            }
+        }
+
+        recv_event_queue(net_recv_queue, raw_recv_buffer);
+
+        printf("ID: %d | Count: %d | 1Protocol: %d\n", gsubserver->client_id, net_recv_queue->event_count, net_recv_queue->events[0]->protocol);
+
+        for (int i = 0; i < net_recv_queue->event_count; ++i) {
+            NetEvent *event = net_recv_queue->events[i];
+            NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
+            printf("n: %d\n", nargs->id);
+        }
+
         usleep(1000000);
     }
+
+    printf("CLIENT DISCONNECT\n");
 
     exit(EXIT_SUCCESS);
 }
@@ -57,6 +91,7 @@ char *get_client_to_server_fifo_name() {
 GServer *gserver_new() {
     GServer *gserver = malloc(sizeof(GServer));
 
+    gserver->status = GSS_WAITING_FOR_PLAYERS;
     gserver->max_clients = 2;
     gserver->current_clients = 0;
     gserver->id = 0;
@@ -71,6 +106,36 @@ GServer *gserver_new() {
     return gserver;
 }
 
+void gserver_set_max_clients(GServer *gserver, int max_clients) {
+    int old_max_clients = gserver->max_clients;
+
+    // Don't do anything if we're not changing anything
+    if (old_max_clients == max_clients) {
+        return;
+    }
+
+    // Can't make server accomodate less players than it already has
+    if (gserver->current_clients > max_clients) {
+        return;
+    }
+
+    int is_expanding = max_clients > old_max_clients;
+
+    if (is_expanding) {
+        gserver->subservers = realloc(gserver->subservers, sizeof(GSubserver *) * max_clients);
+
+        for (int i = old_max_clients - 1; i < max_clients; ++i) {
+            gserver->subservers[i] = gsubserver_new(i);
+        }
+    } else {
+        for (int i = old_max_clients - 1; i >= max_clients - 1; --i) {
+            free(gserver->subservers[i]);
+        }
+
+        gserver->subservers = realloc(gserver->subservers, sizeof(GSubserver *) * max_clients);
+    }
+}
+
 // -1 indicates the server is full
 int gserver_get_free_client_id(GServer *gserver) {
     for (int i = 0; i < gserver->max_clients; ++i) {
@@ -82,17 +147,14 @@ int gserver_get_free_client_id(GServer *gserver) {
     return -1;
 }
 
-GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd) {
+GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd, int send_fd, NetEvent *handshake_event) {
     int client_id = gserver_get_free_client_id(gserver);
 
-    // TODO: Send a kick message (this shouldn't be possible anyways)
-    if (client_id == -1) {
-        printf("Could not assign the client to a valid ID\n");
-        return NULL;
-    }
-
     GSubserver *chosen_subserver = gserver->subservers[client_id];
+
     chosen_subserver->recv_fd = recv_fd;
+    chosen_subserver->send_fd = send_fd;
+    chosen_subserver->handshake_event = handshake_event;
 
     gserver->current_clients++;
 
@@ -112,16 +174,24 @@ void gserver_init(GServer *gserver) {
     signal(SIGINT, handle_sigint);
 
     int from_client;
-    int to_client;
 
     while (1) {
-        // TODO: Reverse the order and send connection failure messages
-        if (gserver->current_clients >= gserver->max_clients) {
-            continue;
-        }
         from_client = server_setup(get_client_to_server_fifo_name());
 
-        GSubserver *subserver = gserver_handle_connection(gserver, from_client);
+        NetEvent *handshake_event = create_handshake_event();
+        int to_client = server_get_send_fd(from_client, handshake_event);
+
+        // A client connected, but the server is full!
+        if (gserver->current_clients >= gserver->max_clients) {
+            server_abort_handshake(to_client, handshake_event, HEC_SERVER_IS_FULL);
+            free_handshake_event(handshake_event);
+
+            printf("server is full!\n");
+
+            continue;
+        }
+
+        GSubserver *subserver = gserver_handle_connection(gserver, from_client, to_client, handshake_event);
         if (subserver == NULL) {
             continue;
         }

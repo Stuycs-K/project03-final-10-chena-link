@@ -10,6 +10,8 @@
 
 #include "../debug/debug.h"
 #include "pipehandshake.h"
+#include "pipenet.h"
+#include "pipenetevents.h"
 
 #define HANDSHAKE_DEBUG
 
@@ -21,7 +23,6 @@ int server_setup(char *client_to_server_fifo) {
     printf("[SERVER]: Waiting for connection...\n");
 
     int from_client = open(client_to_server_fifo, O_RDONLY, 0);
-    fatal_assert(from_client, "Open client PP fail\n");
 
     printf("[SERVER]: Client connected\n");
 
@@ -30,70 +31,126 @@ int server_setup(char *client_to_server_fifo) {
     return from_client;
 }
 
-int server_handshake(int from_client) {
+NetEvent *create_handshake_event() {
+    NetArgs_InitialHandshake *handshake_args = nargs_initial_handshake();
+    NetEvent *handshake_event = net_event_new(INITIAL_HANDSHAKE, handshake_args);
+}
+
+void free_handshake_event(NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+    free(handshake_args->to_client_pipe_name);
+
+    free(handshake_event->args);
+    free(handshake_event);
+}
+
+void server_abort_handshake(int send_fd, NetEvent *handshake_event, HandshakeErrCode errcode) {
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+    handshake_args->errcode = errcode;
+
+    send_event_immediate(handshake_event, send_fd);
+}
+
+int server_get_send_fd(int recv_fd, NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+
     printf("[SERVER]: Waiting for SYN...\n");
 
-    char syn[HANDSHAKE_BUFFER_SIZE];
-    read(from_client, syn, sizeof(syn));
+    recv_event_immediate(recv_fd, handshake_event);
 
-    printf("[SERVER]: Received SYN: %s\n", syn);
+    char *to_client_pipe_name = handshake_args->to_client_pipe_name;
 
-    int downstream = open(syn, O_WRONLY, 0);
+    int send_fd = open(to_client_pipe_name, O_WRONLY, 0);
 
+    return send_fd;
+}
+
+int server_complete_handshake(int recv_fd, int send_fd, NetEvent *handshake_event) {
+    // SYN-ACK
     int syn_ack_value = rand();
-    ssize_t bytes = write(downstream, &syn_ack_value, sizeof(syn_ack_value));
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+    handshake_args->syn_ack = syn_ack_value;
 
-    printf("[SERVER]: Sent SYN-ACK: %d\n", syn_ack_value);
-    printf("[SERVER]: Waiting for ACK...\n");
+    send_event_immediate(handshake_event, send_fd);
 
-    int ack_value;
-    bytes = read(from_client, &ack_value, sizeof(ack_value));
+    // ACK
+    recv_event_immediate(recv_fd, handshake_event);
 
-    printf("[SERVER]: Received ACK: %d\n", ack_value);
-
-    if (ack_value != syn_ack_value + 1) {
+    // Inform the client that they failed the ACK.
+    if (handshake_args->ack != handshake_args->syn_ack + 1) {
         printf("[SERVER]: Invalid ACK received. Handshake failed\n");
+
+        server_abort_handshake(send_fd, handshake_event, HEC_INVALID_ACK);
+
         return -1;
     }
 
-    printf("[SERVER]: Handshake complete\n");
-
-    return downstream;
+    // Send the event back so the client knows their ACK was correct.
+    send_event_immediate(handshake_event, send_fd);
+    return 1;
 }
 
-void client_handshake(char *client_to_server_fifo, int *fd_pair) {
-    // Create PID string, used as name of PP and value of SYN
+int client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     pid_t client_pid = getpid();
     char pid_string[HANDSHAKE_BUFFER_SIZE];
     snprintf(pid_string, sizeof(pid_string), "%d", client_pid);
-
     remove(pid_string); // Just in case
+
+    // Copy over SYN
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+    strcpy(handshake_args->to_client_pipe_name, pid_string);
+
     int mkfifo_ret = mkfifo(pid_string, 0644);
 
-    printf("[CLIENT]: Created PP: %s\n", pid_string);
-
     int to_server = open(client_to_server_fifo, O_WRONLY, 0);
-    fd_pair[0] = to_server;
+    return to_server;
+}
 
-    // Write SYN
-    ssize_t bytes = write(to_server, pid_string, sizeof(pid_string));
+HandshakeErrCode client_recv_handshake_event(int from_server, NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
 
-    printf("[CLIENT]: Sent SYN: %d\n", client_pid);
-    printf("[CLIENT]: Waiting for SYN-ACK...\n");
+    recv_event_immediate(from_server, handshake_event);
 
-    int from_server = open(pid_string, O_RDONLY, 0);
-    fd_pair[1] = from_server;
+    if (handshake_args->errcode != -1) {
 
-    remove(pid_string);
+        switch (handshake_args->errcode) {
 
-    int syn_ack_value;
-    bytes = read(from_server, &syn_ack_value, sizeof(syn_ack_value));
+        case HEC_INVALID_ACK:
+            printf("Failed ACK\n");
+            break;
 
-    printf("[CLIENT]: Received SYN-ACK: %d\n", syn_ack_value);
+        case HEC_SERVER_IS_FULL:
+            printf("Server is full\n");
+            break;
 
-    int ack_value = syn_ack_value + 1;
-    bytes = write(to_server, &ack_value, sizeof(ack_value));
+        default:
+            break;
+        }
 
-    printf("[CLIENT]: Sent ACK: %d\n", ack_value);
-    printf("[CLIENT]: Handshake complete\n");
+        return handshake_args->errcode;
+    }
+
+    return HEC_SUCCESS;
+}
+
+int client_handshake(int send_fd, NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake_args = handshake_event->args;
+
+    send_event_immediate(handshake_event, send_fd);
+
+    int from_server = open(handshake_args->to_client_pipe_name, O_RDONLY, 0);
+    remove(handshake_args->to_client_pipe_name);
+
+    if (client_recv_handshake_event(from_server, handshake_event) != HEC_SUCCESS) {
+        return -1;
+    }
+
+    handshake_args->ack = handshake_args->syn_ack + 1;
+    send_event_immediate(handshake_event, send_fd);
+
+    if (client_recv_handshake_event(from_server, handshake_event) != HEC_SUCCESS) {
+        return -1;
+    }
+
+    return from_server;
 }

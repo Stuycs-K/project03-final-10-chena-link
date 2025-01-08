@@ -10,11 +10,15 @@ This document must be updated daily by EACH group member.
 * Client-server handshake works. 20 minutes.
 * GServer and GSubserver basics. 1 hour.
 
-### 2024-01-07 - Brief description
+### 2024-01-07 - Pipe network messaging
+* Improve pipe network macros. Done in class.
+* Implement basic messaging by queueing NetEvents of different protocols into a NetEventQueue. After a fixed timestep, they're written to a NetBuffer, which is exported with write. 1.5 hours.
+* Rewrite handshake to allow full servers to boot clients during the handshake process. 1 hour.
 
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
 Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
 
-### 2024-01-07 - Brief description
+### 2024-01-07 - Game functions
+Added uno game functions to game server, added card array to server struct. Done in class
