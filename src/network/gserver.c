@@ -22,7 +22,10 @@ GSubserver *gsubserver_new(int client_id) {
     return gsubserver;
 }
 
-// Finishes the server handshake
+/*
+    Finishes the server handshake.
+    Then, receives all client network signals.
+*/
 void gsubserver_init(GSubserver *gsubserver) {
     NetEventQueue *net_recv_queue = net_event_queue_new();
 
@@ -83,7 +86,7 @@ char *get_client_to_server_fifo_name() {
 GServer *gserver_new() {
     GServer *gserver = malloc(sizeof(GServer));
 
-    gserver->status = WAITING_FOR_PLAYERS;
+    gserver->status = GSS_WAITING_FOR_PLAYERS;
     gserver->max_clients = 2;
     gserver->current_clients = 0;
     gserver->id = 0;
@@ -116,6 +119,7 @@ void gserver_set_max_clients(GServer *gserver, int max_clients) {
 
     if (is_expanding) {
         gserver->subservers = realloc(gserver->subservers, sizeof(GSubserver *) * max_clients);
+
         for (int i = old_max_clients - 1; i < max_clients; ++i) {
             gserver->subservers[i] = gsubserver_new(i);
         }
@@ -141,12 +145,6 @@ int gserver_get_free_client_id(GServer *gserver) {
 
 GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd, int send_fd, NetEvent *handshake_event) {
     int client_id = gserver_get_free_client_id(gserver);
-
-    // TODO: Send a kick message (this shouldn't be possible anyways)
-    if (client_id == -1) {
-        printf("Could not assign the client to a valid ID\n");
-        return NULL;
-    }
 
     GSubserver *chosen_subserver = gserver->subservers[client_id];
 

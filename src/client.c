@@ -23,12 +23,6 @@ void client_main(void) {
         return;
     }
 
-    int net_fds[2];
-    // client_handshake("TEMP", net_fds);
-
-    // int to_server = net_fds[0];
-    // int from_server = net_fds[1];
-
     NetEventQueue *net_send_queue = net_event_queue_new();
 
     while (1) {

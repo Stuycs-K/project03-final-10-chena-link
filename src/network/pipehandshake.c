@@ -106,7 +106,7 @@ int client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     return to_server;
 }
 
-HandshakeErrCode client_recv_handshake(int from_server, NetEvent *handshake_event) {
+HandshakeErrCode client_recv_handshake_event(int from_server, NetEvent *handshake_event) {
     NetArgs_InitialHandshake *handshake_args = handshake_event->args;
 
     recv_event_immediate(from_server, handshake_event);
@@ -141,14 +141,14 @@ int client_handshake(int send_fd, NetEvent *handshake_event) {
     int from_server = open(handshake_args->to_client_pipe_name, O_RDONLY, 0);
     remove(handshake_args->to_client_pipe_name);
 
-    if (client_recv_handshake(from_server, handshake_event) != HEC_SUCCESS) {
+    if (client_recv_handshake_event(from_server, handshake_event) != HEC_SUCCESS) {
         return -1;
     }
 
     handshake_args->ack = handshake_args->syn_ack + 1;
     send_event_immediate(handshake_event, send_fd);
 
-    if (client_recv_handshake(from_server, handshake_event) != HEC_SUCCESS) {
+    if (client_recv_handshake_event(from_server, handshake_event) != HEC_SUCCESS) {
         return -1;
     }
 

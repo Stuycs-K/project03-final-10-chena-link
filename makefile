@@ -25,7 +25,7 @@ client: $(EXE)
 	@./$(EXE) client
 
 server: $(EXE)
-	@./$(EXE) server
+	@./$(EXE) gserver
 
 $(EXE): $(OBJS) | $(BIN)
 	@gcc $(CFLAGS) $^ -o $@ $(LDLIBS)

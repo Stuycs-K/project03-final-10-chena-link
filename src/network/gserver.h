@@ -22,10 +22,10 @@ struct GSubserver {
 
 typedef enum GServerStatus GServerStatus;
 enum GServerStatus {
-    WAITING_FOR_PLAYERS, // Not reached max_clients
-    FULL,                // Server has reached max_clients
-    STARTING,            // Host has started countdown
-    GAME_IN_PROGRESS,    // We're playing the game
+    GSS_WAITING_FOR_PLAYERS, // Not reached max_clients
+    GSS_FULL,                // Server has reached max_clients
+    GSS_STARTING,            // Host has started countdown
+    GSS_GAME_IN_PROGRESS     // We're playing the game
 };
 
 typedef struct GServer GServer;
