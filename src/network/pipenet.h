@@ -44,6 +44,9 @@
         NET_BUFFER_READ((nb), (string), (len)) \
     }
 
+#define SET_NET_EVENT_ARG(net_arg_type, event, field_name, value) \
+    (((net_arg_type) *)((event)->args))->(field_name) = (value);
+
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {
     size_t size;

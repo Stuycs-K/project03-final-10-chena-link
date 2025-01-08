@@ -146,6 +146,8 @@ int gserver_get_free_client_id(GServer *gserver) {
 GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd, int send_fd, NetEvent *handshake_event) {
     int client_id = gserver_get_free_client_id(gserver);
 
+    ((NetArgs_InitialHandshake *)(handshake_event->args))->client_id = client_id;
+
     GSubserver *chosen_subserver = gserver->subservers[client_id];
 
     chosen_subserver->recv_fd = recv_fd;

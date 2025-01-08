@@ -18,6 +18,8 @@ struct NetArgs_InitialHandshake {
     int syn_ack;
     int ack;
     int errcode;
+
+    int client_id;
 };
 
 typedef enum HandshakeErrCode HandshakeErrCode;

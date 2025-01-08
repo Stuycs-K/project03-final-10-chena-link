@@ -18,6 +18,9 @@ void client_main(void) {
     to_server = client_setup("TEMP", handshake_event);
     from_server = client_handshake(to_server, handshake_event);
 
+    int client_id = ((NetArgs_InitialHandshake *)handshake_event->args)->client_id;
+    printf("This is %d\n", client_id);
+
     if (from_server == -1) {
         printf("Connection failed\n");
         return;
