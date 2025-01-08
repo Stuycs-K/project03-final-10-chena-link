@@ -30,7 +30,7 @@ NetBuffer *net_buffer_recv(void *buffer) {
 void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
     ssize_t bytes_written = write(target_fd, net_buffer->buffer, net_buffer->offset);
     if (bytes_written <= 0) {
-        printf("That can't be right\n");
+        perror("oops");
     }
 }
 

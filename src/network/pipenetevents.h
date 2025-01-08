@@ -11,17 +11,6 @@ struct NetArgs_PeriodicHandshake {
 void send_periodic_handshake(NetBuffer *nb, void *args);
 void *recv_periodic_handshake(NetBuffer *nb, void *args);
 
-typedef struct NetArgs_InitialHandshake NetArgs_InitialHandshake;
-struct NetArgs_InitialHandshake {
-    char *to_client_pipe_name;
-
-    int syn_ack;
-    int ack;
-    int errcode;
-
-    int client_id;
-};
-
 typedef enum HandshakeErrCode HandshakeErrCode;
 enum HandshakeErrCode {
     HEC_SUCCESS = -1,
@@ -30,7 +19,19 @@ enum HandshakeErrCode {
     HEC_NO_LONGER_ACCEPTING_CONNECTIONS,
 };
 
-NetArgs_InitialHandshake *nargs_initial_handshake();
+typedef struct NetArgs_InitialHandshake NetArgs_InitialHandshake;
+struct NetArgs_InitialHandshake {
+    char *to_client_pipe_name;
+
+    int client_to_server_fd;
+    int server_to_client_fd;
+
+    int syn_ack;
+    int ack;
+    HandshakeErrCode errcode;
+
+    int client_id;
+};
 
 void send_initial_handshake(NetBuffer *nb, void *args);
 void *recv_initial_handshake(NetBuffer *nb, void *args);

@@ -31,7 +31,7 @@ void gsubserver_init(GSubserver *gsubserver) {
 
     gsubserver->pid = getpid();
 
-    int status = server_complete_handshake(gsubserver->recv_fd, gsubserver->send_fd, gsubserver->handshake_event);
+    int status = server_complete_handshake(gsubserver->handshake_event);
 
     free_handshake_event(gsubserver->handshake_event);
     gsubserver->handshake_event = NULL;
@@ -143,15 +143,17 @@ int gserver_get_free_client_id(GServer *gserver) {
     return -1;
 }
 
-GSubserver *gserver_handle_connection(GServer *gserver, int recv_fd, int send_fd, NetEvent *handshake_event) {
-    int client_id = gserver_get_free_client_id(gserver);
+GSubserver *gserver_handle_connection(GServer *gserver, NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
 
-    ((NetArgs_InitialHandshake *)(handshake_event->args))->client_id = client_id;
+    int client_id = gserver_get_free_client_id(gserver);
+    handshake->client_id = client_id;
 
     GSubserver *chosen_subserver = gserver->subservers[client_id];
 
-    chosen_subserver->recv_fd = recv_fd;
-    chosen_subserver->send_fd = send_fd;
+    chosen_subserver->recv_fd = handshake->client_to_server_fd;
+    chosen_subserver->send_fd = handshake->server_to_client_fd;
+    chosen_subserver->client_id = client_id;
     chosen_subserver->handshake_event = handshake_event;
 
     gserver->current_clients++;
@@ -171,17 +173,17 @@ static void handle_sigint(int signo) {
 void gserver_init(GServer *gserver) {
     signal(SIGINT, handle_sigint);
 
-    int from_client;
-
     while (1) {
-        from_client = server_setup(get_client_to_server_fifo_name());
+        int from_client = server_setup(get_client_to_server_fifo_name());
 
         NetEvent *handshake_event = create_handshake_event();
-        int to_client = server_get_send_fd(from_client, handshake_event);
+        ((NetArgs_InitialHandshake *)handshake_event->args)->client_to_server_fd = from_client;
+
+        server_get_send_fd(handshake_event);
 
         // A client connected, but the server is full!
         if (gserver->current_clients >= gserver->max_clients) {
-            server_abort_handshake(to_client, handshake_event, HEC_SERVER_IS_FULL);
+            server_abort_handshake(handshake_event, HEC_SERVER_IS_FULL);
             free_handshake_event(handshake_event);
 
             printf("server is full!\n");
@@ -189,7 +191,7 @@ void gserver_init(GServer *gserver) {
             continue;
         }
 
-        GSubserver *subserver = gserver_handle_connection(gserver, from_client, to_client, handshake_event);
+        GSubserver *subserver = gserver_handle_connection(gserver, handshake_event);
         if (subserver == NULL) {
             continue;
         }
