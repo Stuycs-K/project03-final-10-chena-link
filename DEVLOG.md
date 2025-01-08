@@ -19,4 +19,5 @@ This document must be updated daily by EACH group member.
 ### 2024-01-06 - Added new file and functions
 Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
 
-### 2024-01-07 - Brief description
+### 2024-01-07 - Game functions
+Added uno game functions to game server, added card array to server struct. Done in class
