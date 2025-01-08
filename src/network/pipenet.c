@@ -133,7 +133,10 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
     free_net_buffer(nb);
 }
 
-NetEvent *recv_event_immediate(void *recv_buffer, NetEvent *recv_event) {
+NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
+    char recv_buffer[2048];
+    read(recv_fd, recv_buffer, sizeof(recv_buffer));
+
     NetBuffer *nb = net_buffer_recv(recv_buffer);
 
     NetProtocol protocol;
@@ -192,4 +195,7 @@ void net_init() {
 
     bind_send_event(PERIODIC_HANDSHAKE, send_periodic_handshake);
     bind_recv_event(PERIODIC_HANDSHAKE, recv_periodic_handshake);
+
+    bind_send_event(INITIAL_HANDSHAKE, send_initial_handshake);
+    bind_recv_event(INITIAL_HANDSHAKE, recv_initial_handshake);
 }

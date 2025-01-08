@@ -23,7 +23,6 @@ NetArgs_InitialHandshake *nargs_initial_handshake() {
 
     nargs->ack = -1;
     nargs->errcode = -1;
-    nargs->syn = -1;
     nargs->syn_ack = -1;
     nargs->to_client_pipe_name = calloc(sizeof(char), 12);
 
@@ -31,9 +30,8 @@ NetArgs_InitialHandshake *nargs_initial_handshake() {
 }
 
 void send_initial_handshake(NetBuffer *nb, void *args) {
-    NetArgs_InitialHandshake *nargs = (NetArgs_InitialHandshake *)args;
+    NetArgs_InitialHandshake *nargs = args;
 
-    NET_BUFFER_WRITE_VALUE(nb, nargs->syn);
     NET_BUFFER_WRITE_VALUE(nb, nargs->syn_ack);
     NET_BUFFER_WRITE_VALUE(nb, nargs->ack);
     NET_BUFFER_WRITE_VALUE(nb, nargs->errcode);
@@ -41,9 +39,8 @@ void send_initial_handshake(NetBuffer *nb, void *args) {
 }
 
 void *recv_initial_handshake(NetBuffer *nb, void *args) {
-    NetArgs_InitialHandshake *nargs = (NetArgs_InitialHandshake *)args;
+    NetArgs_InitialHandshake *nargs = args;
 
-    NET_BUFFER_READ_VALUE(nb, nargs->syn);
     NET_BUFFER_READ_VALUE(nb, nargs->syn_ack);
     NET_BUFFER_READ_VALUE(nb, nargs->ack);
     NET_BUFFER_READ_VALUE(nb, nargs->errcode);

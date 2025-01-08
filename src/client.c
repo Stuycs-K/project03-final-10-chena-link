@@ -9,13 +9,26 @@
 #include "network/pipenetevents.h"
 
 void client_main(void) {
-    int net_fds[2];
-    client_handshake("TEMP", net_fds);
-
-    int to_server = net_fds[0];
-    int from_server = net_fds[1];
-
     net_init();
+
+    NetEvent *handshake_event = create_handshake_event();
+
+    int to_server, from_server;
+
+    to_server = client_setup("TEMP", handshake_event);
+    from_server = client_handshake(to_server, handshake_event);
+
+    if (from_server == -1) {
+        printf("Connection failed\n");
+        return;
+    }
+
+    int net_fds[2];
+    // client_handshake("TEMP", net_fds);
+
+    // int to_server = net_fds[0];
+    // int from_server = net_fds[1];
+
     NetEventQueue *net_send_queue = net_event_queue_new();
 
     while (1) {

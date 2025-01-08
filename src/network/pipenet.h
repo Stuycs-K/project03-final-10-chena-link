@@ -54,6 +54,7 @@ struct NetBuffer {
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
+    INITIAL_HANDSHAKE,
 
     PROTOCOL_COUNT,
 };
@@ -97,7 +98,7 @@ void send_event_immediate(NetEvent *event, int send_fd);
 
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer);
 
-NetEvent *recv_event_immediate(void *recv_buffer, NetEvent *recv_event);
+NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event);
 
 void net_init();
 

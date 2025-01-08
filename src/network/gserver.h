@@ -1,3 +1,4 @@
+#include "pipenet.h"
 #include <sys/types.h>
 
 /*
@@ -15,6 +16,8 @@ struct GSubserver {
     int client_id;
     int send_fd;
     int recv_fd;
+
+    NetEvent *handshake_event; // Handshake to complete
 };
 
 typedef enum GServerStatus GServerStatus;
