@@ -7,6 +7,12 @@
 #ifndef GSERVER_H
 #define GSERVER_H
 
+typedef struct card card;
+struct card{
+  int color;
+  int num;
+};
+
 // GSubserver handles communication with ONE client.
 typedef struct GSubserver GSubserver;
 struct GSubserver {
@@ -16,6 +22,7 @@ struct GSubserver {
     int client_id;
     int send_fd;
     int recv_fd;
+    struct card deck[100];
 };
 
 typedef struct GServer GServer;
@@ -28,15 +35,7 @@ struct GServer {
     char *name;
 
     GSubserver **subservers; // List of subserver connections
-    struct card p1[100];
-    struct card p2[100];
 };
-
-typedef struct card card;
-struct card{
-  int color;
-  int num;
-}
 
 char *get_client_to_server_fifo_name();
 

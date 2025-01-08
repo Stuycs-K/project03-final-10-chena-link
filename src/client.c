@@ -40,7 +40,6 @@ void client_main(void) {
     send_event_queue(net_event_queue, STDOUT_FILENO);
 
     while (1) {
-        printf("hello\n");
         usleep(1000000);
     }
 }

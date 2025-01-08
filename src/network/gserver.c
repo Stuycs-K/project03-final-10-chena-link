@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <sys/types.h>
+#include <time.h>
 
 #include "gserver.h"
 #include "pipehandshake.h"
@@ -57,7 +61,6 @@ GServer *gserver_new() {
     gserver->current_clients = 0;
     gserver->id = 0;
     gserver->name = NULL;
-    gserver->p1 = generate_cards(7);
 
     // Populate with inactive subservers
     gserver->subservers = malloc(sizeof(GSubserver *) * gserver->max_clients);
@@ -133,16 +136,9 @@ void gserver_init(GServer *gserver) {
     }
 }
 
-//Generates num cards
-card * generate_cards(int num){
-  card deck[num];
-  for(int i = 0; i < num; i ++){
-    deck[i] = generate_card();
-  }
-  return deck;
-}
 //Generates 1 card
 card generate_card(){
+  //Write new len of array back to server
   srand(time(NULL));
   card drawn;
   drawn.color = rand()%4;
@@ -150,14 +146,27 @@ card generate_card(){
   return drawn;
 }
 
+//Generates num cards
+card * generate_cards(card * cards, int num){
+  card deck[num];
+  for(int i = 0; i < num; i ++){
+    deck[i] = generate_card();
+  }
+  return deck;
+}
+
 //Plays a card
 //Probably going to look for a card in the array until the information matches
-card play_card(card * cards, card played){
-  while (cards[i] != NULL){
+card * play_card(card * cards, card played){
+  //Should be created with game server
+  int shmid = shmget(getpid(),sizeof(card), IPC_CREAT | 0640);
+  int i = 0;
+  while (cards[i].num != -1){
     if(played.num == cards[i].num && played.color == cards[i].color){
-      cards[i] == NULL;
+      cards[i].num = -1;
       return cards;
     }
+    i++;
   }
   return cards;
 }
