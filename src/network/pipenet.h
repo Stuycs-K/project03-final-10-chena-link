@@ -41,17 +41,46 @@
 #ifndef PIPENET_H
 #define PIPENET_H
 
+/*
+    NET_BUFFER_ALLOC
+
+    This is a function-like macro!
+    This is a helper macro and should NEVER be used externally!
+
+    Resizes nb->buffer using a growth factor of 2 if writing alloc_size bytes
+    would cause overflow.
+
+    NetBuffer *nb : the NetBuffer
+    size_t alloc_size : how many bytes to allocate
+*/
 #define NET_BUFFER_ALLOC(nb, alloc_size)                  \
     if ((nb)->offset + (alloc_size) > (nb)->size) {       \
         (nb)->size *= 2;                                  \
         (nb)->buffer = realloc((nb)->buffer, (nb)->size); \
     }
 
+/*
+    NET_BUFFER_WRITE
+
+    This is a function-like macro!
+
+    Writes size bytes of ptr to nb->buffer. Checks for resizing and updates offset.
+
+    NetBuffer *nb : the NetBuffer
+    void *ptr : the pointer to data to write
+    size_t size : how many bytes of data to write
+*/
 #define NET_BUFFER_WRITE(nb, ptr, size)                 \
     NET_BUFFER_ALLOC(nb, (size))                        \
     memcpy((nb)->buffer + (nb)->offset, (ptr), (size)); \
     (nb)->offset += (size);
 
+/*
+    NET_BUFFER_WRITE_VALUE
+
+    This is a function-like macro!
+
+*/
 #define NET_BUFFER_WRITE_VALUE(nb, value) \
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
@@ -59,14 +88,14 @@
     {                                             \
         size_t packet_size = 0;                   \
         NET_BUFFER_WRITE_VALUE((nb), packet_size) \
-    }
+    };
 
 #define NET_BUFFER_END_WRITE(nb)                                 \
     {                                                            \
         size_t packet_size = 0;                                  \
         packet_size = (nb)->offset - sizeof(packet_size);        \
         memcpy((nb)->buffer, &packet_size, sizeof(packet_size)); \
-    }
+    };
 
 // Write string length + string bytes
 // Uses a scope so that len gets cleaned up
@@ -75,7 +104,7 @@
         size_t len = strlen((string));        \
         NET_BUFFER_WRITE_VALUE((nb), len)     \
         NET_BUFFER_WRITE((nb), (string), len) \
-    }
+    };
 
 #define NET_BUFFER_READ(nb, ptr, size)                  \
     memcpy((ptr), (nb)->buffer + (nb)->offset, (size)); \
@@ -91,8 +120,13 @@
         size_t len;                            \
         NET_BUFFER_READ_VALUE((nb), (len))     \
         NET_BUFFER_READ((nb), (string), (len)) \
-    }
+    };
 
+/*
+    size: The current allocated size of buffer, in bytes
+    buffer: The buffer used to write data into / read data from
+    offset: Where in the buffer we currently are
+*/
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {
     size_t size;
@@ -104,6 +138,8 @@ typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
     INITIAL_HANDSHAKE,
+    CLIENT_CONNECT,
+    CLIENT_DISCONNECT,
 
     PROTOCOL_COUNT,
 };

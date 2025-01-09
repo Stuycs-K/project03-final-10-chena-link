@@ -112,8 +112,11 @@ void send_event_immediate(NetEvent *event, int send_fd) {
 
     NetEventHandler *handler = net_event_handlers[protocol];
 
+    int throwaway_size = 1;
+
     NET_BUFFER_BEGIN_WRITE(nb)
 
+    NET_BUFFER_WRITE_VALUE(nb, throwaway_size) // To maintain compatability with recv_event_queue
     NET_BUFFER_WRITE_VALUE(nb, protocol)
     handler->write_fn(nb, args);
 
@@ -156,8 +159,10 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
 
     NetBuffer *nb = net_buffer_recv(recv_buffer);
 
-    NetProtocol protocol;
+    int throwaway_size;
+    NET_BUFFER_READ_VALUE(nb, throwaway_size);
 
+    NetProtocol protocol;
     NET_BUFFER_READ_VALUE(nb, protocol);
 
     NetEventHandler *handler = net_event_handlers[protocol];
@@ -220,4 +225,7 @@ void net_init() {
 
     bind_send_event(INITIAL_HANDSHAKE, send_initial_handshake);
     bind_recv_event(INITIAL_HANDSHAKE, recv_initial_handshake);
+
+    bind_send_event(CLIENT_CONNECT, send_client_connect);
+    bind_recv_event(CLIENT_CONNECT, recv_client_connect);
 }

@@ -36,4 +36,12 @@ struct NetArgs_InitialHandshake {
 void send_initial_handshake(NetBuffer *nb, void *args);
 void *recv_initial_handshake(NetBuffer *nb, void *args);
 
+typedef struct NetArgs_ClientConnect NetArgs_ClientConnect;
+struct NetArgs_ClientConnect {
+    char *name;
+};
+
+void send_client_connect(NetBuffer *nb, void *args);
+void *recv_client_connect(NetBuffer *nb, void *args);
+
 #endif

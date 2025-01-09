@@ -8,8 +8,27 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 
+NetEvent *create_client_connect_event() {
+    NetArgs_ClientConnect *nargs = malloc(sizeof(NetArgs_ClientConnect));
+    nargs->name = calloc(sizeof(char), 20);
+
+    return net_event_new(CLIENT_CONNECT, nargs);
+}
+
+void free_client_connect_event(NetEvent *event) {
+    NetArgs_ClientConnect *nargs = event->args;
+    free(nargs->name);
+    free(event->args);
+    free(event);
+}
+
 void client_main(void) {
     net_init();
+
+    NetEvent *client_connect_event = create_client_connect_event();
+    NetArgs_ClientConnect *client_connect = client_connect_event->args;
+
+    // Everything below here will be looped in the future!
 
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_InitialHandshake *handshake = handshake_event->args;
@@ -27,6 +46,9 @@ void client_main(void) {
     int from_server = handshake->server_to_client_fd;
 
     printf("This is %d\n", client_id);
+
+    // First packet we send is a confirmation of our connection
+    send_event_immediate(client_connect_event, to_server);
 
     NetEventQueue *net_send_queue = net_event_queue_new();
 

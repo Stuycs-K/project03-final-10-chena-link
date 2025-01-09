@@ -15,6 +15,11 @@ This document must be updated daily by EACH group member.
 * Implement basic messaging by queueing NetEvents of different protocols into a NetEventQueue. After a fixed timestep, they're written to a NetBuffer, which is exported with write. 1.5 hours.
 * Rewrite handshake to allow full servers to boot clients during the handshake process. 1 hour.
 
+### 2024-01-08 - Better servers
+* Setup CServer (far from finished), improve handshaking. Done in class.
+* Reform packet structure to include a VLQ header. 30 minutes.
+* Get GServers to run a game process that reads network messages from all GSubservers. 3 hours due to the most terrible segfault I've ever had to deal with.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions

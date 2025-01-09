@@ -23,14 +23,60 @@ GSubserver *gsubserver_new(int client_id) {
     return gsubserver;
 }
 
+// Propagates client messages to the main server.
+int gsubserver_propagate(GSubserver *gsubserver) {
+    int client_id = gsubserver->client_id;
+
+    // First, get packet size
+    size_t packet_size;
+    ssize_t bytes_read = read(gsubserver->recv_fd, &packet_size, sizeof(packet_size));
+    if (bytes_read <= 0) {
+        if (bytes_read == 0) {
+            // CLIENT DISCONNECT! Send message
+            return -1;
+        }
+    }
+
+    size_t total_size = packet_size + sizeof(packet_size) + sizeof(client_id);
+
+    char *raw_recv_buffer = malloc(sizeof(char) * total_size);
+
+    int offset = 0;
+
+    // Write client ID so the main server knows who sent these messages
+    memcpy(raw_recv_buffer + offset, &client_id, sizeof(client_id));
+    offset += sizeof(client_id);
+
+    // And then write the packet size
+    memcpy(raw_recv_buffer + offset, &packet_size, sizeof(packet_size));
+    offset += sizeof(packet_size);
+
+    // And finally, read the rest of the packet directly into the buffer
+    bytes_read = read(gsubserver->recv_fd, raw_recv_buffer + offset, packet_size);
+
+    if (bytes_read <= 0) {
+        if (bytes_read == 0) {
+            // CLIENT DISCONNECT! Send message
+            return -1;
+        }
+    }
+
+    ssize_t bytes_written = write(gsubserver->subserver_pipe[PIPE_WRITE], raw_recv_buffer, total_size);
+    if (bytes_written <= 0) {
+        return -1;
+    }
+
+    printf("Sent %ld bytes\n", bytes_written);
+
+    return 1;
+}
+
 /*
     Finishes the server handshake.
-    Then, receives all client network signals.
+    Then, receives and propagates all client network messages.
 */
 void gsubserver_init(GSubserver *gsubserver) {
     close(gsubserver->subserver_pipe[PIPE_READ]);
-
-    NetEventQueue *net_recv_queue = net_event_queue_new();
 
     gsubserver->pid = getpid();
 
@@ -52,45 +98,9 @@ void gsubserver_init(GSubserver *gsubserver) {
     // Read loop
     // The subserver propogates the data to the main server through its pipe.
     while (1) {
-        empty_net_event_queue(net_recv_queue);
-
-        printf("ok subserver");
-
-        size_t packet_size;
-        ssize_t bytes_read = read(gsubserver->recv_fd, &packet_size, sizeof(packet_size));
-        if (bytes_read <= 0) {
-            if (bytes_read == 0) {
-                // CLIENT DISCONNECT! Send message
-                break;
-            }
+        if (gsubserver_propagate(gsubserver) == -1) {
+            break;
         }
-
-        size_t total_size = packet_size + sizeof(packet_size) + sizeof(client_id);
-        char *raw_recv_buffer = malloc(sizeof(char) * total_size);
-
-        int offset = 0;
-
-        // Write client ID so the main server knows who sent these messages
-        memcpy(raw_recv_buffer + offset, &client_id, sizeof(client_id));
-        offset += sizeof(client_id);
-
-        // And then the packet size
-        memcpy(raw_recv_buffer + offset, &packet_size, sizeof(packet_size));
-        offset += sizeof(packet_size);
-
-        // And finally, read the rest of the packet directly into the buffer
-        bytes_read = read(gsubserver->recv_fd, raw_recv_buffer + offset, packet_size);
-
-        if (bytes_read <= 0) {
-            if (bytes_read == 0) {
-                // CLIENT DISCONNECT! Send message
-                break;
-            }
-        }
-
-        write(to_main_server_fd, raw_recv_buffer, total_size);
-
-        // usleep(1000000);
     }
 
     printf("CLIENT DISCONNECT\n");
@@ -190,7 +200,7 @@ GSubserver *gserver_handle_connection(GServer *gserver, NetEvent *handshake_even
     return chosen_subserver;
 }
 
-void gserver_start_connection_loop(GServer *gserver) {
+void gserver_run_connection_loop(GServer *gserver) {
     while (1) {
         int from_client = server_setup(get_client_to_server_fifo_name());
 
@@ -224,7 +234,16 @@ void gserver_start_connection_loop(GServer *gserver) {
     }
 }
 
-void gserver_start_game_loop(GServer *gserver) {
+/*
+    Creates the process that's responsible for playing the game.
+*/
+void gserver_run_game(GServer *gserver) {
+    pid_t pid = fork();
+
+    if (pid > 0) {
+        return;
+    }
+
     NetEventQueue *event_queue = net_event_queue_new();
     int recv_fd = gserver->subserver_pipe[PIPE_READ];
 
@@ -246,10 +265,30 @@ void gserver_start_game_loop(GServer *gserver) {
 
         printf("ID: %d | Count: %d \n", client_id, event_queue->event_count);
 
+        // ALL of these events come from client_id
         for (int i = 0; i < event_queue->event_count; ++i) {
+
             NetEvent *event = event_queue->events[i];
-            NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
-            printf("n: %d\n", nargs->id);
+            void *args = event->args;
+
+            // The cases are wrapped in braces so we can keep using "nargs"
+            switch (event->protocol) {
+
+            case PERIODIC_HANDSHAKE: {
+                NetArgs_PeriodicHandshake *nargs = args;
+                printf("n: %d\n", nargs->id);
+
+                break;
+            }
+
+            case CLIENT_CONNECT: {
+                NetArgs_ClientConnect *nargs = args;
+                printf("client %d connected \n", client_id);
+            }
+
+            default:
+                break;
+            }
         }
     }
 }
@@ -266,5 +305,6 @@ static void handle_sigint(int signo) {
 void gserver_init(GServer *gserver) {
     signal(SIGINT, handle_sigint);
 
-    gserver_start_connection_loop(gserver);
+    gserver_run_game(gserver);
+    gserver_run_connection_loop(gserver);
 }
