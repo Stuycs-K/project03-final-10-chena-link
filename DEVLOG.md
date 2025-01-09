@@ -22,3 +22,8 @@ Added game.c which will contain game rules like drawing and playing cards. Spent
 
 ### 2024-01-07 - Game functions
 Added uno game functions to game server, added card array to server struct. Done in class
+
+### 2024-01-08 - Client using game functions
+Clients can use functions and see cards they have. 1.5 hour
+Added shared memory to see last card placed. 20 minutes
+Added dynamic deck size.10 minutes
