@@ -1,5 +1,5 @@
 #include "server.h"
-#include "network/gserver.h"
+#include "gserver.h"
 #include "network/pipenet.h"
 
 void server_main() {

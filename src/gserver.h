@@ -1,10 +1,10 @@
-/*
-#include "pipenet.h"
 #include <sys/types.h>
 
+#include "network/pipenet.h"
 
-// GServer, or game server handles players for a single game instance.
-
+/*
+    GServer, or game server handles players for a single game instance.
+*/
 
 #ifndef GSERVER_H
 #define GSERVER_H
@@ -17,6 +17,8 @@ struct GSubserver {
     int client_id;
     int send_fd;
     int recv_fd;
+
+    int subserver_pipe[2];
 
     NetEvent *handshake_event; // Handshake to complete
 };
@@ -38,6 +40,8 @@ struct GServer {
 
     int id; // Given by the central server
 
+    int subserver_pipe[2];
+
     char *name;
 
     GSubserver **subservers; // List of subserver connections
@@ -50,4 +54,3 @@ void gserver_init(GServer *gserver);
 GServer *gserver_new();
 
 #endif
-*/

@@ -1,4 +1,3 @@
-/*
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,9 +5,10 @@
 #include <unistd.h>
 
 #include "gserver.h"
-#include "pipehandshake.h"
-#include "pipenet.h"
-#include "pipenetevents.h"
+#include "network/pipehandshake.h"
+#include "network/pipenet.h"
+#include "network/pipenetevents.h"
+#include "shared.h"
 
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
@@ -23,17 +23,19 @@ GSubserver *gsubserver_new(int client_id) {
     return gsubserver;
 }
 
-
+/*
     Finishes the server handshake.
     Then, receives all client network signals.
-
+*/
 void gsubserver_init(GSubserver *gsubserver) {
+    close(gsubserver->subserver_pipe[PIPE_READ]);
+
     NetEventQueue *net_recv_queue = net_event_queue_new();
 
     gsubserver->pid = getpid();
 
+    // ACK
     int status = server_complete_handshake(gsubserver->handshake_event);
-
     free_handshake_event(gsubserver->handshake_event);
     gsubserver->handshake_event = NULL;
 
@@ -44,39 +46,51 @@ void gsubserver_init(GSubserver *gsubserver) {
 
     printf("CONNECTION MADE WITH CLIENT!\n");
 
+    int to_main_server_fd = gsubserver->subserver_pipe[PIPE_WRITE];
+    int client_id = gsubserver->client_id;
+
+    // Read loop
+    // The subserver propogates the data to the main server through its pipe.
     while (1) {
         empty_net_event_queue(net_recv_queue);
+
+        printf("ok subserver");
 
         size_t packet_size;
         ssize_t bytes_read = read(gsubserver->recv_fd, &packet_size, sizeof(packet_size));
         if (bytes_read <= 0) {
             if (bytes_read == 0) {
-                // CLIENT DISCONNECT!
+                // CLIENT DISCONNECT! Send message
                 break;
             }
         }
 
-        char *raw_recv_buffer = malloc(sizeof(char) * packet_size);
-        bytes_read = read(gsubserver->recv_fd, raw_recv_buffer, packet_size);
+        size_t total_size = packet_size + sizeof(packet_size) + sizeof(client_id);
+        char *raw_recv_buffer = malloc(sizeof(char) * total_size);
+
+        int offset = 0;
+
+        // Write client ID so the main server knows who sent these messages
+        memcpy(raw_recv_buffer + offset, &client_id, sizeof(client_id));
+        offset += sizeof(client_id);
+
+        // And then the packet size
+        memcpy(raw_recv_buffer + offset, &packet_size, sizeof(packet_size));
+        offset += sizeof(packet_size);
+
+        // And finally, read the rest of the packet directly into the buffer
+        bytes_read = read(gsubserver->recv_fd, raw_recv_buffer + offset, packet_size);
 
         if (bytes_read <= 0) {
             if (bytes_read == 0) {
-                // CLIENT DISCONNECT!
+                // CLIENT DISCONNECT! Send message
                 break;
             }
         }
 
-        recv_event_queue(net_recv_queue, raw_recv_buffer);
+        write(to_main_server_fd, raw_recv_buffer, total_size);
 
-        printf("ID: %d | Count: %d | 1Protocol: %d\n", gsubserver->client_id, net_recv_queue->event_count, net_recv_queue->events[0]->protocol);
-
-        for (int i = 0; i < net_recv_queue->event_count; ++i) {
-            NetEvent *event = net_recv_queue->events[i];
-            NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
-            printf("n: %d\n", nargs->id);
-        }
-
-        usleep(1000000);
+        // usleep(1000000);
     }
 
     printf("CLIENT DISCONNECT\n");
@@ -103,10 +117,15 @@ GServer *gserver_new() {
 
     gserver->name = NULL;
 
+    pipe(gserver->subserver_pipe);
+
     // Populate with inactive subservers
     gserver->subservers = malloc(sizeof(GSubserver *) * gserver->max_clients);
+
     for (int i = 0; i < gserver->max_clients; ++i) {
         gserver->subservers[i] = gsubserver_new(i);
+
+        memcpy(gserver->subservers[i]->subserver_pipe, gserver->subserver_pipe, sizeof(gserver->subserver_pipe));
     }
 
     return gserver;
@@ -171,18 +190,7 @@ GSubserver *gserver_handle_connection(GServer *gserver, NetEvent *handshake_even
     return chosen_subserver;
 }
 
-static void handle_sigint(int signo) {
-    if (signo != SIGINT) {
-        return;
-    }
-
-    remove(get_client_to_server_fifo_name());
-    exit(EXIT_SUCCESS);
-}
-
-void gserver_init(GServer *gserver) {
-    signal(SIGINT, handle_sigint);
-
+void gserver_start_connection_loop(GServer *gserver) {
     while (1) {
         int from_client = server_setup(get_client_to_server_fifo_name());
 
@@ -197,9 +205,9 @@ void gserver_init(GServer *gserver) {
             free_handshake_event(handshake_event);
 
             printf("server is full!\n");
-
             continue;
         }
+        free_handshake_event(handshake_event);
 
         GSubserver *subserver = gserver_handle_connection(gserver, handshake_event);
         if (subserver == NULL) {
@@ -215,4 +223,48 @@ void gserver_init(GServer *gserver) {
         }
     }
 }
-*/
+
+void gserver_start_game_loop(GServer *gserver) {
+    NetEventQueue *event_queue = net_event_queue_new();
+    int recv_fd = gserver->subserver_pipe[PIPE_READ];
+
+    ssize_t bytes_read;
+
+    while (1) {
+        empty_net_event_queue(event_queue);
+
+        int client_id;
+        bytes_read = read(recv_fd, &client_id, sizeof(client_id));
+
+        size_t packet_size;
+        bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
+
+        char *event_buffer = malloc(sizeof(char) * packet_size);
+        bytes_read = read(recv_fd, event_buffer, packet_size);
+
+        recv_event_queue(event_queue, event_buffer);
+
+        printf("ID: %d | Count: %d \n", client_id, event_queue->event_count);
+
+        for (int i = 0; i < event_queue->event_count; ++i) {
+            NetEvent *event = event_queue->events[i];
+            NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)event->args;
+            printf("n: %d\n", nargs->id);
+        }
+    }
+}
+
+static void handle_sigint(int signo) {
+    if (signo != SIGINT) {
+        return;
+    }
+
+    remove(get_client_to_server_fifo_name());
+    exit(EXIT_SUCCESS);
+}
+
+void gserver_init(GServer *gserver) {
+    signal(SIGINT, handle_sigint);
+
+    gserver_start_connection_loop(gserver);
+}

@@ -2,7 +2,7 @@
 #include <unistd.h>
 
 #include "cserver.h"
-#include "network/gserver.h"
+#include "gserver.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 
