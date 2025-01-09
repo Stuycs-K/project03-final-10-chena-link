@@ -55,15 +55,15 @@
 #define NET_BUFFER_WRITE_VALUE(nb, value) \
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
-#define NET_BUFFER_BEGIN_WRITE(nb)              \
-    {                                           \
-        size_t packet_size = 0;                 \
-        NET_BUFFER_WRITE_VALUE(nb, packet_size) \
+#define NET_BUFFER_BEGIN_WRITE(nb)                \
+    {                                             \
+        size_t packet_size = 0;                   \
+        NET_BUFFER_WRITE_VALUE((nb), packet_size) \
     }
 
 #define NET_BUFFER_END_WRITE(nb)                                 \
     {                                                            \
-        size_t packet_size;                                      \
+        size_t packet_size = 0;                                  \
         packet_size = (nb)->offset - sizeof(packet_size);        \
         memcpy((nb)->buffer, &packet_size, sizeof(packet_size)); \
     }

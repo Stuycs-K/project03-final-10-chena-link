@@ -207,7 +207,6 @@ void gserver_start_connection_loop(GServer *gserver) {
             printf("server is full!\n");
             continue;
         }
-        free_handshake_event(handshake_event);
 
         GSubserver *subserver = gserver_handle_connection(gserver, handshake_event);
         if (subserver == NULL) {
@@ -220,6 +219,7 @@ void gserver_start_connection_loop(GServer *gserver) {
             gsubserver_init(subserver);
         } else {
             gserver->subservers[subserver->client_id]->pid = pid;
+            free_handshake_event(handshake_event);
         }
     }
 }

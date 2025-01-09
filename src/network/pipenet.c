@@ -30,6 +30,7 @@ NetBuffer *net_buffer_recv(void *buffer) {
 void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
     ssize_t bytes_written = write(target_fd, net_buffer->buffer, net_buffer->offset);
     if (bytes_written <= 0) {
+        printf("%d\n", target_fd);
         perror("oops");
     }
 }
@@ -143,15 +144,20 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
 }
 
 NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
-    size_t packet_size;
+    size_t packet_size = 0;
     ssize_t bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
+    if (bytes_read <= 0) {
+        printf("RECV FD FAIL: %d\n", recv_fd);
+        perror("wtf");
+    }
 
-    char recv_buffer[packet_size];
-    read(recv_fd, recv_buffer, sizeof(recv_buffer));
+    char *recv_buffer = malloc(sizeof(char) * packet_size);
+    read(recv_fd, recv_buffer, packet_size);
 
     NetBuffer *nb = net_buffer_recv(recv_buffer);
 
     NetProtocol protocol;
+
     NET_BUFFER_READ_VALUE(nb, protocol);
 
     NetEventHandler *handler = net_event_handlers[protocol];
@@ -159,9 +165,13 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
     void *data;
     if (recv_event == NULL) { // Create our own NetEvent
         data = handler->read_fn(nb, NULL);
+        free_net_buffer(nb);
+
         return net_event_new(protocol, data);
     } else {
         data = handler->read_fn(nb, recv_event->args);
+        free_net_buffer(nb);
+
         return recv_event;
     }
 }
