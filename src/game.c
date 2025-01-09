@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
 
 #include "game.h"
 
@@ -28,8 +25,6 @@ void generate_cards(card * cards, int num){
 //Plays a card
 //Probably going to look for a card in the array until the information matches
 void play_card(card * cards, card played, int num_card){
-  //Should be created with game server
-  //int shmid = shmget(getpid(),sizeof(card), IPC_CREAT | 0640);
   for(int i = 0; i < num_card; i ++){
     if(played.num == cards[i].num && played.color == cards[i].color){
       cards[i].num = -1;

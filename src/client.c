@@ -2,6 +2,9 @@
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <sys/types.h>
 
 #include "client.h"
 #include "game.h"
@@ -9,8 +12,14 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 
+#define SHMID 1234567890
+
 void client_main(void) {
     srand(getpid());
+    int shmid;
+    card *data;
+    shmid = shmget(SHMID,sizeof(card),IPC_CREAT | 0640);
+    data = shmat(shmid,0,0);
     net_init();
 
     NetEvent *handshake_event = create_handshake_event();
@@ -30,6 +39,8 @@ void client_main(void) {
     card deck[100];
     int num_cards = 7;
     generate_cards(deck,num_cards);
+    //Should be done by server on setup not by client
+    *data = generate_card();
     char input[10];
     while (1) {
         empty_net_event_queue(net_send_queue);
@@ -46,6 +57,7 @@ void client_main(void) {
 
         send_event_queue(net_send_queue, to_server);
         */
+        printf("Current card: Color: %d Num: %d\n",data->color,data->num);
         for(int i = 0; i < num_cards;i++){
             printf("%d: color: %d num: %d\n",i,deck[i].color,deck[i].num);
         }
@@ -55,14 +67,18 @@ void client_main(void) {
             num_cards ++;
         }
         if(input[0] == 'p'){
-            //Card from shared memory
+            //Set card picked somehow
             card picked;
-            picked.num = 1;
-            picked.color = 1;
-            //If num or color from picked is the same as shared memory then play_card
-            //else pick new card or draw
-            play_card(deck,picked,num_cards);
-            num_cards--;
+            int col;
+            int num;
+            sscanf(input+1,"%d %d",&col,&num);
+            picked.color = col;
+            picked.num = num;
+            if(picked.num == data->num || picked.color == data->color){
+                *data = picked;
+                play_card(deck,picked,num_cards);
+                num_cards--;
+            }
         }
         usleep(1000000);
     }
