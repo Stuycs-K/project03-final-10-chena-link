@@ -51,12 +51,23 @@ void *recv_initial_handshake(NetBuffer *nb, void *args) {
     return nargs;
 }
 
+NetArgs_ClientConnect *nargs_client_connect() {
+    NetArgs_ClientConnect *nargs = malloc(sizeof(NetArgs_ClientConnect));
+    nargs->name = calloc(sizeof(char), 20);
+
+    return nargs;
+}
+
 void send_client_connect(NetBuffer *nb, void *args) {
     NetArgs_ClientConnect *nargs = args;
 
     NET_BUFFER_WRITE_STRING(nb, nargs->name);
 }
 void *recv_client_connect(NetBuffer *nb, void *args) {
+    if (args == NULL) {
+        args = nargs_client_connect();
+    }
+
     NetArgs_ClientConnect *nargs = args;
 
     NET_BUFFER_READ_STRING(nb, nargs->name);

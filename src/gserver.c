@@ -47,7 +47,7 @@ int gsubserver_propagate(GSubserver *gsubserver) {
     memcpy(raw_recv_buffer + offset, &client_id, sizeof(client_id));
     offset += sizeof(client_id);
 
-    // And then write the packet size
+    // And then write the packet size (we're copying it)
     memcpy(raw_recv_buffer + offset, &packet_size, sizeof(packet_size));
     offset += sizeof(packet_size);
 
@@ -65,8 +65,6 @@ int gsubserver_propagate(GSubserver *gsubserver) {
     if (bytes_written <= 0) {
         return -1;
     }
-
-    printf("Sent %ld bytes\n", bytes_written);
 
     return 1;
 }
