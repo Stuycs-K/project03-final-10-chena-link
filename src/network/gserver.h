@@ -17,7 +17,6 @@ struct GSubserver {
     int client_id;
     int send_fd;
     int recv_fd;
-
     NetEvent *handshake_event; // Handshake to complete
 };
 
@@ -50,4 +49,3 @@ void gserver_init(GServer *gserver);
 GServer *gserver_new();
 
 #endif
-*/

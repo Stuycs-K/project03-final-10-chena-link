@@ -1,9 +1,13 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "client.h"
+#include "game.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
@@ -22,7 +26,14 @@ void free_client_connect_event(NetEvent *event) {
     free(event);
 }
 
+#define SHMID 1234567890
+
 void client_main(void) {
+    srand(getpid());
+    int shmid;
+    card *data;
+    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
+    data = shmat(shmid, 0, 0);
     net_init();
 
     NetEvent *client_connect_event = create_client_connect_event();
@@ -52,10 +63,16 @@ void client_main(void) {
 
     NetEventQueue *net_send_queue = net_event_queue_new();
 
+    card deck[100];
+    int num_cards = 7;
+    generate_cards(deck, num_cards);
+    // Should be done by server on setup not by client
+    *data = generate_card();
+    char input[10];
     while (1) {
         empty_net_event_queue(net_send_queue);
 
-        for (int i = 0; i < 2; ++i) {
+        /*for (int i = 0; i < 2; ++i) {
             NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
             test_args->id = rand();
 
@@ -66,9 +83,29 @@ void client_main(void) {
         }
 
         send_event_queue(net_send_queue, to_server);
-
-        printf("sent data\n");
-
+        */
+        printf("Current card: Color: %d Num: %d\n", data->color, data->num);
+        for (int i = 0; i < num_cards; i++) {
+            printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
+        }
+        fgets(input, sizeof(input), stdin);
+        if (input[0] == 'l') {
+            deck[num_cards] = generate_card();
+            num_cards++;
+        }
+        if (input[0] == 'p') {
+            card picked;
+            int col;
+            int num;
+            sscanf(input + 1, "%d %d", &col, &num);
+            picked.color = col;
+            picked.num = num;
+            if (picked.num == data->num || picked.color == data->color) {
+                *data = picked;
+                play_card(deck, picked, num_cards);
+                num_cards--;
+            }
+        }
         usleep(1000000);
     }
 }

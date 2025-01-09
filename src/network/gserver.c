@@ -10,6 +10,7 @@
 #include "pipenet.h"
 #include "pipenetevents.h"
 
+//Makes a new subserver/client
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
 
@@ -100,7 +101,6 @@ GServer *gserver_new() {
     gserver->max_clients = 2;
     gserver->current_clients = 0;
     gserver->id = 0;
-
     gserver->name = NULL;
 
     // Populate with inactive subservers
