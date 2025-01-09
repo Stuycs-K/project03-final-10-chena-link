@@ -67,7 +67,6 @@ void client_main(void) {
             num_cards ++;
         }
         if(input[0] == 'p'){
-            //Set card picked somehow
             card picked;
             int col;
             int num;
