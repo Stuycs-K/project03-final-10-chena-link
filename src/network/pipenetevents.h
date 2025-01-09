@@ -44,4 +44,9 @@ struct NetArgs_ClientConnect {
 void send_client_connect(NetBuffer *nb, void *args);
 void *recv_client_connect(NetBuffer *nb, void *args);
 
+typedef struct NetArgs_CardCount NetArgs_CardCount;
+struct NetArgs_CardCount {
+    int card_count;
+};
+
 #endif

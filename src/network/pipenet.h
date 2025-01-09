@@ -140,7 +140,7 @@ enum NetProtocol {
     INITIAL_HANDSHAKE,
     CLIENT_CONNECT,
     CLIENT_DISCONNECT,
-
+    CARD_COUNT,
     PROTOCOL_COUNT,
 };
 
