@@ -1,3 +1,39 @@
+/*
+    pipenet.h
+
+    NetEvent packet format:
+        [protocol][args...]
+
+        protocol: A NetProtocol enum. Will be used to write / read data in the specified format.
+        args...: The raw bytes containing the relevant data of this event.
+
+    Individual packet format:
+        [packet_size][NetEvent]
+
+        packet_size: A VLQ header. How large the following packet will be, in bytes. 4 bytes.
+
+    Queued packet format:
+        [packet_size][net_event_count][NetEvent...]
+
+        packet_size: A VLQ header. How large the following packet will be, in bytes. 4 bytes.
+        net_event_count: How many NetEvents are written to / to read from this queue. 4 bytes.
+
+    Write process:
+        Skip over the first sizeof(size_t) bytes of the NetBuffer (by writing 0).
+        When we finish writing the rest of the event queue / event, write the NetBuffer's offset - sizeof(size_t) bytes to the header.
+
+        Why the subtraction?
+            To skip the sizeof(size_t) bytes counted in the NetBuffer's offset when we saved space at the start of the buffer.
+            Our reported packet size would be sizeof(size_t) bytes greater than it really is.
+
+        Now, our packet has an accurate VLQ header.
+
+    Read process:
+        First read sizeof(size_t) bytes. This is the size of the following packet.
+        Then, allocate a buffer of the given size to fit all the data (e.g. char buffer[packet_size]).
+        Use read to read the remainder of the packet into this buffer.
+*/
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -18,6 +54,19 @@
 
 #define NET_BUFFER_WRITE_VALUE(nb, value) \
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
+
+#define NET_BUFFER_BEGIN_WRITE(nb)              \
+    {                                           \
+        size_t packet_size = 0;                 \
+        NET_BUFFER_WRITE_VALUE(nb, packet_size) \
+    }
+
+#define NET_BUFFER_END_WRITE(nb)                                 \
+    {                                                            \
+        size_t packet_size;                                      \
+        packet_size = (nb)->offset - sizeof(packet_size);        \
+        memcpy((nb)->buffer, &packet_size, sizeof(packet_size)); \
+    }
 
 // Write string length + string bytes
 // Uses a scope so that len gets cleaned up
@@ -43,9 +92,6 @@
         NET_BUFFER_READ_VALUE((nb), (len))     \
         NET_BUFFER_READ((nb), (string), (len)) \
     }
-
-#define SET_NET_EVENT_ARG(net_arg_type, event, field_name, value) \
-    (((net_arg_type) *)((event)->args))->(field_name) = (value);
 
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {

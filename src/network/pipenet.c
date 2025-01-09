@@ -80,6 +80,9 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
     NetBuffer *nb = net_buffer_send();
+
+    NET_BUFFER_BEGIN_WRITE(nb)
+
     NET_BUFFER_WRITE_VALUE(nb, net_event_queue->event_count) // Write event count
 
     for (int i = 0; i < net_event_queue->event_count; ++i) {
@@ -94,6 +97,8 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         handler->write_fn(nb, args);
     }
 
+    NET_BUFFER_END_WRITE(nb)
+
     transmit_net_buffer(nb, send_fd);
     free_net_buffer(nb);
 }
@@ -106,8 +111,12 @@ void send_event_immediate(NetEvent *event, int send_fd) {
 
     NetEventHandler *handler = net_event_handlers[protocol];
 
+    NET_BUFFER_BEGIN_WRITE(nb)
+
     NET_BUFFER_WRITE_VALUE(nb, protocol)
     handler->write_fn(nb, args);
+
+    NET_BUFFER_END_WRITE(nb)
 
     transmit_net_buffer(nb, send_fd);
     free_net_buffer(nb);
@@ -134,7 +143,10 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
 }
 
 NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
-    char recv_buffer[2048];
+    size_t packet_size;
+    ssize_t bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
+
+    char recv_buffer[packet_size];
     read(recv_fd, recv_buffer, sizeof(recv_buffer));
 
     NetBuffer *nb = net_buffer_recv(recv_buffer);

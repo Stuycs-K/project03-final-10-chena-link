@@ -46,8 +46,17 @@ void gsubserver_init(GSubserver *gsubserver) {
     while (1) {
         empty_net_event_queue(net_recv_queue);
 
-        char *raw_recv_buffer = malloc(sizeof(char) * 4096);
-        ssize_t bytes_read = read(gsubserver->recv_fd, raw_recv_buffer, 4096);
+        size_t packet_size;
+        ssize_t bytes_read = read(gsubserver->recv_fd, &packet_size, sizeof(packet_size));
+        if (bytes_read <= 0) {
+            if (bytes_read == 0) {
+                // CLIENT DISCONNECT!
+                break;
+            }
+        }
+
+        char *raw_recv_buffer = malloc(sizeof(char) * packet_size);
+        bytes_read = read(gsubserver->recv_fd, raw_recv_buffer, packet_size);
 
         if (bytes_read <= 0) {
             if (bytes_read == 0) {
