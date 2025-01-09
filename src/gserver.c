@@ -203,7 +203,6 @@ static void handle_sigchld(int signo) {
         return;
     }
 
-
     exit(EXIT_SUCCESS);
 }
 
@@ -261,12 +260,7 @@ void gserver_run_game(GServer *gserver) {
 
         int client_id;
         bytes_read = read(recv_fd, &client_id, sizeof(client_id));
-
-        size_t packet_size;
-        bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
-
-        char *event_buffer = malloc(sizeof(char) * packet_size);
-        bytes_read = read(recv_fd, event_buffer, packet_size);
+        char *event_buffer = read_into_buffer(recv_fd);
 
         recv_event_queue(event_queue, event_buffer);
 

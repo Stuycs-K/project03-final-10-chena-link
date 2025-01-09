@@ -26,12 +26,14 @@
             To skip the sizeof(size_t) bytes counted in the NetBuffer's offset when we saved space at the start of the buffer.
             Our reported packet size would be sizeof(size_t) bytes greater than it really is.
 
-        Now, our packet has an accurate VLQ header.
+        Now, our packet has an accurate VLQ header and is ready to send.
 
     Read process:
         First read sizeof(size_t) bytes. This is the size of the following packet.
         Then, allocate a buffer of the given size to fit all the data (e.g. char buffer[packet_size]).
         Use read to read the remainder of the packet into this buffer.
+
+        Finally, process the packet, translating the raw bytes into NetEvents.
 */
 
 #include <stdlib.h>
@@ -80,16 +82,41 @@
 
     This is a function-like macro!
 
+    Wraps NET_BUFFER_WRITE. Used to write non-pointer values.
+
+    NetBuffer *nb : the NetBuffer
+    value : any non-pointer basic data type (e.g. char, int, size_t)
 */
 #define NET_BUFFER_WRITE_VALUE(nb, value) \
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
+/*
+    NET_BUFFER_BEGIN_WRITE
+
+    This is a function-like macro!
+    This is a helper macro and should NEVER be used externally!
+
+    Reserves sizeof(size_t) bytes at the beginning of nb->buffer to record the packet size
+    Called before writing anything else.
+
+    NetBuffer *nb : the NetBuffer
+*/
 #define NET_BUFFER_BEGIN_WRITE(nb)                \
     {                                             \
         size_t packet_size = 0;                   \
         NET_BUFFER_WRITE_VALUE((nb), packet_size) \
     };
 
+/*
+    NET_BUFFER_BEGIN_WRITE
+
+    This is a function-like macro!
+    This is a helper macro and should NEVER be used externally!
+
+    Writes the total packet size to the space reserved by NET_BUFFER_BEGIN_WRITE.
+
+    NetBuffer *nb : the NetBuffer
+*/
 #define NET_BUFFER_END_WRITE(nb)                                 \
     {                                                            \
         size_t packet_size = 0;                                  \
@@ -97,8 +124,17 @@
         memcpy((nb)->buffer, &packet_size, sizeof(packet_size)); \
     };
 
-// Write string length + string bytes
-// Uses a scope so that len gets cleaned up
+/*
+    NET_BUFFER_WRITE_STRING
+
+    This is a function-like macro!
+
+    Writes a string to nb->buffer.
+    First writes strlen(string), then the raw bytes of the string.
+
+    NetBuffer *nb : the NetBuffer
+    char *string : a string
+*/
 #define NET_BUFFER_WRITE_STRING(nb, string)   \
     {                                         \
         size_t len = strlen((string));        \
@@ -106,15 +142,45 @@
         NET_BUFFER_WRITE((nb), (string), len) \
     };
 
+/*
+    NET_BUFFER_READ
+
+    This is a function-like macro!
+
+    Reads size bytes from nb->buffer into ptr.
+
+    NetBuffer *nb : the NetBuffer
+    void *ptr : the pointer to the data to write to
+    size_t size : how many bytes of data to read
+*/
 #define NET_BUFFER_READ(nb, ptr, size)                  \
     memcpy((ptr), (nb)->buffer + (nb)->offset, (size)); \
     (nb)->offset += (size);
 
+/*
+    NET_BUFFER_READ_VALUE
+
+    This is a function-like macro!
+
+    Wraps NET_BUFFER_READ. Used to read to non-pointer values
+
+    NetBuffer *nb : the NetBuffer
+    var : any non-pointer basic data type
+*/
 #define NET_BUFFER_READ_VALUE(nb, var) \
     NET_BUFFER_READ((nb), &(var), sizeof(var))
 
-//
-// Uses a scope so that len gets cleaned up
+/*
+    NET_BUFFER_READ_STRING
+
+    This is a function-like macro!
+
+    Reads a string from nb->buffer.
+    First reads strlen(string). Then reads strlen(string) bytes.
+
+    NetBuffer *nb : the NetBuffer
+    char *string : a string
+*/
 #define NET_BUFFER_READ_STRING(nb, string)     \
     {                                          \
         size_t len;                            \
@@ -180,6 +246,8 @@ void empty_net_event_queue(NetEventQueue *net_event_queue);
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd);
 
 void send_event_immediate(NetEvent *event, int send_fd);
+
+void *read_into_buffer(int recv_fd);
 
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer);
 
