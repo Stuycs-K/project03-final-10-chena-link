@@ -4,11 +4,13 @@
 #include <unistd.h>
 
 #include "client.h"
+#include "game.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 
 void client_main(void) {
+    srand(getpid());
     net_init();
 
     NetEvent *handshake_event = create_handshake_event();
@@ -25,6 +27,10 @@ void client_main(void) {
 
     NetEventQueue *net_send_queue = net_event_queue_new();
 
+    card deck[100];
+    int num_cards = 7;
+    generate_cards(deck,num_cards);
+    char input[10];
     while (1) {
         empty_net_event_queue(net_send_queue);
 
@@ -40,9 +46,24 @@ void client_main(void) {
 
         send_event_queue(net_send_queue, to_server);
         */
-
-        printf("sent data\n");
-
+        for(int i = 0; i < num_cards;i++){
+            printf("%d: color: %d num: %d\n",i,deck[i].color,deck[i].num);
+        }
+        fgets(input, sizeof(input), stdin);
+        if(input[0] == 'l'){
+            deck[num_cards] = generate_card();
+            num_cards ++;
+        }
+        if(input[0] == 'p'){
+            //Card from shared memory
+            card picked;
+            picked.num = 1;
+            picked.color = 1;
+            //If num or color from picked is the same as shared memory then play_card
+            //else pick new card or draw
+            play_card(deck,picked,num_cards);
+            num_cards--;
+        }
         usleep(1000000);
     }
 }
