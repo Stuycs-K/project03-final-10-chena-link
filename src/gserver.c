@@ -198,6 +198,15 @@ GSubserver *gserver_handle_connection(GServer *gserver, NetEvent *handshake_even
     return chosen_subserver;
 }
 
+static void handle_sigchld(int signo) {
+    if (signo != SIGCHLD) {
+        return;
+    }
+
+
+    exit(EXIT_SUCCESS);
+}
+
 void gserver_run_connection_loop(GServer *gserver) {
     while (1) {
         int from_client = server_setup(get_client_to_server_fifo_name());
