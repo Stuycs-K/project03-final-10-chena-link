@@ -91,6 +91,7 @@ void check_handler_write_fn_exists(NetEventHandler *handler) {
 
 void check_handler_read_fn_exists(NetEventHandler *handler) {
     if (handler->read_fn == NULL) {
+        printf("yeah i like reading\n");
         fprintf(
             stderr,
             "No read function bound to protocol (% d)! Make sure to bind with bind_recv_event !\n",

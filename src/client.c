@@ -36,7 +36,6 @@ void client_main(void) {
     card *data;
     shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
-    net_init();
 
     NetEvent *client_connect_event = create_client_connect_event();
     NetArgs_ClientConnect *client_connect = client_connect_event->args;

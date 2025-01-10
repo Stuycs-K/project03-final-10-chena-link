@@ -7,12 +7,15 @@
 #include "debug/debug.h"
 #include "server.h"
 
+#include "network/pipenet.h"
 #include "testserver.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         exit(EXIT_FAILURE);
     }
+
+    net_init();
 
     char *mode = argv[1];
     if (!strcmp(mode, "client")) {

@@ -155,7 +155,6 @@ void client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     int mkfifo_ret = mkfifo(pid_string, 0644);
 
     int to_server = open(client_to_server_fifo, O_WRONLY, 0);
-    printf("opened\n");
     handshake_args->client_to_server_fd = to_server;
 }
 
@@ -166,7 +165,6 @@ int client_handshake(NetEvent *handshake_event) {
     send_event_immediate(handshake_event, send_fd);
 
     int from_server = open(handshake_args->to_client_pipe_name, O_RDONLY, 0);
-    printf("try  again\n");
 
     remove(handshake_args->to_client_pipe_name);
 
