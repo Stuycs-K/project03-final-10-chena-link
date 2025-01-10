@@ -16,6 +16,8 @@ struct Server {
     char *name;
 
     ClientConnection **clients;
+    int *recv_fd_list;
+    int connection_handler_pipe[2];
 };
 
 Server *server_new(int server_id);

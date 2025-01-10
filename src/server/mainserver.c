@@ -1,11 +1,12 @@
+#include <poll.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <poll.h>
 
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"
 #include "../shared.h"
 #include "../util/file.h"
+#include "connectionhandler.h"
 #include "mainserver.h"
 
 Server *server_new(int server_id) {
@@ -89,58 +90,10 @@ ClientConnection *get_client_connection(Server *this, NetEvent *handshake_event)
 
     ClientConnection *connection = this->clients[client_id];
 
+    connection->is_free = CONNECTION_IS_USED;
     connection->recv_fd = handshake->client_to_server_fd;
     connection->send_fd = handshake->server_to_client_fd;
-    connection->handshake_event = handshake_event;
-}
-
-Subserver *setup_subserver_for_connection(Server *this, NetEvent *handshake_event) {
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
-
-    int client_id = get_free_client_id(this);
-    handshake->client_id = client_id;
-
-    Subserver *chosen_subserver = this->subservers[client_id];
-
-    chosen_subserver->recv_fd = handshake->client_to_server_fd;
-    chosen_subserver->send_fd = handshake->server_to_client_fd;
-    chosen_subserver->client_id = client_id;
-    chosen_subserver->handshake_event = handshake_event;
-
-    this->current_clients++;
-
-    return chosen_subserver;
-}
-
-void accept_connection(Server *this) {
-    NetEvent *handshake_event = server_setup("TEMP");
-    if (handshake_event == NULL) { // No clients attempting to connect on this tick.
-        return;
-    }
-
-    server_get_send_fd(handshake_event);
-
-    // A client connected, but the server is full!
-    if (this->current_clients >= this->max_clients) {
-        server_abort_handshake(handshake_event, HEC_SERVER_IS_FULL);
-        free_handshake_event(handshake_event);
-
-        printf("server is full!\n");
-        return;
-    }
-
-    ClientConnection *client = get_client_connection(this, handshake_event);
-
-    Subserver *subserver = setup_subserver_for_connection(this, handshake_event);
-
-    pid_t pid = fork();
-
-    if (pid == 0) {
-        subserver_run(subserver);
-    } else {
-        this->subservers[subserver->client_id]->pid = pid;
-        free_handshake_event(handshake_event);
-    }
+    // connection->handshake_event = handshake_event;
 }
 
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
@@ -165,17 +118,29 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
     }
 }
 
+struct pollfd *make_client_pollfds(Server *this) {
+    for (int i = 0; i < this->max_clients; ++i) {
+        if (this->clients[i]->is_free) {
+            continue;
+        }
+    }
+}
+
 void server_run(Server *this) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        connection_handler_init(this);
+    }
+
     int recv_fd = this->subserver_pipe[PIPE_READ];
     set_nonblock(recv_fd);
 
     NetEventQueue *subserver_recv_queue = net_event_queue_new();
     NetEventQueue *send_queue = net_event_queue_new();
 
-    while (1) {
-        // 1) Try to connect clients
-        accept_connection(this);
+    struct pollfd *polls;
 
+    while (1) {
         // 2) Read all NetEvents
         empty_net_event_queue(subserver_recv_queue);
 

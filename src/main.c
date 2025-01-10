@@ -7,6 +7,8 @@
 #include "debug/debug.h"
 #include "server.h"
 
+#include "testserver.h"
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         exit(EXIT_FAILURE);
@@ -18,7 +20,7 @@ int main(int argc, char *argv[]) {
         client_main();
     } else if (!strcmp(mode, "gserver")) {
         printf("server\n");
-        server_main();
+        test_main();
     } else if (!strcmp(mode, "cserver")) {
         printf("cserver\n");
     }

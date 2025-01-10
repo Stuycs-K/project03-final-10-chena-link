@@ -1,8 +1,10 @@
-#include "connectionhandler.h"
-#include "../network/pipehandshake.h"
+#include <stdio.h>
+#include <unistd.h>
 
-/*
-void accept_connection(Server *this) {
+#include "../network/pipehandshake.h"
+#include "connectionhandler.h"
+
+void connection_handler_init(Server *this) {
     NetEvent *handshake_event = server_setup("TEMP");
     if (handshake_event == NULL) { // No clients attempting to connect on this tick.
         return;
@@ -19,15 +21,16 @@ void accept_connection(Server *this) {
         return;
     }
 
-    Subserver *subserver = setup_subserver_for_connection(this, handshake_event);
-
     pid_t pid = fork();
 
     if (pid == 0) {
-        subserver_run(subserver);
+        int status = server_complete_handshake(handshake_event);
+
+        if (status == -1) {
+            printf("ACK Fail\n");
+            exit(EXIT_FAILURE);
+        }
     } else {
-        this->subservers[subserver->client_id]->pid = pid;
         free_handshake_event(handshake_event);
     }
 }
-*/

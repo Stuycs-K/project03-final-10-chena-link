@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,9 +46,7 @@ NetEvent *server_setup(char *client_to_server_fifo) {
 
     remove(client_to_server_fifo);
 
-    int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
-
-    // printf("[SERVER]: Waiting for connection...\n");
+    int mkfifo_ret = mkfifo(client_to_server_fifo, 0666);
 
     int from_client = open(client_to_server_fifo, O_RDONLY, 0);
 
@@ -74,6 +73,8 @@ void server_get_send_fd(NetEvent *handshake_event) {
     printf("[SERVER]: Waiting for SYN...\n");
 
     recv_event_immediate(handshake_args->client_to_server_fd, handshake_event);
+
+    printf("got it\n");
 
     int send_fd = open(handshake_args->to_client_pipe_name, O_WRONLY, 0);
     handshake_args->server_to_client_fd = send_fd;
@@ -154,6 +155,7 @@ void client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     int mkfifo_ret = mkfifo(pid_string, 0644);
 
     int to_server = open(client_to_server_fifo, O_WRONLY, 0);
+    printf("opened\n");
     handshake_args->client_to_server_fd = to_server;
 }
 
@@ -164,6 +166,8 @@ int client_handshake(NetEvent *handshake_event) {
     send_event_immediate(handshake_event, send_fd);
 
     int from_server = open(handshake_args->to_client_pipe_name, O_RDONLY, 0);
+    printf("try  again\n");
+
     remove(handshake_args->to_client_pipe_name);
 
     handshake_args->server_to_client_fd = from_server;
