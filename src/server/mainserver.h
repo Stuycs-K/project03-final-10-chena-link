@@ -19,6 +19,6 @@ struct Server {
 
 Server *server_new(int server_id);
 void server_set_max_clients(Server *this, int max_clients);
-Subserver *server_setup_subserver_for_connection(Server *this, NetEvent *handshake_event);
+void server_run(Server *this);
 
 #endif

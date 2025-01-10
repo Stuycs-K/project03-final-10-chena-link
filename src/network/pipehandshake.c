@@ -47,9 +47,12 @@ NetEvent *server_setup(char *client_to_server_fifo) {
 
     int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
 
-    printf("[SERVER]: Waiting for connection...\n");
+    // printf("[SERVER]: Waiting for connection...\n");
 
-    int from_client = open(client_to_server_fifo, O_RDONLY, 0);
+    int from_client = open(client_to_server_fifo, O_RDONLY | O_NONBLOCK, 0);
+    if (from_client == -1) {
+        return NULL;
+    }
 
     printf("[SERVER]: Client connected\n");
 

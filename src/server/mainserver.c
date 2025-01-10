@@ -1,6 +1,10 @@
+#include <stdio.h>
 #include <unistd.h>
 
+#include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"
+#include "../shared.h"
+#include "../util/file.h"
 #include "mainserver.h"
 
 Server *server_new(int server_id) {
@@ -20,7 +24,7 @@ Server *server_new(int server_id) {
     for (int i = 0; i < this->max_clients; ++i) {
         this->subservers[i] = subserver_new(i);
 
-        // Set the subserver pipedes
+        // Set the subserver's pipedes
         memcpy(this->subservers[i]->main_pipe, this->subserver_pipe, sizeof(this->subserver_pipe));
     }
 
@@ -58,7 +62,7 @@ void server_set_max_clients(Server *this, int max_clients) {
 }
 
 // -1 indicates the server is full
-int server_get_free_client_id(Server *this) {
+int get_free_client_id(Server *this) {
     for (int i = 0; i < this->max_clients; ++i) {
         if (subserver_is_inactive(this->subservers[i])) {
             return i;
@@ -68,10 +72,10 @@ int server_get_free_client_id(Server *this) {
     return -1;
 }
 
-Subserver *server_setup_subserver_for_connection(Server *this, NetEvent *handshake_event) {
+Subserver *setup_subserver_for_connection(Server *this, NetEvent *handshake_event) {
     NetArgs_InitialHandshake *handshake = handshake_event->args;
 
-    int client_id = server_get_free_client_id(this);
+    int client_id = get_free_client_id(this);
     handshake->client_id = client_id;
 
     Subserver *chosen_subserver = this->subservers[client_id];
@@ -84,4 +88,94 @@ Subserver *server_setup_subserver_for_connection(Server *this, NetEvent *handsha
     this->current_clients++;
 
     return chosen_subserver;
+}
+
+void accept_connection(Server *this) {
+    NetEvent *handshake_event = server_setup("TEMP");
+    if (handshake_event == NULL) { // No clients attempting to connect on this tick.
+        return;
+    }
+
+    server_get_send_fd(handshake_event);
+
+    // A client connected, but the server is full!
+    if (this->current_clients >= this->max_clients) {
+        server_abort_handshake(handshake_event, HEC_SERVER_IS_FULL);
+        free_handshake_event(handshake_event);
+
+        printf("server is full!\n");
+        return;
+    }
+
+    Subserver *subserver = setup_subserver_for_connection(this, handshake_event);
+
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        subserver_run(subserver);
+    } else {
+        this->subservers[subserver->client_id]->pid = pid;
+        free_handshake_event(handshake_event);
+    }
+}
+
+void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
+    void *args = event->args;
+
+    // The cases are wrapped in braces so we can keep using "nargs"
+    switch (event->protocol) {
+
+    case PERIODIC_HANDSHAKE: {
+        NetArgs_PeriodicHandshake *nargs = args;
+        printf("n: %d\n", nargs->id);
+        break;
+    }
+    case CLIENT_CONNECT: {
+        NetArgs_ClientConnect *nargs = args;
+        printf("CLIENT CONNECTED %d\n", client_id);
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
+void server_run(Server *this) {
+    int recv_fd = this->subserver_pipe[PIPE_READ];
+    set_nonblock(recv_fd);
+
+    NetEventQueue *subserver_recv_queue = net_event_queue_new();
+    NetEventQueue *send_queue = net_event_queue_new();
+
+    while (1) {
+        // 1) Try to connect clients
+        accept_connection(this);
+
+        // 2) Read all NetEvents
+        empty_net_event_queue(subserver_recv_queue);
+
+        int client_id;
+        ssize_t bytes_read;
+
+        while (1) {
+            bytes_read = read(recv_fd, &client_id, sizeof(client_id));
+            // Done reading all messages
+            if (bytes_read <= 0) {
+                break;
+            }
+
+            char *event_buffer = read_into_buffer(recv_fd);
+            recv_event_queue(subserver_recv_queue, event_buffer);
+
+            printf("ID: %d | Count: %d \n", client_id, subserver_recv_queue->event_count);
+
+            // ALL of these events come from client_id
+            for (int i = 0; i < subserver_recv_queue->event_count; ++i) {
+                handle_core_server_net_event(this, client_id, subserver_recv_queue->events[i]);
+            }
+        }
+
+        usleep(TICK_TIME_MICROSECONDS);
+    }
 }
