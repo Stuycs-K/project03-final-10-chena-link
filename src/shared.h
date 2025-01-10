@@ -4,6 +4,8 @@
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 
+#define MAX_PLAYER_NAME_CHARACTERS 20
+
 // 1/10th second
 #define TICK_TIME_MICROSECONDS 100000
 

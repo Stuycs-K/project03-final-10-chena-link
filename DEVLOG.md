@@ -20,6 +20,10 @@ This document must be updated daily by EACH group member.
 * Reform packet structure to include a VLQ header. 30 minutes.
 * Get GServers to run a game process that reads network messages from all GSubservers. 3 hours due to the most terrible segfault I've ever had to deal with.
 
+### 2024-01-09 - I wish I knew about poll
+* Set server reads to nonblocking so they can be put in the same loop as everything else. All of this will be rewritten in favor of using poll() tomorrow. 1 hour.
+* Begin refactoring components of GServer into base server modules. 1 hour.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
