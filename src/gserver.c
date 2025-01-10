@@ -283,8 +283,13 @@ void gserver_run_game(GServer *gserver) {
                 case CLIENT_CONNECT: {
                     NetArgs_ClientConnect *nargs = args;
                     printf("client %d connected \n", client_id);
+                    break;
                 }
-
+                case CARD_COUNT:{
+                    NetArgs_CardCount *nargs = args;
+                    printf("sent card\n");
+                    break;
+                }
                 default:
                     break;
                 }

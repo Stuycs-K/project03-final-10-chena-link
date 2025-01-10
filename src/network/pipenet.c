@@ -267,4 +267,7 @@ void net_init() {
 
     bind_send_event(CLIENT_CONNECT, send_client_connect);
     bind_recv_event(CLIENT_CONNECT, recv_client_connect);
+
+    bind_send_event(CARD_COUNT, send_card_count);
+    bind_recv_event(CARD_COUNT, recv_card_count);
 }

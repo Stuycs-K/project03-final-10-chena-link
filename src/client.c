@@ -28,6 +28,11 @@ void free_client_connect_event(NetEvent *event) {
     free(event);
 }
 
+NetEvent *create_card_count_event(){
+  NetArgs_CardCount *nargs = malloc(sizeof(NetArgs_CardCount));
+  nargs->card_count = 7;
+  return net_event_new(CARD_COUNT, nargs);
+}
 #define SHMID 1234567890
 
 void client_main(void) {
@@ -73,6 +78,7 @@ void client_main(void) {
     card deck[100];
     int num_cards = 7;
     generate_cards(deck, num_cards);
+
     // Should be done by server on setup not by client
     *data = generate_card();
     char input[10];
@@ -131,11 +137,13 @@ void client_main(void) {
                 num_cards--;
             }
         }
-
+        NetEvent * card_counts = create_card_count_event();
+        NetArgs_CardCount *card_num = card_counts->args;
+        card_num->card_count = num_cards;
+        insert_event(net_send_queue, card_counts);
         // Finally, send event queue
         send_event_queue(net_send_queue, to_server);
         empty_net_event_queue(net_send_queue);
-
         usleep(TICK_TIME_MICROSECONDS);
     }
 }

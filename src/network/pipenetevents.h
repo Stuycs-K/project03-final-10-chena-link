@@ -50,5 +50,6 @@ typedef struct NetArgs_CardCount NetArgs_CardCount;
 struct NetArgs_CardCount {
     int card_count;
 };
-
+void * recv_card_count(NetBuffer *nb, void *args);
+void send_card_count(NetBuffer *nb, void *args);
 #endif

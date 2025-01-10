@@ -76,10 +76,13 @@ void *recv_client_connect(NetBuffer *nb, void *args) {
 
     return nargs;
 }
-//All to send 1 int btw
-void send_card_count(NetBuffer *nb, void *args){
 
+void send_card_count(NetBuffer *nb, void *args){
+  NetArgs_CardCount *nargs = args;
+  NET_BUFFER_WRITE_VALUE(nb, nargs->card_count);
 }
-void recv_card_count(NetBuffer *nb, void *args){
-  
+void * recv_card_count(NetBuffer *nb, void *args){
+  NetArgs_CardCount *nargs = args;
+  NET_BUFFER_READ_VALUE(nb, nargs->card_count);
+  return nargs;
 }
