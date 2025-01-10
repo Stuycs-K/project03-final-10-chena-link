@@ -32,3 +32,6 @@ Added uno game functions to game server, added card array to server struct. Done
 Clients can use functions and see cards they have. 1.5 hour
 Added shared memory to see last card placed. 20 minutes
 Added dynamic deck size.10 minutes
+
+### 2024-01-09 - Client functions to send card count to server
+Added functions to send card count to server. Done in class
