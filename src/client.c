@@ -61,6 +61,7 @@ void client_main(void) {
     printf("This is %d\n", client_id);
 
     // First packet we send is a confirmation of our connection
+    client_connect->to_client_fd = from_server;
     send_event_immediate(client_connect_event, to_server);
 
     NetEventQueue *net_send_queue = net_event_queue_new();

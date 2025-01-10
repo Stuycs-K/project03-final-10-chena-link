@@ -39,6 +39,8 @@ void *recv_initial_handshake(NetBuffer *nb, void *args);
 typedef struct NetArgs_ClientConnect NetArgs_ClientConnect;
 struct NetArgs_ClientConnect {
     char *name;
+
+    int to_client_fd; // The main server will use this to send messages to the clients
 };
 
 void send_client_connect(NetBuffer *nb, void *args);
