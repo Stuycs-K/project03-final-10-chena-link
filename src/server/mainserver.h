@@ -1,3 +1,4 @@
+#include "clientconnection.h"
 #include "subserver.h"
 
 #ifndef MAINSERVER_H
@@ -14,6 +15,7 @@ struct Server {
 
     char *name;
 
+    ClientConnection **clients;
     Subserver **subservers; // List of subserver connections
 };
 

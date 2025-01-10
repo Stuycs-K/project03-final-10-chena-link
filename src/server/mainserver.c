@@ -18,6 +18,11 @@ Server *server_new(int server_id) {
 
     pipe(this->subserver_pipe);
 
+    this->clients = malloc(sizeof(ClientConnection *) * this->max_clients);
+    for (int i = 0; i < this->max_clients; ++i) {
+        this->clients[i] = client_connection_new(i);
+    }
+
     // Populate with inactive subservers
     this->subservers = malloc(sizeof(Subserver *) * this->max_clients);
 
@@ -47,24 +52,24 @@ void server_set_max_clients(Server *this, int max_clients) {
     int is_expanding = max_clients > old_max_clients;
 
     if (is_expanding) {
-        this->subservers = realloc(this->subservers, sizeof(Subserver *) * max_clients);
+        this->clients = realloc(this->clients, sizeof(ClientConnection *) * max_clients);
 
         for (int i = old_max_clients - 1; i < max_clients; ++i) {
-            this->subservers[i] = subserver_new(i);
+            this->clients[i] = client_connection_new(i);
         }
     } else {
         for (int i = old_max_clients - 1; i >= max_clients - 1; --i) {
-            free(this->subservers[i]);
+            free_client_connection(this->clients[i]);
         }
 
-        this->subservers = realloc(this->subservers, sizeof(Subserver *) * max_clients);
+        this->clients = realloc(this->clients, sizeof(ClientConnection *) * max_clients);
     }
 }
 
 // -1 indicates the server is full
 int get_free_client_id(Server *this) {
     for (int i = 0; i < this->max_clients; ++i) {
-        if (subserver_is_inactive(this->subservers[i])) {
+        if (this->clients[i]->is_free) {
             return i;
         }
     }
