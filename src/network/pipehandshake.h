@@ -6,7 +6,7 @@
 
 #define HANDSHAKE_BUFFER_SIZE 12
 
-int server_setup(char *client_to_server_fifo);
+NetEvent *server_setup(char *client_to_server_fifo);
 
 NetEvent *create_handshake_event();
 void free_handshake_event(NetEvent *handshake_event);

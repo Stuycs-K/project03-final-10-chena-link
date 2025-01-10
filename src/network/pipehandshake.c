@@ -15,22 +15,6 @@
 
 #define HANDSHAKE_DEBUG
 
-int server_setup(char *client_to_server_fifo) {
-    remove(client_to_server_fifo);
-
-    int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
-
-    printf("[SERVER]: Waiting for connection...\n");
-
-    int from_client = open(client_to_server_fifo, O_RDONLY, 0);
-
-    printf("[SERVER]: Client connected\n");
-
-    remove(client_to_server_fifo);
-
-    return from_client;
-}
-
 NetEvent *create_handshake_event() {
     NetArgs_InitialHandshake *nargs = malloc(sizeof(NetArgs_InitialHandshake));
 
@@ -43,6 +27,7 @@ NetEvent *create_handshake_event() {
     nargs->to_client_pipe_name = calloc(sizeof(char), HANDSHAKE_BUFFER_SIZE + 1);
 
     NetEvent *handshake_event = net_event_new(INITIAL_HANDSHAKE, nargs);
+    return handshake_event;
 }
 
 void free_handshake_event(NetEvent *handshake_event) {
@@ -52,6 +37,27 @@ void free_handshake_event(NetEvent *handshake_event) {
 
     free(handshake_event->args);
     free(handshake_event);
+}
+
+NetEvent *server_setup(char *client_to_server_fifo) {
+    NetEvent *handshake_event = create_handshake_event();
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
+
+    remove(client_to_server_fifo);
+
+    int mkfifo_ret = mkfifo(client_to_server_fifo, 0644);
+
+    printf("[SERVER]: Waiting for connection...\n");
+
+    int from_client = open(client_to_server_fifo, O_RDONLY, 0);
+
+    printf("[SERVER]: Client connected\n");
+
+    remove(client_to_server_fifo);
+
+    handshake->client_to_server_fd = from_client;
+
+    return handshake_event;
 }
 
 void server_abort_handshake(NetEvent *handshake_event, HandshakeErrCode errcode) {

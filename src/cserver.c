@@ -21,11 +21,7 @@ int cserver_init() {
     game_server_list = malloc(sizeof(GServer *) * 256);
 
     while (1) {
-        int from_client = server_setup("CSERVER");
-
-        NetEvent *handshake_event = create_handshake_event();
-        ((NetArgs_InitialHandshake *)handshake_event->args)->client_to_server_fd = from_client;
-
+        NetEvent *handshake_event = server_setup(get_client_to_server_fifo_name());
         server_get_send_fd(handshake_event);
 
         pid_t pid = fork();

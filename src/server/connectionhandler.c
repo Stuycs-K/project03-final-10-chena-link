@@ -8,11 +8,7 @@
 
 void server_run_connection_loop(Server *server) {
     while (1) {
-        int from_client = server_setup("TEMP");
-
-        NetEvent *handshake_event = create_handshake_event();
-        ((NetArgs_InitialHandshake *)handshake_event->args)->client_to_server_fd = from_client;
-
+        NetEvent *handshake_event = server_setup("TEMP");
         server_get_send_fd(handshake_event);
 
         // A client connected, but the server is full!

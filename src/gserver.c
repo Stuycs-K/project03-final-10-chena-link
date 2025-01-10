@@ -202,11 +202,7 @@ static void handle_sigchld(int signo) {
 
 void gserver_run_connection_loop(GServer *gserver) {
     while (1) {
-        int from_client = server_setup(get_client_to_server_fifo_name());
-
-        NetEvent *handshake_event = create_handshake_event();
-        ((NetArgs_InitialHandshake *)handshake_event->args)->client_to_server_fd = from_client;
-
+        NetEvent *handshake_event = server_setup(get_client_to_server_fifo_name());
         server_get_send_fd(handshake_event);
 
         // A client connected, but the server is full!
