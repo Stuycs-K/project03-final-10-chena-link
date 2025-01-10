@@ -100,6 +100,10 @@ void check_handler_read_fn_exists(NetEventHandler *handler) {
 }
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
+    if (net_event_queue->event_count == 0) {
+        return;
+    }
+
     NetBuffer *nb = net_buffer_send();
 
     NET_BUFFER_BEGIN_WRITE(nb)
@@ -155,7 +159,7 @@ void *read_into_buffer(int recv_fd) {
     bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
 
     if (bytes_read <= 0) {
-        perror("read_into_buffer: read VLQ");
+        return NULL;
     }
 
     char *recv_buffer = malloc(sizeof(char) * packet_size);
