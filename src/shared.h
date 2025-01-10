@@ -4,6 +4,14 @@
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 
+#define MAX_PLAYER_NAME_CHARACTERS 20
+
+#define CONNECTION_IS_FREE 1
+#define CONNECTION_IS_USED 0
+
+// 1/10th second
+#define TICK_TIME_MICROSECONDS 100000
+
 #define CSERVER_WKP_NAME "CSERVER"
 
 #endif

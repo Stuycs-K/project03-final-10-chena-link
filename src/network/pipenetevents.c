@@ -62,6 +62,7 @@ void send_client_connect(NetBuffer *nb, void *args) {
     NetArgs_ClientConnect *nargs = args;
 
     NET_BUFFER_WRITE_STRING(nb, nargs->name);
+    NET_BUFFER_WRITE_VALUE(nb, nargs->to_client_fd);
 }
 void *recv_client_connect(NetBuffer *nb, void *args) {
     if (args == NULL) {
@@ -71,6 +72,7 @@ void *recv_client_connect(NetBuffer *nb, void *args) {
     NetArgs_ClientConnect *nargs = args;
 
     NET_BUFFER_READ_STRING(nb, nargs->name);
+    NET_BUFFER_READ_VALUE(nb, nargs->to_client_fd);
 
     return nargs;
 }

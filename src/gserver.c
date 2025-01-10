@@ -9,6 +9,7 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "shared.h"
+#include "util/file.h"
 
 GSubserver *gsubserver_new(int client_id) {
     GSubserver *gsubserver = malloc(sizeof(GSubserver));
@@ -53,13 +54,6 @@ int gsubserver_propagate(GSubserver *gsubserver) {
 
     // And finally, read the rest of the packet directly into the buffer
     bytes_read = read(gsubserver->recv_fd, raw_recv_buffer + offset, packet_size);
-
-    if (bytes_read <= 0) {
-        if (bytes_read == 0) {
-            // CLIENT DISCONNECT! Send message
-            return -1;
-        }
-    }
 
     ssize_t bytes_written = write(gsubserver->subserver_pipe[PIPE_WRITE], raw_recv_buffer, total_size);
     if (bytes_written <= 0) {
@@ -198,13 +192,17 @@ GSubserver *gserver_handle_connection(GServer *gserver, NetEvent *handshake_even
     return chosen_subserver;
 }
 
+static void handle_sigchld(int signo) {
+    if (signo != SIGCHLD) {
+        return;
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
 void gserver_run_connection_loop(GServer *gserver) {
     while (1) {
-        int from_client = server_setup(get_client_to_server_fifo_name());
-
-        NetEvent *handshake_event = create_handshake_event();
-        ((NetArgs_InitialHandshake *)handshake_event->args)->client_to_server_fd = from_client;
-
+        NetEvent *handshake_event = server_setup(get_client_to_server_fifo_name());
         server_get_send_fd(handshake_event);
 
         // A client connected, but the server is full!
@@ -242,52 +240,59 @@ void gserver_run_game(GServer *gserver) {
         return;
     }
 
-    NetEventQueue *event_queue = net_event_queue_new();
+    NetEventQueue *recv_queue = net_event_queue_new();
+    NetEventQueue *send_queue = net_event_queue_new();
+
     int recv_fd = gserver->subserver_pipe[PIPE_READ];
+    set_nonblock(recv_fd);
 
     ssize_t bytes_read;
 
     while (1) {
-        empty_net_event_queue(event_queue);
+        empty_net_event_queue(recv_queue);
 
         int client_id;
-        bytes_read = read(recv_fd, &client_id, sizeof(client_id));
 
-        size_t packet_size;
-        bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
-
-        char *event_buffer = malloc(sizeof(char) * packet_size);
-        bytes_read = read(recv_fd, event_buffer, packet_size);
-
-        recv_event_queue(event_queue, event_buffer);
-
-        printf("ID: %d | Count: %d \n", client_id, event_queue->event_count);
-
-        // ALL of these events come from client_id
-        for (int i = 0; i < event_queue->event_count; ++i) {
-
-            NetEvent *event = event_queue->events[i];
-            void *args = event->args;
-
-            // The cases are wrapped in braces so we can keep using "nargs"
-            switch (event->protocol) {
-
-            case PERIODIC_HANDSHAKE: {
-                NetArgs_PeriodicHandshake *nargs = args;
-                printf("n: %d\n", nargs->id);
-
+        while (1) {
+            bytes_read = read(recv_fd, &client_id, sizeof(client_id));
+            if (bytes_read <= 0) {
                 break;
             }
 
-            case CLIENT_CONNECT: {
-                NetArgs_ClientConnect *nargs = args;
-                printf("client %d connected \n", client_id);
-            }
+            char *event_buffer = read_into_buffer(recv_fd);
+            recv_event_queue(recv_queue, event_buffer);
 
-            default:
-                break;
+            printf("ID: %d | Count: %d \n", client_id, recv_queue->event_count);
+
+            // ALL of these events come from client_id
+            for (int i = 0; i < recv_queue->event_count; ++i) {
+
+                NetEvent *event = recv_queue->events[i];
+                void *args = event->args;
+
+                // The cases are wrapped in braces so we can keep using "nargs"
+                switch (event->protocol) {
+
+                case PERIODIC_HANDSHAKE: {
+                    NetArgs_PeriodicHandshake *nargs = args;
+                    printf("n: %d\n", nargs->id);
+
+                    break;
+                }
+
+                case CLIENT_CONNECT: {
+                    NetArgs_ClientConnect *nargs = args;
+                    printf("client %d connected \n", client_id);
+                }
+
+                default:
+                    break;
+                }
             }
+            printf("loop done\n");
         }
+
+        usleep(TICK_TIME_MICROSECONDS);
     }
 }
 

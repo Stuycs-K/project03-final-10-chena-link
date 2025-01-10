@@ -11,6 +11,8 @@
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
+#include "shared.h"
+#include "util/file.h"
 
 NetEvent *create_client_connect_event() {
     NetArgs_ClientConnect *nargs = malloc(sizeof(NetArgs_ClientConnect));
@@ -59,9 +61,14 @@ void client_main(void) {
     printf("This is %d\n", client_id);
 
     // First packet we send is a confirmation of our connection
+    client_connect->to_client_fd = from_server;
     send_event_immediate(client_connect_event, to_server);
 
     NetEventQueue *net_send_queue = net_event_queue_new();
+    NetEventQueue *net_recv_queue = net_event_queue_new();
+
+    // SET RECEIVE FO TO NONBLOCK MODE!
+    set_nonblock(from_server);
 
     card deck[100];
     int num_cards = 7;
@@ -69,10 +76,30 @@ void client_main(void) {
     // Should be done by server on setup not by client
     *data = generate_card();
     char input[10];
-    while (1) {
-        empty_net_event_queue(net_send_queue);
 
-        /*for (int i = 0; i < 2; ++i) {
+    while (1) {
+        // First: receive events
+        empty_net_event_queue(net_recv_queue);
+
+        void *recv_buffer;
+        while (recv_buffer = read_into_buffer(from_server)) {
+            recv_event_queue(net_recv_queue, recv_buffer);
+
+            for (int i = 0; i < net_recv_queue->event_count; ++i) {
+
+                NetEvent *event = net_recv_queue->events[i];
+                void *args = event->args;
+
+                // Run game logic + rendering based on NetEvents HERE
+                switch (event->protocol) {
+
+                default:
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < 2; ++i) {
             NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
             test_args->id = rand();
 
@@ -82,8 +109,6 @@ void client_main(void) {
             insert_event(net_send_queue, test_event);
         }
 
-        send_event_queue(net_send_queue, to_server);
-        */
         printf("Current card: Color: %d Num: %d\n", data->color, data->num);
         for (int i = 0; i < num_cards; i++) {
             printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
@@ -106,6 +131,11 @@ void client_main(void) {
                 num_cards--;
             }
         }
-        usleep(1000000);
+
+        // Finally, send event queue
+        send_event_queue(net_send_queue, to_server);
+        empty_net_event_queue(net_send_queue);
+
+        usleep(TICK_TIME_MICROSECONDS);
     }
 }

@@ -79,7 +79,31 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
     net_event_queue->event_count = 0;
 }
 
+void check_handler_write_fn_exists(NetEventHandler *handler) {
+    if (handler->write_fn == NULL) {
+        fprintf(
+            stderr,
+            "No write function bound to protocol (% d)! Make sure to bind with bind_send_event !\n",
+            handler->protocol);
+        exit(EXIT_FAILURE);
+    }
+}
+
+void check_handler_read_fn_exists(NetEventHandler *handler) {
+    if (handler->read_fn == NULL) {
+        fprintf(
+            stderr,
+            "No read function bound to protocol (% d)! Make sure to bind with bind_recv_event !\n",
+            handler->protocol);
+        exit(EXIT_FAILURE);
+    }
+}
+
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
+    if (net_event_queue->event_count == 0) {
+        return;
+    }
+
     NetBuffer *nb = net_buffer_send();
 
     NET_BUFFER_BEGIN_WRITE(nb)
@@ -93,6 +117,7 @@ void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
         void *args = event_to_send->args;
 
         NetEventHandler *handler = net_event_handlers[protocol];
+        check_handler_write_fn_exists(handler);
 
         NET_BUFFER_WRITE_VALUE(nb, protocol) // Write the event's protocol
         handler->write_fn(nb, args);
@@ -111,6 +136,7 @@ void send_event_immediate(NetEvent *event, int send_fd) {
     void *args = event->args;
 
     NetEventHandler *handler = net_event_handlers[protocol];
+    check_handler_write_fn_exists(handler);
 
     int throwaway_size = 1;
 
@@ -126,6 +152,26 @@ void send_event_immediate(NetEvent *event, int send_fd) {
     free_net_buffer(nb);
 }
 
+void *read_into_buffer(int recv_fd) {
+    ssize_t bytes_read;
+
+    size_t packet_size = 0;
+    bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
+
+    if (bytes_read <= 0) {
+        return NULL;
+    }
+
+    char *recv_buffer = malloc(sizeof(char) * packet_size);
+    read(recv_fd, recv_buffer, packet_size);
+
+    if (bytes_read <= 0) {
+        perror("read_into_buffer: read rest of packet");
+    }
+
+    return recv_buffer;
+}
+
 // Populates a NetEventQueue with deserialized NetEvents
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
     NetBuffer *nb = net_buffer_recv(recv_buffer);
@@ -138,6 +184,7 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
         NET_BUFFER_READ_VALUE(nb, protocol);
 
         NetEventHandler *handler = net_event_handlers[protocol];
+        check_handler_read_fn_exists(handler);
 
         void *data = handler->read_fn(nb, NULL);
         insert_event(net_event_queue, net_event_new(protocol, data));
@@ -147,16 +194,7 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
 }
 
 NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
-    size_t packet_size = 0;
-    ssize_t bytes_read = read(recv_fd, &packet_size, sizeof(packet_size));
-    if (bytes_read <= 0) {
-        printf("RECV FD FAIL: %d\n", recv_fd);
-        perror("wtf");
-    }
-
-    char *recv_buffer = malloc(sizeof(char) * packet_size);
-    read(recv_fd, recv_buffer, packet_size);
-
+    void *recv_buffer = read_into_buffer(recv_fd);
     NetBuffer *nb = net_buffer_recv(recv_buffer);
 
     int throwaway_size;
@@ -166,6 +204,7 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
     NET_BUFFER_READ_VALUE(nb, protocol);
 
     NetEventHandler *handler = net_event_handlers[protocol];
+    check_handler_read_fn_exists(handler);
 
     void *data;
     if (recv_event == NULL) { // Create our own NetEvent
