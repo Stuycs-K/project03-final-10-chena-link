@@ -17,6 +17,7 @@ struct Subserver {
 };
 
 Subserver *subserver_new(int client_id);
+int subserver_is_inactive(Subserver *this);
 void subserver_run(Subserver *this);
 
 #endif

@@ -58,6 +58,10 @@ Subserver *subserver_new(int client_id) {
     return this;
 }
 
+int subserver_is_inactive(Subserver *this) {
+    return (this->pid == -1 && this->recv_fd == -1);
+}
+
 void subserver_run(Subserver *this) {
     close(this->main_pipe[PIPE_READ]);
 
