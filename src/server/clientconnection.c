@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "clientconnection.h"
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"

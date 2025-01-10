@@ -16,7 +16,6 @@ struct Server {
     char *name;
 
     ClientConnection **clients;
-    Subserver **subservers; // List of subserver connections
 };
 
 Server *server_new(int server_id);
