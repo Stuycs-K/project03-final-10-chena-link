@@ -1,4 +1,8 @@
 #include <stdio.h>
+<<<<<<< HEAD
+=======
+
+>>>>>>> e7867147ddb8cf24ae7f5f6aa8bac133f1415003
 #include "clientconnection.h"
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"

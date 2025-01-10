@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"
@@ -23,6 +24,8 @@ Server *server_new(int server_id) {
         this->clients[i] = client_connection_new(i);
     }
 
+    /*
+
     // Populate with inactive subservers
     this->subservers = malloc(sizeof(Subserver *) * this->max_clients);
 
@@ -32,6 +35,7 @@ Server *server_new(int server_id) {
         // Set the subserver's pipedes
         memcpy(this->subservers[i]->main_pipe, this->subserver_pipe, sizeof(this->subserver_pipe));
     }
+    */
 
     return this;
 }
@@ -77,6 +81,19 @@ int get_free_client_id(Server *this) {
     return -1;
 }
 
+ClientConnection *get_client_connection(Server *this, NetEvent *handshake_event) {
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
+
+    int client_id = get_free_client_id(this);
+    handshake->client_id = client_id;
+
+    ClientConnection *connection = this->clients[client_id];
+
+    connection->recv_fd = handshake->client_to_server_fd;
+    connection->send_fd = handshake->server_to_client_fd;
+    connection->handshake_event = handshake_event;
+}
+
 Subserver *setup_subserver_for_connection(Server *this, NetEvent *handshake_event) {
     NetArgs_InitialHandshake *handshake = handshake_event->args;
 
@@ -111,6 +128,8 @@ void accept_connection(Server *this) {
         printf("server is full!\n");
         return;
     }
+
+    ClientConnection *client = get_client_connection(this, handshake_event);
 
     Subserver *subserver = setup_subserver_for_connection(this, handshake_event);
 
