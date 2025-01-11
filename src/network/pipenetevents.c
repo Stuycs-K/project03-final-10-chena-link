@@ -144,7 +144,7 @@ DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs->id = -1;
     nargs->status = 0;
     nargs->current_clients = 0;
-    nargs->max_clients = 2;
+    nargs->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
 
     // Null out the strings
     nargs->name[0] = 0;

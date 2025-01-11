@@ -13,7 +13,9 @@
 GServer *gserver_new(int id) {
     GServer *this = malloc(sizeof(GServer));
     this->status = GSS_WAITING_FOR_PLAYERS;
+
     this->server = server_new(id);
+    this->server->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
 
     char gserver_name_buffer[MAX_GSERVER_NAME_CHARACTERS];
     snprintf(gserver_name_buffer, sizeof(gserver_name_buffer), "GameServer%d", id);

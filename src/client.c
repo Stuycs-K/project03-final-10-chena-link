@@ -14,7 +14,68 @@
 #include "shared.h"
 #include "util/file.h"
 
-NetEvent *try_connect_to_server() {
+// May as well be globals
+int cclient_id;
+int to_cserver;
+int from_cserver;
+NetEventQueue *cserver_send_queue;
+NetEventQueue *cserver_recv_queue;
+
+void connect_to_cserver() {
+    cserver_send_queue = net_event_queue_new();
+    cserver_recv_queue = net_event_queue_new();
+
+    NetEvent *handshake_event = create_handshake_event();
+    NetArgs_Handshake *handshake = handshake_event->args;
+
+    client_setup(CSERVER_WKP_NAME, handshake_event);
+    int succeeded = client_handshake(handshake_event);
+
+    if (succeeded == -1) {
+        printf("Connection to CServer failed\n");
+        return;
+    }
+
+    cclient_id = -1;
+    to_cserver = handshake->client_to_server_fd;
+    from_cserver = handshake->server_to_client_fd;
+
+    free_handshake_event(handshake_event);
+}
+
+void recv_from_cserver() {
+    void *recv_buffer;
+    while (recv_buffer = read_into_buffer(from_cserver)) {
+        recv_event_queue(cserver_recv_queue, recv_buffer);
+
+        for (int i = 0; i < cserver_recv_queue->event_count; ++i) {
+            NetEvent *event = cserver_recv_queue->events[i];
+            void *args = event->args;
+
+            switch (event->protocol) {
+
+            case PERIODIC_HANDSHAKE: {
+                NetArgs_PeriodicHandshake *nargs = args;
+                printf("we GOT from server: %d\n", nargs->id);
+                break;
+            }
+
+            case CLIENT_LIST: {
+                ClientList *nargs = args;
+                cclient_id = nargs->local_client_id;
+                printf("Our CServer client ID: %d\n", cclient_id);
+                print_client_list(nargs->info_list);
+                break;
+            }
+
+            default:
+                break;
+            }
+        }
+    }
+}
+
+NetEvent *connect_to_gserver() {
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_Handshake *handshake = handshake_event->args;
 
@@ -43,7 +104,7 @@ void client_main(void) {
     gserver_client_list_event->cleanup_behavior = NEVENT_PERSISTENT;
 
     // Everything below here will be looped in the future!
-    NetEvent *handshake_event = try_connect_to_server();
+    NetEvent *handshake_event = connect_to_gserver();
     if (handshake_event == NULL) {
         return;
     }

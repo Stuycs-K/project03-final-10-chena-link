@@ -63,11 +63,19 @@ struct ClientList {
 };
 DECLARE_NET_ARGS(ClientList, client_list)
 
-// A client wants to reserve
 typedef struct ReserveGServer ReserveGServer;
 struct ReserveGServer {
     int gserver_id;
 };
+
+// Used for client modifying GServer properties
+typedef struct GServerConfig GServerConfig;
+struct GServerConfig {
+    int gserver_id;
+    char name[MAX_GSERVER_NAME_CHARACTERS];
+    int max_clients;
+};
+DECLARE_NET_ARGS(GServerConfig, gserver_config)
 
 typedef struct GServerInfo GServerInfo;
 struct GServerInfo {

@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
         printf("server\n");
         server_main();
     } else if (!strcmp(mode, "cserver")) {
-        printf("cserver\n");
     }
+
+    return 0;
 }
