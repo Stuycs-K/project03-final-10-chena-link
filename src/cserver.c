@@ -13,7 +13,8 @@ CServer *cserver_new(int id) {
     return this;
 }
 
-void create_gserver() {
+void create_gserver(CServer *this, int id) {
+    GServer *gserver = gserver_new(id);
 }
 
 void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
@@ -49,9 +50,11 @@ void cserver_run(CServer *this) {
 
     while (1) {
         handle_connections(server);
-        server_recv_events(server);
 
         server_empty_recv_events(server);
+        server_recv_events(server);
+
+        cserver_loop(this);
 
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);

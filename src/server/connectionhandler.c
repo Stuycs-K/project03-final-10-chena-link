@@ -9,6 +9,8 @@
 /*
     Listens to WKP. When a client opens it, they complete the handshake.
 
+    Then, check the server to see if we should accept the client.
+
     If they send the correct ACK, send the handshake struct back to the host server
     to inform them that the client connected.
 */

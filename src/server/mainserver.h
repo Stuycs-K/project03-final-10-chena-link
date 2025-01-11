@@ -5,8 +5,16 @@
 #ifndef MAINSERVER_H
 #define MAINSERVER_H
 
+typedef enum ServerStatus ServerStatus;
+enum ServerStatus {
+    SSTATUS_OPEN,
+    SSTATUS_CLOSED,
+};
+
 typedef struct Server Server;
 struct Server {
+    ServerStatus status;
+
     int max_clients;
     int current_clients;
 

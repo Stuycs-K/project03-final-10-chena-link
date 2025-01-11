@@ -8,7 +8,6 @@
 #include "server.h"
 
 #include "network/pipenet.h"
-#include "testserver.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

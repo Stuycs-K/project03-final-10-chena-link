@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -6,12 +7,14 @@
 #include "../network/pipenetevents.h"
 #include "../shared.h"
 #include "../util/file.h"
+
 #include "connectionhandler.h"
 #include "mainserver.h"
 
 Server *server_new(int server_id) {
     Server *this = malloc(sizeof(Server));
 
+    this->status = SSTATUS_OPEN;
     this->max_clients = 2;
     this->current_clients = 0;
     this->id = server_id;
@@ -91,7 +94,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->server_to_client_fd);
     connection->send_fd = open(fd_path, O_WRONLY);
 
-    printf("CLIENT CONNECTED %d !!!\n", connection->recv_fd);
+    printf("CLIENT CONNECTED %d \n", connection->recv_fd);
 
     this->current_clients++;
 }
@@ -275,6 +278,9 @@ void server_start_connection_handler(Server *this) {
     } else {
         this->connection_handler_pid = pid;
     }
+}
+
+void server_shutdown(Server *this) {
 }
 
 void server_run(Server *this) {

@@ -74,11 +74,11 @@ void gserver_run(GServer *this) {
 
     while (1) {
         handle_connections(server);
+
+        server_empty_recv_events(server);
         server_recv_events(server);
 
         gserver_loop(this);
-
-        server_empty_recv_events(server);
 
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);
