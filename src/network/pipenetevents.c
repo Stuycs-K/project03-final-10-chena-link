@@ -99,19 +99,6 @@ END_HANDLER()
 
 //============================================================
 
-DECLARE_CONSTRUCTOR(NetArgs_ClientConnect, client_connect) {
-    nargs->name = calloc(sizeof(char), 20);
-}
-END_CONSTRUCTOR()
-
-DECLARE_HANDLER(NetArgs_ClientConnect, client_connect) {
-    STRING(nargs->name);
-    VALUE(nargs->to_client_fd);
-}
-END_HANDLER()
-
-//============================================================
-
 DECLARE_CONSTRUCTOR(ClientList, client_list) {
     nargs->local_client_id = -1;
     nargs->info_list = NULL;

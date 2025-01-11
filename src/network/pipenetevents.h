@@ -54,21 +54,23 @@ struct NetArgs_Handshake {
 };
 DECLARE_NET_ARGS(NetArgs_Handshake, handshake)
 
-typedef struct NetArgs_ClientConnect NetArgs_ClientConnect;
-struct NetArgs_ClientConnect {
-    char *name;
-
-    int to_client_fd; // The main server will use this to send messages to the clients
-};
-DECLARE_NET_ARGS(NetArgs_ClientConnect, client_connect)
-
-// A GServer sends this to the client after they complete the handshake so they know their client id in the server
+// The list of clients connected to the server. The server sends this whenever a client leaves / joins.
 typedef struct ClientList ClientList;
 struct ClientList {
     int local_client_id;
-    ClientInfoNode *info_list;
+    ClientInfoNode *info_list; // Linked list of connected clients and their names
 };
 DECLARE_NET_ARGS(ClientList, client_list)
+
+typedef struct GServerState GServerState;
+struct GServerState {
+};
+
+// A client wants to reserve
+typedef struct ReserveGServer ReserveGServer;
+struct ReserveGServer {
+    int gserver_id;
+};
 
 typedef struct GServerInfo GServerInfo;
 struct GServerInfo {

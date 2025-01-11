@@ -14,20 +14,6 @@
 #include "shared.h"
 #include "util/file.h"
 
-NetEvent *create_client_connect_event() {
-    NetArgs_ClientConnect *nargs = malloc(sizeof(NetArgs_ClientConnect));
-    nargs->name = calloc(sizeof(char), 20);
-
-    return net_event_new(CLIENT_CONNECT, nargs);
-}
-
-void free_client_connect_event(NetEvent *event) {
-    NetArgs_ClientConnect *nargs = event->args;
-    free(nargs->name);
-    free(event->args);
-    free(event);
-}
-
 NetEvent *try_connect_to_server() {
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_Handshake *handshake = handshake_event->args;

@@ -212,7 +212,6 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
 void net_init() {
     BIND(PERIODIC_HANDSHAKE, periodic_handshake);
     BIND(HANDSHAKE, handshake);
-    BIND(CLIENT_CONNECT, client_connect);
     BIND(CLIENT_LIST, client_list);
     BIND(GSERVER_INFO, gserver_info);
 }

@@ -99,7 +99,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 
     client->is_free = CONNECTION_IS_USED;
 
-    // THE FDs IN THE HANDSHAKE ARE NOT THE MAIN SERVER'S FDS!
+    // THE FDs IN THE HANDSHAKE ARE NOT THE MAIN SERVER'S FDS! THIS IS A REALLY TERRIBLE SOLUTION
     // The connection handler (separate process) opens the pipes, so the FDs aren't shared with the main server.
     // We have to use this magic to open the process's FDs as our own.
     char fd_path[64];
@@ -121,13 +121,12 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 // This gets called during the receive phase.
 // By this point, if any clients joined, we've already sent the client list to each client's queue.
 // That means, of course, we have to go into each client's send queue and update the event. Wow.
-// Otherwise, if no one else joined this tick, we have to send to client list to everyone again.
+// Otherwise, if no one else joined this tick, we have to send to client list to everyone.
 void handle_client_disconnect(Server *this, int client_id) {
     disconnect_client(this->clients[client_id]);
 
     // Update client info list
     this->client_info_list = remove_client_list_by_id(this->client_info_list, client_id);
-    printf("size after removing: %d\n", get_client_list_size(this->client_info_list));
 
     if (this->client_info_changed) {
         FOREACH_CLIENT(this) {
@@ -164,11 +163,6 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
         printf("n: %d\n", nargs->id);
         break;
     }
-    case CLIENT_CONNECT: {
-        NetArgs_ClientConnect *nargs = args;
-        printf("CLIENT CONNECTED %d\n", client_id);
-        break;
-    }
 
     default:
         break;
@@ -197,7 +191,7 @@ void handle_connections(Server *this) {
     check.events = POLLIN;
 
     int ret = poll(&check, 1, 0);
-    if (ret <= 0) {
+    if (ret <= 0) { // Nobody connected to the connection handler
         return;
     }
 

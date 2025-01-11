@@ -193,8 +193,6 @@ typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
     HANDSHAKE,
-    CLIENT_CONNECT,
-    CLIENT_DISCONNECT,
     CLIENT_LIST,
     GSERVER_INFO,
 
