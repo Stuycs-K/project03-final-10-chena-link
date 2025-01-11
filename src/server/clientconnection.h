@@ -4,8 +4,8 @@
 #ifndef CLIENTCONNECTION_H
 #define CLIENTCONNECTION_H
 
-typedef struct ClientConnection ClientConnection;
-struct ClientConnection {
+typedef struct Client Client;
+struct Client {
     int id;
     char *name;
 
@@ -18,8 +18,8 @@ struct ClientConnection {
     NetEventQueue *recv_queue;
 };
 
-ClientConnection *client_connection_new(int id);
-void disconnect_client(ClientConnection *this);
-void free_client_connection(ClientConnection *this);
+Client *client_connection_new(int id);
+void disconnect_client(Client *this);
+void free_client_connection(Client *this);
 
 #endif

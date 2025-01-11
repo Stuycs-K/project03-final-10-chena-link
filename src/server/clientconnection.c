@@ -6,8 +6,8 @@
 #include "../shared.h"
 #include "clientconnection.h"
 
-ClientConnection *client_connection_new(int id) {
-    ClientConnection *this = malloc(sizeof(ClientConnection));
+Client *client_connection_new(int id) {
+    Client *this = malloc(sizeof(Client));
 
     this->id = id;
     this->name = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
@@ -22,7 +22,7 @@ ClientConnection *client_connection_new(int id) {
     return this;
 }
 
-void disconnect_client(ClientConnection *this) {
+void disconnect_client(Client *this) {
     this->is_free = CONNECTION_IS_FREE;
     memset(this->name, 0, MAX_PLAYER_NAME_CHARACTERS);
 
@@ -36,7 +36,7 @@ void disconnect_client(ClientConnection *this) {
     empty_net_event_queue(this->recv_queue);
 }
 
-void free_client_connection(ClientConnection *this) {
+void free_client_connection(Client *this) {
     free(this->name);
     free(this->send_queue);
     free(this->recv_queue);

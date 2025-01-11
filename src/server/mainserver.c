@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -17,12 +18,14 @@ Server *server_new(int server_id) {
 
     this->name = NULL;
     this->client_poll_list = poll_list_new(128); // 128 for no reason
+
+    this->connection_handler_pid = -1;
     this->connection_handler_recv_queue = net_event_queue_new();
 
     pipe(this->connection_handler_pipe);
     set_nonblock(this->connection_handler_pipe[PIPE_READ]);
 
-    this->clients = malloc(sizeof(ClientConnection *) * this->max_clients);
+    this->clients = malloc(sizeof(Client *) * this->max_clients);
     for (int i = 0; i < this->max_clients; ++i) {
         this->clients[i] = client_connection_new(i);
     }
@@ -46,7 +49,7 @@ void server_set_max_clients(Server *this, int max_clients) {
     int is_expanding = max_clients > old_max_clients;
 
     if (is_expanding) {
-        this->clients = realloc(this->clients, sizeof(ClientConnection *) * max_clients);
+        this->clients = realloc(this->clients, sizeof(Client *) * max_clients);
 
         for (int i = old_max_clients - 1; i < max_clients; ++i) {
             this->clients[i] = client_connection_new(i);
@@ -56,7 +59,7 @@ void server_set_max_clients(Server *this, int max_clients) {
             free_client_connection(this->clients[i]);
         }
 
-        this->clients = realloc(this->clients, sizeof(ClientConnection *) * max_clients);
+        this->clients = realloc(this->clients, sizeof(Client *) * max_clients);
     }
 }
 
@@ -77,18 +80,23 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     int client_id = get_free_client_id(this);
     // handshake->client_id = client_id;
 
-    ClientConnection *connection = this->clients[client_id];
+    Client *connection = this->clients[client_id];
 
     connection->is_free = CONNECTION_IS_USED;
 
-    connection->recv_fd = handshake->client_to_server_fd;
-    connection->send_fd = handshake->server_to_client_fd;
+    // THE HANDSHAKE FDs ARE NOT THE MAIN SERVER'S FDS! We have to use this magic to open the process's FDs as our own.
+    char fd_path[64];
+    snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->client_to_server_fd);
+    connection->recv_fd = open(fd_path, O_RDONLY);
+
+    snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->server_to_client_fd);
+    connection->send_fd = open(fd_path, O_WRONLY);
 
     // Register for polling.
     struct pollfd *request = insert_pollfd(this->client_poll_list, client_id, connection->recv_fd);
     request->events = POLLIN; // Only poll for new data to
 
-    printf("CLIENT CONNECTED: To server FD is %d\n", connection->send_fd);
+    printf("CLIENT CONNECTED %d !!!\n", connection->recv_fd);
 
     this->current_clients++;
 }
@@ -161,19 +169,18 @@ void server_recv_events(Server *this) {
 
     int ret = poll(*polls->requests, polls->count, 0);
     if (ret <= 0) { // Nobody sent anything
-        printf("ret: %d, %d\n", ret, polls->count);
         return;
     }
 
     for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        ClientConnection *client = this->clients[client_id];
+        Client *client = this->clients[client_id];
         if (client->is_free) {
             continue;
         }
 
         struct pollfd *poll_request = polls->requests[client_id];
 
-        if (poll_request->revents & POLLERR) {
+        if (poll_request->revents & POLLERR || poll_request->revents & POLLHUP || poll_request->revents & POLLNVAL) {
             printf("client disconnect\n");
             handle_client_disconnect(this, client_id);
         }
@@ -198,7 +205,7 @@ void server_recv_events(Server *this) {
 // Call after you finish processing all NetEvents
 void server_empty_recv_events(Server *this) {
     for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        ClientConnection *client = this->clients[client_id];
+        Client *client = this->clients[client_id];
         if (client->is_free) {
             continue;
         }
@@ -212,7 +219,7 @@ void server_empty_recv_events(Server *this) {
 */
 void server_send_events(Server *this) {
     for (int i = 0; i < this->max_clients; ++i) {
-        ClientConnection *client = this->clients[i];
+        Client *client = this->clients[i];
         if (client->is_free) {
             continue;
         }
@@ -226,10 +233,9 @@ void server_run(Server *this) {
     pid_t pid = fork();
     if (pid == 0) {
         connection_handler_init(this);
+    } else {
+        this->connection_handler_pid = pid;
     }
-
-    // int recv_fd = this->subserver_pipe[PIPE_READ];
-    // set_nonblock(recv_fd);
 
     struct pollfd *polls;
 
@@ -237,32 +243,6 @@ void server_run(Server *this) {
         handle_connections(this);
 
         server_recv_events(this);
-
-        // 2) Read all NetEvents
-
-        int client_id;
-        ssize_t bytes_read;
-
-        /*
-        while (1) {
-            bytes_read = read(STDIN_FILENO, &client_id, sizeof(client_id));
-            // Done reading all messages
-            if (bytes_read <= 0) {
-                break;
-            }
-
-            char *event_buffer = read_into_buffer(STDIN_FILENO);
-            recv_event_queue(subserver_recv_queue, event_buffer);
-
-            printf("ID: %d | Count: %d \n", client_id, subserver_recv_queue->event_count);
-
-            // ALL of these events come from client_id
-            for (int i = 0; i < subserver_recv_queue->event_count; ++i) {
-                handle_core_server_net_event(this, client_id, subserver_recv_queue->events[i]);
-            }
-        }
-        */
-
         server_empty_recv_events(this);
 
         server_send_events(this);

@@ -15,8 +15,10 @@ struct Server {
 
     char *name;
 
-    ClientConnection **clients;
+    Client **clients;
     PollList *client_poll_list;
+
+    pid_t connection_handler_pid;
     NetEventQueue *connection_handler_recv_queue;
 
     int *recv_fd_list;

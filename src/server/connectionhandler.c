@@ -20,6 +20,8 @@ void connection_handler_init(Server *this) {
 
     while (1) {
         NetEvent *handshake_event = server_setup("TEMP");
+        NetArgs_InitialHandshake *handshake = handshake_event->args;
+
         server_get_send_fd(handshake_event);
 
         // TODO: Used shared memory to check this?
@@ -42,9 +44,7 @@ void connection_handler_init(Server *this) {
                 exit(EXIT_FAILURE);
             }
 
-            NetArgs_InitialHandshake *handshake = handshake_event->args;
             handshake->are_fds_finalized = 1;
-
             send_event_immediate(handshake_event, send_to_host_server_fd);
 
             exit(EXIT_SUCCESS);
