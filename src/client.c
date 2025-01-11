@@ -147,7 +147,6 @@ void client_main(void) {
         }
 
         // Finally, send event queue
-        printf("send queue\n");
         send_event_queue(send_queue, to_server);
         empty_net_event_queue(send_queue);
 

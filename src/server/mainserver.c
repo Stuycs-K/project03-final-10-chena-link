@@ -17,7 +17,6 @@ Server *server_new(int server_id) {
     this->id = server_id;
 
     this->name = NULL;
-    this->client_poll_list = poll_list_new(128); // 128 for no reason
 
     this->connection_handler_pid = -1;
     this->connection_handler_recv_queue = net_event_queue_new();
@@ -92,17 +91,12 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->server_to_client_fd);
     connection->send_fd = open(fd_path, O_WRONLY);
 
-    // Register for polling.
-    struct pollfd *request = insert_pollfd(this->client_poll_list, client_id, connection->recv_fd);
-    request->events = POLLIN; // Only poll for new data to
-
     printf("CLIENT CONNECTED %d !!!\n", connection->recv_fd);
 
     this->current_clients++;
 }
 
 void handle_client_disconnect(Server *this, int client_id) {
-    remove_pollfd_by_index(this->client_poll_list, client_id);
     disconnect_client(this->clients[client_id]);
 
     this->current_clients--;
@@ -164,10 +158,34 @@ void handle_connections(Server *this) {
     empty_net_event_queue(queue);
 }
 
-void server_recv_events(Server *this) {
-    PollList *polls = this->client_poll_list;
+struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {
+    for (int i = 0; i < size; ++i) {
+        struct pollfd current = pollfds[i];
+        if (current.fd == fd) {
+            return current;
+        }
+    }
+}
 
-    int ret = poll(*polls->requests, polls->count, 0);
+void server_recv_events(Server *this) {
+    // Setup poll
+    int pollcount = 0;
+    struct pollfd pollfds[this->max_clients];
+
+    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
+        Client *client = this->clients[client_id];
+        if (client->is_free) {
+            continue;
+        }
+
+        struct pollfd pollfd;
+        pollfd.events = POLLIN;
+        pollfd.fd = client->recv_fd;
+
+        pollfds[pollcount++] = pollfd;
+    }
+
+    int ret = poll(pollfds, this->current_clients, 0);
     if (ret <= 0) { // Nobody sent anything
         return;
     }
@@ -178,14 +196,14 @@ void server_recv_events(Server *this) {
             continue;
         }
 
-        struct pollfd *poll_request = polls->requests[client_id];
+        struct pollfd poll_request = get_pollfd_for_client(pollfds, this->current_clients, client->recv_fd);
 
-        if (poll_request->revents & POLLERR || poll_request->revents & POLLHUP || poll_request->revents & POLLNVAL) {
-            printf("client disconnect\n");
+        if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
             handle_client_disconnect(this, client_id);
+            continue;
         }
 
-        if (!(poll_request->revents & POLLIN)) { // This client hasn't done anything
+        if (!(poll_request.revents & POLLIN)) { // This client hasn't done anything
             continue;
         }
 
