@@ -43,3 +43,6 @@ Added dynamic deck size.10 minutes
 
 ### 2024-01-09 - Client functions to send card count to server
 Added functions to send card count to server. Done in class
+
+### 2024-01-10 - Client server interaction functions
+Added functions for client to send card count to server.
