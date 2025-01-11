@@ -29,6 +29,8 @@ void on_recv_client_list(BaseClient *this, ClientList *nargs);
 
 void client_recv_from_server(BaseClient *this);
 
+void client_send_event(BaseClient *this, NetEvent *event);
+
 void client_send_to_server(BaseClient *this);
 
 void free_client(BaseClient *this);

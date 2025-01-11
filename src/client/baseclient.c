@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "../network/pipehandshake.h"
+#include "../util/file.h"
 #include "baseclient.h"
 
 BaseClient *client_new() {
@@ -35,6 +36,7 @@ void client_connect(BaseClient *this, char *wkp) {
 
     this->to_server_fd = handshake->client_to_server_fd;
     this->from_server_fd = handshake->server_to_client_fd;
+    set_nonblock(this->from_server_fd); // MUST SET NONBLOCK HERE
 
     free_handshake_event(handshake_event);
 }
@@ -72,6 +74,10 @@ void client_recv_from_server(BaseClient *this) {
             }
         }
     }
+}
+
+void client_send_event(BaseClient *this, NetEvent *event) {
+    insert_event(this->send_queue, event);
 }
 
 void client_send_to_server(BaseClient *this) {
