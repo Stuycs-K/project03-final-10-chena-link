@@ -1,5 +1,6 @@
 #include <poll.h>
 
+#include "../util/poll_list.h"
 #include "clientconnection.h"
 
 #ifndef MAINSERVER_H
@@ -15,14 +16,11 @@ struct Server {
     char *name;
 
     ClientConnection **clients;
+    PollList *client_poll_list;
+    NetEventQueue *connection_handler_recv_queue;
+
     int *recv_fd_list;
     int connection_handler_pipe[2];
-};
-
-typedef struct PollRequestList PollRequestList;
-struct PollRequestList {
-    int count;
-    struct pollfd *poll_requests;
 };
 
 Server *server_new(int server_id);

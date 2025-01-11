@@ -16,8 +16,11 @@ Server *server_new(int server_id) {
     this->id = server_id;
 
     this->name = NULL;
+    this->client_poll_list = poll_list_new(128); // 128 for no reason
+    this->connection_handler_recv_queue = net_event_queue_new();
 
     pipe(this->connection_handler_pipe);
+    set_nonblock(this->connection_handler_pipe[PIPE_READ]);
 
     this->clients = malloc(sizeof(ClientConnection *) * this->max_clients);
     for (int i = 0; i < this->max_clients; ++i) {
@@ -68,7 +71,7 @@ int get_free_client_id(Server *this) {
     return -1;
 }
 
-ClientConnection *get_client_connection(Server *this, NetEvent *handshake_event) {
+ClientConnection *init_client_connection(Server *this, NetEvent *handshake_event) {
     NetArgs_InitialHandshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
@@ -80,6 +83,8 @@ ClientConnection *get_client_connection(Server *this, NetEvent *handshake_event)
 
     connection->recv_fd = handshake->client_to_server_fd;
     connection->send_fd = handshake->server_to_client_fd;
+
+    this->current_clients++;
 }
 
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
@@ -104,18 +109,40 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
     }
 }
 
-struct pollfd *make_client_pollfds(Server *this) {
-    PollRequestList *requests = malloc(sizeof(PollRequestList));
-    requests->count = 0;
+void handle_new_connections(Server *this) {
+    int connection_handler_read_fd = this->connection_handler_pipe[PIPE_READ];
 
-    for (int i = 0; i < this->max_clients; ++i) {
-        ClientConnection *current_client = this->clients[i];
-        if (current_client->is_free) {
-            continue;
-        }
+    struct pollfd check;
+    check.fd = connection_handler_read_fd;
+    check.events = POLLIN;
 
-        int recv_fd = current_client->recv_fd;
+    NetEventQueue *queue = this->connection_handler_recv_queue;
+
+    empty_net_event_queue(queue);
+
+    int ret = poll(&check, 1, 0);
+
+    if (ret <= 0) {
+        return;
     }
+
+    char *event_buffer;
+    while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
+        recv_event_queue(queue, event_buffer);
+
+        for (int i = 0; i < queue->event_count; ++i) {
+            NetEvent *event = queue->events[i];
+            void *args = event->args;
+
+            // Mark client as connected
+            if (event->protocol == INITIAL_HANDSHAKE) {
+                init_client_connection(this, event);
+            }
+        }
+    }
+
+    event_buffer = NULL; // I don't know if this is necessary
+    empty_net_event_queue(queue);
 }
 
 void server_run(Server *this) {
@@ -124,8 +151,8 @@ void server_run(Server *this) {
         connection_handler_init(this);
     }
 
-    int recv_fd = this->subserver_pipe[PIPE_READ];
-    set_nonblock(recv_fd);
+    // int recv_fd = this->subserver_pipe[PIPE_READ];
+    // set_nonblock(recv_fd);
 
     NetEventQueue *subserver_recv_queue = net_event_queue_new();
     NetEventQueue *send_queue = net_event_queue_new();
@@ -133,20 +160,23 @@ void server_run(Server *this) {
     struct pollfd *polls;
 
     while (1) {
+        handle_new_connections(this);
+
         // 2) Read all NetEvents
         empty_net_event_queue(subserver_recv_queue);
 
         int client_id;
         ssize_t bytes_read;
 
+        /*
         while (1) {
-            bytes_read = read(recv_fd, &client_id, sizeof(client_id));
+            bytes_read = read(STDIN_FILENO, &client_id, sizeof(client_id));
             // Done reading all messages
             if (bytes_read <= 0) {
                 break;
             }
 
-            char *event_buffer = read_into_buffer(recv_fd);
+            char *event_buffer = read_into_buffer(STDIN_FILENO);
             recv_event_queue(subserver_recv_queue, event_buffer);
 
             printf("ID: %d | Count: %d \n", client_id, subserver_recv_queue->event_count);
@@ -156,6 +186,7 @@ void server_run(Server *this) {
                 handle_core_server_net_event(this, client_id, subserver_recv_queue->events[i]);
             }
         }
+        */
 
         usleep(TICK_TIME_MICROSECONDS);
     }

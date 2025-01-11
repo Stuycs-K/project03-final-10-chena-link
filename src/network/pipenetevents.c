@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 
+#include "../shared.h"
 #include "pipenetevents.h"
 
 void send_periodic_handshake(NetBuffer *nb, void *args) {
@@ -18,6 +19,20 @@ void *recv_periodic_handshake(NetBuffer *nb, void *args) {
     return nargs;
 }
 
+NetArgs_InitialHandshake *nargs_initial_handshake() {
+    NetArgs_InitialHandshake *nargs = malloc(sizeof(NetArgs_InitialHandshake));
+
+    nargs->ack = -1;
+    nargs->errcode = -1;
+    nargs->syn_ack = -1;
+    nargs->client_to_server_fd = -1;
+    nargs->server_to_client_fd = -1;
+    nargs->client_id = -1;
+    nargs->to_client_pipe_name = calloc(sizeof(char), 13);
+
+    return nargs;
+}
+
 void send_initial_handshake(NetBuffer *nb, void *args) {
     NetArgs_InitialHandshake *nargs = args;
 
@@ -25,25 +40,20 @@ void send_initial_handshake(NetBuffer *nb, void *args) {
     NET_BUFFER_WRITE_VALUE(nb, nargs->ack);
     NET_BUFFER_WRITE_VALUE(nb, nargs->errcode);
 
-    // NET_BUFFER_WRITE_VALUE(nb, nargs->client_to_server_fd);
-
-    // NET_BUFFER_WRITE_VALUE(nb, nargs->server_to_client_fd);
-
     NET_BUFFER_WRITE_STRING(nb, nargs->to_client_pipe_name);
-
     NET_BUFFER_WRITE_VALUE(nb, nargs->client_id);
 }
 
 void *recv_initial_handshake(NetBuffer *nb, void *args) {
+    if (args == NULL) {
+        args = nargs_initial_handshake();
+    }
+
     NetArgs_InitialHandshake *nargs = args;
 
     NET_BUFFER_READ_VALUE(nb, nargs->syn_ack);
     NET_BUFFER_READ_VALUE(nb, nargs->ack);
     NET_BUFFER_READ_VALUE(nb, nargs->errcode);
-
-    // NET_BUFFER_READ_VALUE(nb, nargs->client_to_server_fd);
-
-    // NET_BUFFER_READ_VALUE(nb, nargs->server_to_client_fd);
 
     NET_BUFFER_READ_STRING(nb, nargs->to_client_pipe_name);
     NET_BUFFER_READ_VALUE(nb, nargs->client_id);

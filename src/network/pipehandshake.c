@@ -74,8 +74,6 @@ void server_get_send_fd(NetEvent *handshake_event) {
 
     recv_event_immediate(handshake_args->client_to_server_fd, handshake_event);
 
-    printf("got it\n");
-
     int send_fd = open(handshake_args->to_client_pipe_name, O_WRONLY, 0);
     handshake_args->server_to_client_fd = send_fd;
 }

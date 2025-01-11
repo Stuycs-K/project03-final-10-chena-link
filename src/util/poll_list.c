@@ -16,10 +16,7 @@ struct pollfd *insert_pollfd(PollList *this, int index, int fd) {
     struct pollfd *request = malloc(sizeof(struct pollfd));
     request->fd = fd;
 
-    if (this->requests[index] != NULL) {
-        free(this->requests[index]);
-        this->requests[index] = NULL;
-    }
+    remove_pollfd_by_index(this, index);
 
     this->requests[index] = request;
     this->count++;
@@ -34,6 +31,7 @@ void remove_pollfd_by_index(PollList *this, int index) {
 
     free(this->requests[index]);
     this->requests[index] = NULL;
+    this->count--;
 }
 
 void free_poll_list(PollList *this) {
