@@ -15,6 +15,7 @@ ClientInfoNode *client_info_new(int id);
 ClientInfoNode *get_client_info_for_id(ClientInfoNode *this, int id);
 ClientInfoNode *insert_client_list(ClientInfoNode *this, int id);
 ClientInfoNode *remove_client_list_by_id(ClientInfoNode *this, int id);
+ClientInfoNode *copy_client_list(ClientInfoNode *this);
 int get_client_list_size(ClientInfoNode *this);
 void print_client_list(ClientInfoNode *this);
 void free_client_list(ClientInfoNode *this);

@@ -78,8 +78,17 @@ int get_free_client_id(Server *this) {
 }
 
 void send_client_list(Server *this, int client_id) {
-    NetEvent *event = net_event_new(CLIENT_LIST, this->client_info_list);
-    event->cleanup_behavior = NEVENT_PERSISTENT_ARGS; // WE DO NOT WANT TO FREE THE LIST LOCALLY!
+    if (!this->client_info_changed) {
+        return;
+    }
+
+    ClientList *event_args = nargs_client_list();
+    event_args->local_client_id = client_id;                          // So the client knows who they
+    event_args->info_list = copy_client_list(this->client_info_list); // Copy the linked list
+
+    NetEvent *event = net_event_new(CLIENT_LIST, event_args);
+
+    server_send_event_to(this, client_id, event);
 }
 
 void handle_client_connection(Server *this, NetEvent *handshake_event) {
@@ -104,6 +113,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 
     this->current_clients++;
 
+    // Update client info list
     this->client_info_changed = 1;
     this->client_info_list = insert_client_list(this->client_info_list, client_id);
 }
@@ -111,6 +121,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 void handle_client_disconnect(Server *this, int client_id) {
     disconnect_client(this->clients[client_id]);
 
+    // Update client info list
     this->client_info_changed = 1;
     this->client_info_list = remove_client_list_by_id(this->client_info_list, client_id);
 
@@ -140,6 +151,8 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
 }
 
 void handle_connections(Server *this) {
+    this->client_info_changed = 0; // Reset flag
+
     NetEventQueue *queue = this->connection_handler_recv_queue;
     empty_net_event_queue(queue);
 
@@ -171,6 +184,11 @@ void handle_connections(Server *this) {
 
     event_buffer = NULL; // I don't know if this is necessary
     empty_net_event_queue(queue);
+
+    FOREACH_CLIENT(this) {
+        send_client_list(this, client_id);
+    }
+    END_FOREACH_CLIENT
 }
 
 struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {

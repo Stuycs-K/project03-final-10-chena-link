@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "clientlist.h"
 
@@ -58,6 +59,33 @@ ClientInfoNode *remove_client_list_by_id(ClientInfoNode *this, int id) {
     }
 
     return this;
+}
+
+ClientInfoNode *copy_client_list(ClientInfoNode *this) {
+    if (this == NULL) {
+        return NULL;
+    }
+
+    // Copy head
+    ClientInfoNode *new_head = malloc(sizeof(ClientInfoNode));
+    new_head->id = this->id;
+    strcpy(new_head->name, this->name);
+
+    // And the rest of the list
+    ClientInfoNode *current = new_head;
+    this = this->next;
+    while (this != NULL) {
+        current->next = malloc(sizeof(ClientInfoNode));
+        current = current->next;
+
+        current->id = this->id;
+        strcpy(current->name, this->name);
+
+        this = this->next;
+    }
+    current->next = NULL; // Set last element as tail
+
+    return new_head;
 }
 
 int get_client_list_size(ClientInfoNode *this) {
