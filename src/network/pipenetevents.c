@@ -7,23 +7,59 @@
 #include "../shared.h"
 #include "pipenetevents.h"
 
-void send_periodic_handshake(NetBuffer *nb, void *args) {
-    NetArgs_PeriodicHandshake *nargs = (NetArgs_PeriodicHandshake *)args;
-    NET_BUFFER_WRITE_VALUE(nb, nargs->id);
-}
+#define DECLARE_CONSTRUCTOR(net_args_type_name, internal_name) \
+    net_args_type_name *(nargs_##internal_name)() {            \
+        net_args_type_name *nargs = malloc(sizeof(net_args_type_name));
 
-void *recv_periodic_handshake(NetBuffer *nb, void *args) {
-    NetArgs_PeriodicHandshake *nargs = malloc(sizeof(NetArgs_PeriodicHandshake));
-    NET_BUFFER_READ_VALUE(nb, nargs->id);
+#define END_CONSTRUCTOR() \
+    return nargs;         \
+    }
 
-    return nargs;
+#define DECLARE_HANDLER(net_args_type_name, internal_name)               \
+    void *handler_##internal_name(NetBuffer *nb, void *args, int mode) { \
+        if (args == NULL) {                                              \
+            args = nargs_##internal_name();                              \
+        }                                                                \
+        net_args_type_name *nargs = args;
+
+#define VALUE(field)                      \
+    if (mode == 0) {                      \
+        NET_BUFFER_WRITE_VALUE(nb, field) \
+    } else {                              \
+        NET_BUFFER_READ_VALUE(nb, field)  \
+    }
+
+#define PTR(field, size)                  \
+    if (mode == 0) {                      \
+        NET_BUFFER_WRITE(nb, field, size) \
+    } else {                              \
+        NET_BUFFER_READ(nb, field, size)  \
+    }
+
+#define STRING(field)                      \
+    if (mode == 0) {                       \
+        NET_BUFFER_WRITE_STRING(nb, field) \
+    } else {                               \
+        NET_BUFFER_READ_STRING(nb, field)  \
+    }
+
+#define END_HANDLER() \
+    return nargs;     \
+    }
+
+DECLARE_CONSTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake) {
+    nargs->id = 69420;
 }
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(NetArgs_PeriodicHandshake, periodic_handshake) {
+    VALUE(nargs->id);
+}
+END_HANDLER()
 
 //============================================================
 
-NetArgs_InitialHandshake *nargs_initial_handshake() {
-    NetArgs_InitialHandshake *nargs = malloc(sizeof(NetArgs_InitialHandshake));
-
+DECLARE_CONSTRUCTOR(NetArgs_Handshake, handshake) {
     nargs->ack = -1;
     nargs->errcode = -1;
     nargs->syn_ack = -1;
@@ -32,12 +68,27 @@ NetArgs_InitialHandshake *nargs_initial_handshake() {
     nargs->server_to_client_fd = -1;
     nargs->client_id = -1;
     nargs->to_client_pipe_name = calloc(sizeof(char), 13);
-
-    return nargs;
 }
+END_CONSTRUCTOR()
 
-void send_initial_handshake(NetBuffer *nb, void *args) {
-    NetArgs_InitialHandshake *nargs = args;
+DECLARE_HANDLER(NetArgs_Handshake, handshake) {
+    VALUE(nargs->syn_ack);
+    VALUE(nargs->ack);
+    VALUE(nargs->errcode);
+    VALUE(nargs->are_fds_finalized);
+
+    if (nargs->are_fds_finalized) {
+        VALUE(nargs->client_to_server_fd);
+        VALUE(nargs->server_to_client_fd);
+    }
+
+    STRING(nargs->to_client_pipe_name);
+    VALUE(nargs->client_id);
+}
+END_HANDLER()
+
+void send_handshake(NetBuffer *nb, void *args) {
+    NetArgs_Handshake *nargs = args;
 
     NET_BUFFER_WRITE_VALUE(nb, nargs->syn_ack);
     NET_BUFFER_WRITE_VALUE(nb, nargs->ack);
@@ -53,12 +104,12 @@ void send_initial_handshake(NetBuffer *nb, void *args) {
     NET_BUFFER_WRITE_VALUE(nb, nargs->client_id);
 }
 
-void *recv_initial_handshake(NetBuffer *nb, void *args) {
+void *recv_handshake(NetBuffer *nb, void *args) {
     if (args == NULL) {
-        args = nargs_initial_handshake();
+        args = nargs_handshake();
     }
 
-    NetArgs_InitialHandshake *nargs = args;
+    NetArgs_Handshake *nargs = args;
 
     NET_BUFFER_READ_VALUE(nb, nargs->syn_ack);
     NET_BUFFER_READ_VALUE(nb, nargs->ack);
@@ -78,30 +129,15 @@ void *recv_initial_handshake(NetBuffer *nb, void *args) {
 
 //============================================================
 
-NetArgs_ClientConnect *nargs_client_connect() {
-    NetArgs_ClientConnect *nargs = malloc(sizeof(NetArgs_ClientConnect));
+DECLARE_CONSTRUCTOR(NetArgs_ClientConnect, client_connect) {
     nargs->name = calloc(sizeof(char), 20);
-
-    return nargs;
 }
+END_CONSTRUCTOR()
 
-void send_client_connect(NetBuffer *nb, void *args) {
-    NetArgs_ClientConnect *nargs = args;
-
-    NET_BUFFER_WRITE_STRING(nb, nargs->name);
-    NET_BUFFER_WRITE_VALUE(nb, nargs->to_client_fd);
+DECLARE_HANDLER(NetArgs_ClientConnect, client_connect) {
+    STRING(nargs->name);
+    VALUE(nargs->to_client_fd);
 }
-void *recv_client_connect(NetBuffer *nb, void *args) {
-    if (args == NULL) {
-        args = nargs_client_connect();
-    }
-
-    NetArgs_ClientConnect *nargs = args;
-
-    NET_BUFFER_READ_STRING(nb, nargs->name);
-    NET_BUFFER_READ_VALUE(nb, nargs->to_client_fd);
-
-    return nargs;
-}
+END_HANDLER()
 
 //============================================================

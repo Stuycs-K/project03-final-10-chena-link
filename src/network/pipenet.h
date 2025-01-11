@@ -192,7 +192,7 @@ struct NetBuffer {
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
-    INITIAL_HANDSHAKE,
+    HANDSHAKE,
     CLIENT_CONNECT,
     CLIENT_DISCONNECT,
 
@@ -209,6 +209,15 @@ typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
 typedef void *(*NetEventReader)(NetBuffer *nb, void *args);
 
 /*
+    Don't worry about calling this. It's handled automagically.
+
+    NetBuffer *nb : the NetBuffer
+    void *args: the arguments of a NetEvent
+    int mode : 0 is write mode, 1 is read mode
+*/
+typedef void *(*Handler)(NetBuffer *nb, void *args, int mode);
+
+/*
     Holds pointers to functions that read / write an event of the specified protocol.
 
     NetProtocol protocol : the protocol
@@ -219,11 +228,15 @@ typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
     NetProtocol protocol;
 
+    Handler handler_fn;
+
     NetEventWriter write_fn;
     NetEventReader read_fn;
 };
 
 /*
+    NetEvents wrap networked structs for networking.
+
     NetProtocol protocol : see NetProtocol
 
     int is_persistent : emptying a NetEventQueue will, by default, free all NetEvents.

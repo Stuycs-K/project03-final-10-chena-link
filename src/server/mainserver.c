@@ -77,7 +77,7 @@ int get_free_client_id(Server *this) {
 }
 
 void handle_client_connection(Server *this, NetEvent *handshake_event) {
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
+    NetArgs_Handshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
     // handshake->client_id = client_id;
@@ -151,7 +151,7 @@ void handle_connections(Server *this) {
             void *args = event->args;
 
             // Mark client as connected
-            if (event->protocol == INITIAL_HANDSHAKE) {
+            if (event->protocol == HANDSHAKE) {
                 handle_client_connection(this, event);
             }
         }

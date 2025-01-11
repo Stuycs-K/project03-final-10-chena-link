@@ -1,17 +1,28 @@
 #include "pipenet.h"
 
+/*
+    Declares 2 functions:
+    1) A constructor for the struct
+    2) The write / read function
+
+    net_args_type_name : the type name of the struct (from typedef)
+
+    internal_name : the suffix for each of the 3 functions
+        Convention is to chop off the NetArgs_ prefix of the type name and convert the rest to snake_case
+        So the internal name would for NetArgs_DoThis is do_this
+*/
+#define DECLARE_NET_ARGS(net_args_type_name, internal_name) \
+    net_args_type_name *(nargs_##internal_name)();          \
+    void *handler_##internal_name(NetBuffer *nb, void *args, int mode);
+
 #ifndef PIPENETEVENTS_H
 #define PIPENETEVENTS_H
-
-#define DECLARE_NET_STRUCT(type_name)
 
 typedef struct NetArgs_PeriodicHandshake NetArgs_PeriodicHandshake;
 struct NetArgs_PeriodicHandshake {
     int id;
 };
-
-void send_periodic_handshake(NetBuffer *nb, void *args);
-void *recv_periodic_handshake(NetBuffer *nb, void *args);
+DECLARE_NET_ARGS(NetArgs_PeriodicHandshake, periodic_handshake)
 
 typedef enum HandshakeErrCode HandshakeErrCode;
 enum HandshakeErrCode {
@@ -21,8 +32,8 @@ enum HandshakeErrCode {
     HEC_NO_LONGER_ACCEPTING_CONNECTIONS,
 };
 
-typedef struct NetArgs_InitialHandshake NetArgs_InitialHandshake;
-struct NetArgs_InitialHandshake {
+typedef struct NetArgs_Handshake NetArgs_Handshake;
+struct NetArgs_Handshake {
     char *to_client_pipe_name;
 
     int are_fds_finalized;
@@ -36,10 +47,7 @@ struct NetArgs_InitialHandshake {
 
     int client_id;
 };
-
-NetArgs_InitialHandshake *nargs_initial_handshake();
-void send_initial_handshake(NetBuffer *nb, void *args);
-void *recv_initial_handshake(NetBuffer *nb, void *args);
+DECLARE_NET_ARGS(NetArgs_Handshake, handshake)
 
 typedef struct NetArgs_ClientConnect NetArgs_ClientConnect;
 struct NetArgs_ClientConnect {
@@ -47,8 +55,6 @@ struct NetArgs_ClientConnect {
 
     int to_client_fd; // The main server will use this to send messages to the clients
 };
-
-void send_client_connect(NetBuffer *nb, void *args);
-void *recv_client_connect(NetBuffer *nb, void *args);
+DECLARE_NET_ARGS(NetArgs_ClientConnect, client_connect)
 
 #endif

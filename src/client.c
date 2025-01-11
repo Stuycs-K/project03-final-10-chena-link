@@ -30,7 +30,7 @@ void free_client_connect_event(NetEvent *event) {
 
 NetEvent *try_connect_to_server() {
     NetEvent *handshake_event = create_handshake_event();
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
+    NetArgs_Handshake *handshake = handshake_event->args;
 
     client_setup("TEMP", handshake_event);
     int succeeded = client_handshake(handshake_event);
@@ -60,7 +60,7 @@ void client_main(void) {
     if (handshake_event == NULL) {
         return;
     }
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
+    NetArgs_Handshake *handshake = handshake_event->args;
 
     int client_id = handshake->client_id;
     int to_server = handshake->client_to_server_fd;
