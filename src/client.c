@@ -18,6 +18,16 @@
 
 #define SHMID 1234567890
 
+void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
+    void *args = event->args;
+
+    switch (event->protocol) {
+
+    default:
+        break;
+    }
+}
+
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
 

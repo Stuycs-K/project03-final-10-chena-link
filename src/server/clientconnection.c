@@ -12,7 +12,7 @@ Client *client_connection_new(int id) {
     this->id = id;
     this->send_fd = -1;
     this->recv_fd = -1;
-
+    this->recently_connected = 0;
     this->is_free = CONNECTION_IS_FREE;
 
     this->send_queue = net_event_queue_new();

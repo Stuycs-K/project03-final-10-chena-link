@@ -7,6 +7,7 @@ typedef struct Client Client;
 struct Client {
     int id;
     int is_free;
+    int recently_connected; // Set to 1 upon a client joining, and 0 the next server tick.
 
     int send_fd;
     int recv_fd;

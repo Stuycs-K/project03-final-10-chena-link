@@ -111,6 +111,8 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->server_to_client_fd);
     client->send_fd = open(fd_path, O_WRONLY);
 
+    client->recently_connected = 1;
+
     printf("CLIENT CONNECTED %d \n", client->recv_fd);
 
     this->current_clients++;
@@ -182,6 +184,13 @@ struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {
 
 void handle_connections(Server *this) {
     this->client_info_changed = 0; // Reset flag
+
+    FOREACH_CLIENT(this) {
+        if (client->recently_connected) {
+            client->recently_connected = 0;
+        }
+    }
+    END_FOREACH_CLIENT()
 
     NetEventQueue *queue = this->connection_handler_recv_queue;
     empty_net_event_queue(queue);

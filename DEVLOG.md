@@ -26,8 +26,12 @@ This document must be updated daily by EACH group member.
 
 ### 2024-01-10 - Overhaul
 * Servers no longer use subservers. Instead, they use poll. Much cleaner. 2 hours.
-* Finish refactoring GServer, started yesterday. 2 hours.
+* Finish refactoring GServer, started yesterday. Also refactor the pipenet library so that there's less manual labor involved. 2 hours.
 * Begin writing CServer. 20 minutes.
+
+## 2024-01-11 - 
+* Implement a networked client list so that clients can know which other clients are connected. 1 hour.
+* Cleanup client.c by offloading network functions into the baseclient module. 2 hours.
 
 ## Kevin Lin
 
