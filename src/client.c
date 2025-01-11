@@ -56,9 +56,6 @@ void client_main(void) {
     NetEvent *gserver_client_list_event = net_event_new(CLIENT_LIST, gserver_client_list);
     gserver_client_list_event->cleanup_behavior = NEVENT_PERSISTENT;
 
-    NetEvent *client_connect_event = create_client_connect_event();
-    NetArgs_ClientConnect *client_connect = client_connect_event->args;
-
     // Everything below here will be looped in the future!
     NetEvent *handshake_event = try_connect_to_server();
     if (handshake_event == NULL) {
@@ -66,21 +63,16 @@ void client_main(void) {
     }
     NetArgs_Handshake *handshake = handshake_event->args;
 
-    int client_id = handshake->client_id;
+    int gclient_id = handshake->client_id;
     int to_server = handshake->client_to_server_fd;
     int from_server = handshake->server_to_client_fd;
+    // SET RECEIVE FO TO NONBLOCK MODE!
+    set_nonblock(from_server);
 
-    printf("This is %d, sending to %d\n", client_id, to_server);
-
-    // First packet we send is a confirmation of our connection
-    client_connect->to_client_fd = from_server;
-    send_event_immediate(client_connect_event, to_server);
+    printf("Sending to %d\n", to_server);
 
     NetEventQueue *send_queue = net_event_queue_new();
     NetEventQueue *recv_queue = net_event_queue_new();
-
-    // SET RECEIVE FO TO NONBLOCK MODE!
-    set_nonblock(from_server);
 
     card deck[100];
     int num_cards = 7;
@@ -113,8 +105,8 @@ void client_main(void) {
 
                 case CLIENT_LIST: {
                     ClientList *nargs = args;
-                    client_id = nargs->local_client_id;
-                    printf("Our client ID: %d\n", client_id);
+                    gclient_id = nargs->local_client_id;
+                    printf("Our GServer client ID: %d\n", gclient_id);
                     print_client_list(nargs->info_list);
                     break;
                 }
@@ -123,6 +115,10 @@ void client_main(void) {
                     break;
                 }
             }
+        }
+
+        if (gclient_id < 0) {
+            continue;
         }
 
         printf("Current card: Color: %d Num: %d\n", data->color, data->num);
@@ -148,7 +144,7 @@ void client_main(void) {
             }
         }
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 1; ++i) {
             NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
             test_args->id = rand();
 

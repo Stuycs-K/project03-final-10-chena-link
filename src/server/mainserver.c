@@ -83,7 +83,7 @@ void send_client_list(Server *this, int client_id) {
     }
 
     ClientList *event_args = nargs_client_list();
-    event_args->local_client_id = client_id;                          // So the client knows who they
+    event_args->local_client_id = client_id;                          // So the client knows who they are
     event_args->info_list = copy_client_list(this->client_info_list); // Copy the linked list
 
     NetEvent *event = net_event_new(CLIENT_LIST, event_args);
@@ -118,12 +118,37 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     this->client_info_list = insert_client_list(this->client_info_list, client_id);
 }
 
+// This gets called during the receive phase.
+// By this point, if any clients joined, we've already sent the client list to each client's queue.
+// That means, of course, we have to go into each client's send queue and update the event. Wow.
+// Otherwise, if no one else joined this tick, we have to send to client list to everyone again.
 void handle_client_disconnect(Server *this, int client_id) {
     disconnect_client(this->clients[client_id]);
 
     // Update client info list
-    this->client_info_changed = 1;
     this->client_info_list = remove_client_list_by_id(this->client_info_list, client_id);
+    printf("size after removing: %d\n", get_client_list_size(this->client_info_list));
+
+    if (this->client_info_changed) {
+        FOREACH_CLIENT(this) {
+            NetEventQueue *send_queue = client->send_queue;
+            for (int i = 0; i < send_queue->event_count; ++i) {
+                NetEvent *event = send_queue->events[i];
+                if (event->protocol == CLIENT_LIST) {
+                    ClientList *nargs = event->args;
+                    nargs->info_list = remove_client_list_by_id(nargs->info_list, client_id);
+                }
+            }
+        }
+        END_FOREACH_CLIENT()
+    } else {
+        this->client_info_changed = 1;
+
+        FOREACH_CLIENT(this) {
+            send_client_list(this, client_id);
+        }
+        END_FOREACH_CLIENT()
+    }
 
     this->current_clients--;
 }
@@ -147,6 +172,15 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
 
     default:
         break;
+    }
+}
+
+struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {
+    for (int i = 0; i < size; ++i) {
+        struct pollfd current = pollfds[i];
+        if (current.fd == fd) {
+            return current;
+        }
     }
 }
 
@@ -185,19 +219,12 @@ void handle_connections(Server *this) {
     event_buffer = NULL; // I don't know if this is necessary
     empty_net_event_queue(queue);
 
+    // The first event sent to all clients is the client list.
+    // Newly joined clients MUST set their client_id as soon as possible.
     FOREACH_CLIENT(this) {
         send_client_list(this, client_id);
     }
-    END_FOREACH_CLIENT
-}
-
-struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {
-    for (int i = 0; i < size; ++i) {
-        struct pollfd current = pollfds[i];
-        if (current.fd == fd) {
-            return current;
-        }
-    }
+    END_FOREACH_CLIENT()
 }
 
 void server_recv_events(Server *this) {
@@ -212,7 +239,7 @@ void server_recv_events(Server *this) {
 
         pollfds[pollcount++] = pollfd;
     }
-    END_FOREACH_CLIENT
+    END_FOREACH_CLIENT()
 
     int ret = poll(pollfds, this->current_clients, 0);
     if (ret <= 0) { // Nobody sent anything
@@ -223,6 +250,7 @@ void server_recv_events(Server *this) {
         struct pollfd poll_request = get_pollfd_for_client(pollfds, this->current_clients, client->recv_fd);
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
+            printf("CLIENT DISCONNECT\n");
             handle_client_disconnect(this, client_id);
             continue;
         }
@@ -242,7 +270,7 @@ void server_recv_events(Server *this) {
             handle_core_server_net_event(this, client_id, queue->events[i]);
         }
     }
-    END_FOREACH_CLIENT
+    END_FOREACH_CLIENT()
 }
 
 // Call after you finish processing all NetEvents
@@ -250,7 +278,7 @@ void server_empty_recv_events(Server *this) {
     FOREACH_CLIENT(this) {
         empty_net_event_queue(client->recv_queue);
     }
-    END_FOREACH_CLIENT
+    END_FOREACH_CLIENT()
 }
 
 /*
@@ -267,7 +295,7 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
     FOREACH_CLIENT(this) {
         server_send_event_to(this, client_id, event);
     }
-    END_FOREACH_CLIENT
+    END_FOREACH_CLIENT()
 }
 
 /*
@@ -278,7 +306,7 @@ void server_send_events(Server *this) {
         send_event_queue(client->send_queue, client->send_fd);
         empty_net_event_queue(client->send_queue);
     }
-    END_FOREACH_CLIENT
+    END_FOREACH_CLIENT()
 }
 
 void server_start_connection_handler(Server *this) {

@@ -13,7 +13,7 @@
             continue;                                                         \
         }
 
-#define END_FOREACH_CLIENT }
+#define END_FOREACH_CLIENT() }
 
 typedef enum ServerStatus ServerStatus;
 enum ServerStatus {
