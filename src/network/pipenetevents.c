@@ -1,12 +1,16 @@
-// Place send and recv handlers for each network protocol here.
-// They should be named "send_[protocol name in lowercase]" and "recv_[protocol name in lowercase]"
-// Then, bind them in net_init() in pipenet.c
+/*
+    For each protocol:
+
+    Build a constructor function with DECLARE_CONSTRUCTOR. Make sure to close it with END_CONSTRUCTOR
+    Build a handler function with DECLARE_HANDLER. Make sure to close it with END_HANDLER
+*/
 
 #include <stdio.h>
 
 #include "../shared.h"
 #include "pipenetevents.h"
 
+// The variable "nargs" is available and has the correct type
 #define DECLARE_CONSTRUCTOR(net_args_type_name, internal_name) \
     net_args_type_name *(nargs_##internal_name)() {            \
         net_args_type_name *nargs = malloc(sizeof(net_args_type_name));
@@ -15,6 +19,7 @@
     return nargs;         \
     }
 
+// The variable "nargs" is available and has the correct type
 #define DECLARE_HANDLER(net_args_type_name, internal_name)               \
     void *handler_##internal_name(NetBuffer *nb, void *args, int mode) { \
         if (args == NULL) {                                              \
@@ -22,6 +27,7 @@
         }                                                                \
         net_args_type_name *nargs = args;
 
+// Read / write a non-pointer field
 #define VALUE(field)                      \
     if (mode == 0) {                      \
         NET_BUFFER_WRITE_VALUE(nb, field) \
@@ -29,6 +35,7 @@
         NET_BUFFER_READ_VALUE(nb, field)  \
     }
 
+// Read / write a pointer field (needs size)
 #define PTR(field, size)                  \
     if (mode == 0) {                      \
         NET_BUFFER_WRITE(nb, field, size) \
@@ -36,6 +43,7 @@
         NET_BUFFER_READ(nb, field, size)  \
     }
 
+// Read / write a string (char *) field
 #define STRING(field)                      \
     if (mode == 0) {                       \
         NET_BUFFER_WRITE_STRING(nb, field) \
@@ -46,6 +54,8 @@
 #define END_HANDLER() \
     return nargs;     \
     }
+
+//============================================================
 
 DECLARE_CONSTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake) {
     nargs->id = 69420;
@@ -86,46 +96,6 @@ DECLARE_HANDLER(NetArgs_Handshake, handshake) {
     VALUE(nargs->client_id);
 }
 END_HANDLER()
-
-void send_handshake(NetBuffer *nb, void *args) {
-    NetArgs_Handshake *nargs = args;
-
-    NET_BUFFER_WRITE_VALUE(nb, nargs->syn_ack);
-    NET_BUFFER_WRITE_VALUE(nb, nargs->ack);
-    NET_BUFFER_WRITE_VALUE(nb, nargs->errcode);
-
-    NET_BUFFER_WRITE_VALUE(nb, nargs->are_fds_finalized);
-    if (nargs->are_fds_finalized) {
-        NET_BUFFER_WRITE_VALUE(nb, nargs->client_to_server_fd);
-        NET_BUFFER_WRITE_VALUE(nb, nargs->server_to_client_fd);
-    }
-
-    NET_BUFFER_WRITE_STRING(nb, nargs->to_client_pipe_name);
-    NET_BUFFER_WRITE_VALUE(nb, nargs->client_id);
-}
-
-void *recv_handshake(NetBuffer *nb, void *args) {
-    if (args == NULL) {
-        args = nargs_handshake();
-    }
-
-    NetArgs_Handshake *nargs = args;
-
-    NET_BUFFER_READ_VALUE(nb, nargs->syn_ack);
-    NET_BUFFER_READ_VALUE(nb, nargs->ack);
-    NET_BUFFER_READ_VALUE(nb, nargs->errcode);
-
-    NET_BUFFER_READ_VALUE(nb, nargs->are_fds_finalized);
-    if (nargs->are_fds_finalized) {
-        NET_BUFFER_READ_VALUE(nb, nargs->client_to_server_fd);
-        NET_BUFFER_READ_VALUE(nb, nargs->server_to_client_fd);
-    }
-
-    NET_BUFFER_READ_STRING(nb, nargs->to_client_pipe_name);
-    NET_BUFFER_READ_VALUE(nb, nargs->client_id);
-
-    return nargs;
-}
 
 //============================================================
 

@@ -1,6 +1,8 @@
 #include "pipenet.h"
 
 /*
+    Use this macro after every NetArgs typedef.
+
     Declares 2 functions:
     1) A constructor for the struct
     2) The write / read function

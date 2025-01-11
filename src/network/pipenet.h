@@ -200,39 +200,14 @@ enum NetProtocol {
 };
 
 /*
-    Don't worry about calling these. They're handled automatically.
-
-    NetBuffer *nb : the NetBuffer
-    void *args: the arguments of a NetEvent
-*/
-typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
-typedef void *(*NetEventReader)(NetBuffer *nb, void *args);
-
-/*
     Don't worry about calling this. It's handled automagically.
+    Reads / writes an event of a specific protocol. Composed with macros in pipenetevents.c
 
     NetBuffer *nb : the NetBuffer
     void *args: the arguments of a NetEvent
     int mode : 0 is write mode, 1 is read mode
 */
-typedef void *(*Handler)(NetBuffer *nb, void *args, int mode);
-
-/*
-    Holds pointers to functions that read / write an event of the specified protocol.
-
-    NetProtocol protocol : the protocol
-    NetEventWriter write_fn : the function that will be called to write the event's arguments into the NetBuffer
-    NetEventReader read_fn : the function that will be called to read the event's arguments from the NetBuffer, into a NetEvent's args.
-*/
-typedef struct NetEventHandler NetEventHandler;
-struct NetEventHandler {
-    NetProtocol protocol;
-
-    Handler handler_fn;
-
-    NetEventWriter write_fn;
-    NetEventReader read_fn;
-};
+typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
 
 /*
     NetEvents wrap networked structs for networking.

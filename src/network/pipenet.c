@@ -8,9 +8,7 @@
 #define BIND(protocol, internal_name) \
     handlers[protocol] = handler_##internal_name;
 
-NetEventHandler *net_event_handlers[PROTOCOL_COUNT];
-
-Handler handlers[PROTOCOL_COUNT];
+NetEventHandler handlers[PROTOCOL_COUNT];
 
 NetBuffer *net_buffer_send() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
@@ -183,8 +181,6 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
     NetProtocol protocol;
     NET_BUFFER_READ_VALUE(nb, protocol);
 
-    NetEventHandler *handler = net_event_handlers[protocol];
-
     void *data;
     if (recv_event == NULL) { // Create our own NetEvent
         data = handlers[protocol](nb, NULL, 1);
@@ -199,54 +195,8 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
     }
 }
 
-void bind_send_event(NetProtocol protocol, NetEventWriter writer) {
-    NetEventHandler *existing_handler = net_event_handlers[protocol];
-    if (existing_handler != NULL) {
-        if (existing_handler->write_fn != NULL) {
-            printf("NetEventHandler already has a bound writer\n");
-            return;
-        }
-
-        existing_handler->write_fn = writer;
-        return;
-    }
-
-    net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
-    net_event_handlers[protocol]->protocol = protocol;
-    net_event_handlers[protocol]->write_fn = writer;
-}
-
-void bind_recv_event(NetProtocol protocol, NetEventReader reader) {
-    NetEventHandler *existing_handler = net_event_handlers[protocol];
-    if (existing_handler != NULL) {
-        if (existing_handler->read_fn != NULL) {
-            printf("NetEventHandler already has a bound reader\n");
-            return;
-        }
-
-        existing_handler->read_fn = reader;
-        return;
-    }
-
-    net_event_handlers[protocol] = malloc(sizeof(NetEventHandler));
-    net_event_handlers[protocol]->protocol = protocol;
-    net_event_handlers[protocol]->read_fn = reader;
-}
-
 void net_init() {
-    for (int i = 0; i < PROTOCOL_COUNT; ++i) {
-        net_event_handlers[i] = malloc(sizeof(NetEventHandler));
-        net_event_handlers[i]->protocol = i; // This should work. Just don't change the starting value of enum NetProtocol
-    }
-
+    BIND(PERIODIC_HANDSHAKE, periodic_handshake);
     BIND(HANDSHAKE, handshake);
-
-    bind_send_event(PERIODIC_HANDSHAKE, send_periodic_handshake);
-    bind_recv_event(PERIODIC_HANDSHAKE, recv_periodic_handshake);
-
-    bind_send_event(HANDSHAKE, send_handshake);
-    bind_recv_event(HANDSHAKE, recv_handshake);
-
-    bind_send_event(CLIENT_CONNECT, send_client_connect);
-    bind_recv_event(CLIENT_CONNECT, recv_client_connect);
+    BIND(CLIENT_CONNECT, client_connect);
 }
