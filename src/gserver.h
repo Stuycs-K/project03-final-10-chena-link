@@ -12,6 +12,7 @@
 
 typedef enum GServerStatus GServerStatus;
 enum GServerStatus {
+    GSS_UNRESERVED,
     GSS_WAITING_FOR_PLAYERS, // Not reached max_clients
     GSS_FULL,                // Server has reached max_clients
     GSS_STARTING,            // Host has started countdown
@@ -21,6 +22,7 @@ enum GServerStatus {
 typedef struct GServer GServer;
 struct GServer {
     GServerStatus status;
+    int cserver_pipes[2];
 
     Server *server;
 };

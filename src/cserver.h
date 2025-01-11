@@ -9,6 +9,7 @@
 typedef struct CServer CServer;
 struct CServer {
     GServer **gserver_list;
+    int gserver_count;
     Server *server;
 };
 

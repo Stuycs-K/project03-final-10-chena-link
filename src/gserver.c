@@ -43,17 +43,13 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
 void gserver_loop(GServer *this) {
     Server *server = this->server;
 
-    for (int client_id = 0; client_id < server->max_clients; ++client_id) {
-        Client *client = server->clients[client_id];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(server) {
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {
             gserver_handle_net_event(this, client_id, queue->events[i]);
         }
     }
+    END_FOREACH_CLIENT()
 
     /* BELOW IS A TEST FOR SERVER SEND
     NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));

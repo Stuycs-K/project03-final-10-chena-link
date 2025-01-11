@@ -15,11 +15,13 @@ Server *server_new(int server_id) {
     Server *this = malloc(sizeof(Server));
 
     this->status = SSTATUS_OPEN;
+
     this->max_clients = 2;
     this->current_clients = 0;
     this->id = server_id;
 
-    this->name = NULL;
+    strcpy(this->name, "Server"); // Set default name
+    this->wkp_name[0] = 0;        // Null out WKP
 
     this->connection_handler_pid = -1;
     this->connection_handler_recv_queue = net_event_queue_new();

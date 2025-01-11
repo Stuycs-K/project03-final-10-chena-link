@@ -1,5 +1,6 @@
 #include "pipenet.h"
 
+#include "../shared.h"
 #include "clientlist.h"
 
 /*
@@ -79,8 +80,12 @@ struct GServerInfo {
     int current_clients;
     int max_clients;
 
-    char name[20];
-    char wkp_name[10];
+    char name[MAX_GSERVER_NAME_CHARACTERS];
+    char wkp_name[GSERVER_WKP_NAME_LEN];
+};
+
+typedef struct GServerList GServerList;
+struct GServerList {
 };
 DECLARE_NET_ARGS(GServerInfo, gserver_info)
 

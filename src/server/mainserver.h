@@ -1,6 +1,7 @@
 #include <poll.h>
 
 #include "../network/clientlist.h"
+#include "../shared.h"
 #include "clientconnection.h"
 
 #ifndef MAINSERVER_H
@@ -30,7 +31,8 @@ struct Server {
 
     int id; // Given by the central server
 
-    char *name;
+    char name[MAX_GSERVER_NAME_CHARACTERS]; // A name a client can give the server.
+    char wkp_name[GSERVER_WKP_NAME_LEN];    // Given by the central server. Used by clients to connect.
 
     Client **clients; // FDs and queues for each client
 
@@ -45,16 +47,25 @@ struct Server {
 };
 
 Server *server_new(int server_id);
+
 void server_start_connection_handler(Server *this);
+
 void server_set_max_clients(Server *this, int max_clients);
+
 void server_run(Server *this);
+
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event);
+
 void handle_connections(Server *this);
+
 void server_recv_events(Server *this);
+
 void server_send_events(Server *this);
+
 void server_empty_recv_events(Server *this);
 
 void server_send_event_to(Server *this, int client_id, NetEvent *event);
+
 void server_send_event_to_all(Server *this, NetEvent *event);
 
 #endif
