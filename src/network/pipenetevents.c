@@ -122,8 +122,12 @@ DECLARE_HANDLER(ClientList, client_list) {
     VALUE(nargs->local_client_id);
 
     if (mode == 0) {
-        // Writing the linked list:
+        // Writing the linked list: First, write the size and then write the properties of each node
         ClientInfoNode *node = nargs->info_list;
+
+        int total_clients = get_client_list_size(node);
+        VALUE(total_clients);
+
         while (node != NULL) {
             VALUE(node->id);
             STRING(node->name);
@@ -136,9 +140,14 @@ DECLARE_HANDLER(ClientList, client_list) {
         }
 
         int total_clients;
-        NET_BUFFER_READ_VALUE(nb, total_clients);
+        VALUE(total_clients);
 
         for (int i = 0; i < total_clients; ++i) {
+            int client_id;
+            VALUE(client_id);
+
+            nargs->info_list = insert_client_list(nargs->info_list, client_id);
+            STRING(nargs->info_list->name)
         }
     }
 }

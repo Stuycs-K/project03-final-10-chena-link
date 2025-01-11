@@ -52,6 +52,10 @@ void client_main(void) {
     shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
 
+    ClientList *gserver_client_list = nargs_client_list();
+    NetEvent *gserver_client_list_event = net_event_new(CLIENT_LIST, gserver_client_list);
+    gserver_client_list_event->is_persistent = 1;
+
     NetEvent *client_connect_event = create_client_connect_event();
     NetArgs_ClientConnect *client_connect = client_connect_event->args;
 
@@ -104,6 +108,14 @@ void client_main(void) {
                 case PERIODIC_HANDSHAKE: {
                     NetArgs_PeriodicHandshake *nargs = args;
                     printf("we GOT from server: %d\n", nargs->id);
+                    break;
+                }
+
+                case CLIENT_LIST: {
+                    ClientList *nargs = args;
+                    client_id = nargs->local_client_id;
+                    printf("Our client ID: %d\n", client_id);
+                    print_client_list(nargs->info_list);
                     break;
                 }
 

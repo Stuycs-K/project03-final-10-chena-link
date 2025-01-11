@@ -48,6 +48,7 @@ NetEvent *net_event_new(NetProtocol protocol, void *args) {
     net_event->protocol = protocol;
     net_event->args = args;
     net_event->is_persistent = 0;
+    net_event->is_args_persistent = 0;
     return net_event;
 }
 
@@ -74,6 +75,11 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
 void empty_net_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event = net_event_queue->events[i];
+
+        if (event->is_args_persistent) {
+            event->args = NULL; // Don't free the args!
+            free(net_event_queue->events[i]);
+        }
 
         if (!event->is_persistent) {
             free(event->args);

@@ -27,6 +27,7 @@ Server *server_new(int server_id) {
     pipe(this->connection_handler_pipe);
     set_nonblock(this->connection_handler_pipe[PIPE_READ]);
 
+    this->client_info_list = NULL;
     this->clients = malloc(sizeof(Client *) * this->max_clients);
     for (int i = 0; i < this->max_clients; ++i) {
         this->clients[i] = client_connection_new(i);
@@ -76,17 +77,22 @@ int get_free_client_id(Server *this) {
     return -1;
 }
 
+void send_client_list(Server *this, int client_id) {
+    NetEvent *event = net_event_new(CLIENT_LIST, this->client_info_list);
+    event->is_args_persistent = 1; // WE DO NOT WANT TO FREE THE LIST LOCALLY!
+}
+
 void handle_client_connection(Server *this, NetEvent *handshake_event) {
     NetArgs_Handshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
-    // handshake->client_id = client_id;
-
     Client *client = this->clients[client_id];
 
     client->is_free = CONNECTION_IS_USED;
 
-    // THE HANDSHAKE FDs ARE NOT THE MAIN SERVER'S FDS! We have to use this magic to open the process's FDs as our own.
+    // THE FDs IN THE HANDSHAKE ARE NOT THE MAIN SERVER'S FDS!
+    // The connection handler (separate process) opens the pipes, so the FDs aren't shared with the main server.
+    // We have to use this magic to open the process's FDs as our own.
     char fd_path[64];
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->client_to_server_fd);
     client->recv_fd = open(fd_path, O_RDONLY);
@@ -98,11 +104,15 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 
     this->current_clients++;
 
-    // ClientConnection *client_connection = nargs_gserver_connection();
+    this->client_info_changed = 1;
+    this->client_info_list = insert_client_list(this->client_info_list, client_id);
 }
 
 void handle_client_disconnect(Server *this, int client_id) {
     disconnect_client(this->clients[client_id]);
+
+    this->client_info_changed = 1;
+    this->client_info_list = remove_client_list_by_id(this->client_info_list, client_id);
 
     this->current_clients--;
 }

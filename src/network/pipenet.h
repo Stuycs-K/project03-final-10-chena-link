@@ -220,6 +220,9 @@ typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
         Setting is_persistent to 1 will exempt it from being freed.
         Useful for reusing an event instead of constantly rebuilding it.
 
+    int is_args_persistent : setting to 1 will cause the NetEvent wrapper to be freed, but NOT the args.
+        Recommended to set this to 1 for sending events.
+
     void *args : a struct of data linked to the NetProtocol
         Must be cast into the correct NetArgs object with a statement such as NetArgs_EventName *nargs = event->args;
         Can be freely manipulated from that point onward.
@@ -228,6 +231,7 @@ typedef struct NetEvent NetEvent;
 struct NetEvent {
     NetProtocol protocol;
     int is_persistent;
+    int is_args_persistent;
     void *args;
 };
 

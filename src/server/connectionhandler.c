@@ -51,6 +51,9 @@ void connection_handler_init(Server *this) {
 
             exit(EXIT_SUCCESS);
         } else {
+            // close(handshake->client_to_server_fd);
+            // close(handshake->server_to_client_fd);
+
             free_handshake_event(handshake_event);
         }
     }

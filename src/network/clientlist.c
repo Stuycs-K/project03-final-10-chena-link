@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "clientlist.h"
@@ -66,6 +67,16 @@ int get_client_list_size(ClientInfoNode *this) {
         this = this->next;
     }
     return size;
+}
+
+void print_client_list(ClientInfoNode *this) {
+    printf("|| CLIENT LIST ||\n");
+    printf("Size: %d\n", get_client_list_size(this));
+
+    while (this != NULL) {
+        printf("[%d]: %s\n", this->id, this->name);
+        this = this->next;
+    }
 }
 
 void free_client_list(ClientInfoNode *this) {

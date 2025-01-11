@@ -1,5 +1,6 @@
 #include <poll.h>
 
+#include "../network/clientlist.h"
 #include "clientconnection.h"
 
 #ifndef MAINSERVER_H
@@ -31,7 +32,10 @@ struct Server {
 
     char *name;
 
-    Client **clients;
+    Client **clients; // FDs and queues for each client
+
+    int client_info_changed;          // A flag to send client_info_list if a client joined / disconnected
+    ClientInfoNode *client_info_list; // Networked to clients
 
     pid_t connection_handler_pid;
     NetEventQueue *connection_handler_recv_queue;
