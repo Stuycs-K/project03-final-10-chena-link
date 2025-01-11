@@ -204,6 +204,7 @@ typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
     INITIAL_HANDSHAKE,
+    CH_CLIENT_CONNECT, // Used by connection handler
     CLIENT_CONNECT,
     CLIENT_DISCONNECT,
 

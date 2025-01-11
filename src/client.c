@@ -57,7 +57,7 @@ void client_main(void) {
     int to_server = handshake->client_to_server_fd;
     int from_server = handshake->server_to_client_fd;
 
-    printf("This is %d\n", client_id);
+    printf("This is %d, sending to %d\n", client_id, to_server);
 
     // First packet we send is a confirmation of our connection
     client_connect->to_client_fd = from_server;
@@ -132,6 +132,7 @@ void client_main(void) {
         }
 
         // Finally, send event queue
+        printf("send queue\n");
         send_event_queue(net_send_queue, to_server);
         empty_net_event_queue(net_send_queue);
 

@@ -71,7 +71,7 @@ int get_free_client_id(Server *this) {
     return -1;
 }
 
-ClientConnection *init_client_connection(Server *this, NetEvent *handshake_event) {
+void handle_client_connection(Server *this, NetEvent *handshake_event) {
     NetArgs_InitialHandshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
@@ -86,9 +86,18 @@ ClientConnection *init_client_connection(Server *this, NetEvent *handshake_event
 
     // Register for polling.
     struct pollfd *request = insert_pollfd(this->client_poll_list, client_id, connection->recv_fd);
-    request->events = POLLIN; // Only poll for new data to read
+    request->events = POLLIN; // Only poll for new data to
+
+    printf("CLIENT CONNECTED: To server FD is %d\n", connection->send_fd);
 
     this->current_clients++;
+}
+
+void handle_client_disconnect(Server *this, int client_id) {
+    remove_pollfd_by_index(this->client_poll_list, client_id);
+    disconnect_client(this->clients[client_id]);
+
+    this->current_clients--;
 }
 
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
@@ -113,19 +122,17 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
     }
 }
 
-void handle_new_connections(Server *this) {
+void handle_connections(Server *this) {
+    NetEventQueue *queue = this->connection_handler_recv_queue;
+    empty_net_event_queue(queue);
+
     int connection_handler_read_fd = this->connection_handler_pipe[PIPE_READ];
 
     struct pollfd check;
     check.fd = connection_handler_read_fd;
     check.events = POLLIN;
 
-    NetEventQueue *queue = this->connection_handler_recv_queue;
-
-    empty_net_event_queue(queue);
-
     int ret = poll(&check, 1, 0);
-
     if (ret <= 0) {
         return;
     }
@@ -140,7 +147,7 @@ void handle_new_connections(Server *this) {
 
             // Mark client as connected
             if (event->protocol == INITIAL_HANDSHAKE) {
-                init_client_connection(this, event);
+                handle_client_connection(this, event);
             }
         }
     }
@@ -154,6 +161,7 @@ void server_recv_events(Server *this) {
 
     int ret = poll(*polls->requests, polls->count, 0);
     if (ret <= 0) { // Nobody sent anything
+        printf("ret: %d, %d\n", ret, polls->count);
         return;
     }
 
@@ -166,9 +174,36 @@ void server_recv_events(Server *this) {
         struct pollfd *poll_request = polls->requests[client_id];
 
         if (poll_request->revents & POLLERR) {
-            disconnect_client(client);
-            // Client disconnect.
+            printf("client disconnect\n");
+            handle_client_disconnect(this, client_id);
         }
+
+        if (!(poll_request->revents & POLLIN)) { // This client hasn't done anything
+            continue;
+        }
+
+        char *event_buffer = read_into_buffer(client->recv_fd);
+
+        NetEventQueue *queue = client->recv_queue;
+        recv_event_queue(queue, event_buffer);
+
+        printf("ID: %d | Count: %d \n", client_id, queue->event_count);
+
+        for (int i = 0; i < queue->event_count; ++i) {
+            handle_core_server_net_event(this, client_id, queue->events[i]);
+        }
+    }
+}
+
+// Call after you finish processing all NetEvents
+void server_empty_recv_events(Server *this) {
+    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
+        ClientConnection *client = this->clients[client_id];
+        if (client->is_free) {
+            continue;
+        }
+
+        empty_net_event_queue(client->recv_queue);
     }
 }
 
@@ -199,7 +234,9 @@ void server_run(Server *this) {
     struct pollfd *polls;
 
     while (1) {
-        handle_new_connections(this);
+        handle_connections(this);
+
+        server_recv_events(this);
 
         // 2) Read all NetEvents
 
@@ -226,6 +263,9 @@ void server_run(Server *this) {
         }
         */
 
+        server_empty_recv_events(this);
+
+        server_send_events(this);
         usleep(TICK_TIME_MICROSECONDS);
     }
 }

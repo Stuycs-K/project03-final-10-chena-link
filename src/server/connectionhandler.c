@@ -8,6 +8,9 @@
 
 /*
     Listens to WKP. When a client opens it, they complete the handshake.
+
+    If they send the correct ACK, send the handshake struct back to the host server
+    to inform them that the client connected.
 */
 void connection_handler_init(Server *this) {
     NetEventQueue *send_host_queue = net_event_queue_new();
@@ -39,7 +42,9 @@ void connection_handler_init(Server *this) {
                 exit(EXIT_FAILURE);
             }
 
-            // Inform the host server that a client connected.
+            NetArgs_InitialHandshake *handshake = handshake_event->args;
+            handshake->are_fds_finalized = 1;
+
             send_event_immediate(handshake_event, send_to_host_server_fd);
 
             exit(EXIT_SUCCESS);

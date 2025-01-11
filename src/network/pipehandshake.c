@@ -17,16 +17,7 @@
 #define HANDSHAKE_DEBUG
 
 NetEvent *create_handshake_event() {
-    NetArgs_InitialHandshake *nargs = malloc(sizeof(NetArgs_InitialHandshake));
-
-    nargs->ack = -1;
-    nargs->errcode = -1;
-    nargs->syn_ack = -1;
-    nargs->client_to_server_fd = -1;
-    nargs->server_to_client_fd = -1;
-    nargs->client_id = -1;
-    nargs->to_client_pipe_name = calloc(sizeof(char), HANDSHAKE_BUFFER_SIZE + 1);
-
+    NetArgs_InitialHandshake *nargs = nargs_initial_handshake();
     NetEvent *handshake_event = net_event_new(INITIAL_HANDSHAKE, nargs);
     return handshake_event;
 }

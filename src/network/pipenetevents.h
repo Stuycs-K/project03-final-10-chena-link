@@ -23,6 +23,8 @@ typedef struct NetArgs_InitialHandshake NetArgs_InitialHandshake;
 struct NetArgs_InitialHandshake {
     char *to_client_pipe_name;
 
+    int are_fds_finalized;
+
     int client_to_server_fd;
     int server_to_client_fd;
 
@@ -33,6 +35,7 @@ struct NetArgs_InitialHandshake {
     int client_id;
 };
 
+NetArgs_InitialHandshake *nargs_initial_handshake();
 void send_initial_handshake(NetBuffer *nb, void *args);
 void *recv_initial_handshake(NetBuffer *nb, void *args);
 
