@@ -15,10 +15,22 @@ struct BaseClient {
     int to_server_fd;
     int from_server_fd;
 
+    ClientInfoNode *client_info_list;
+
     NetEventQueue *recv_queue;
     NetEventQueue *send_queue;
 };
 
-BaseClient *base_client_new();
+BaseClient *client_new();
+
+void client_connect(BaseClient *this, char *wkp);
+
+void on_recv_client_list(BaseClient *this, ClientList *nargs);
+
+void client_recv_from_server(BaseClient *this);
+
+void client_send_to_server(BaseClient *this);
+
+void free_client(BaseClient *this);
 
 #endif
