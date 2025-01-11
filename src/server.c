@@ -3,7 +3,7 @@
 #include "network/pipenet.h"
 
 void server_main() {
-    GServer *gserver = gserver_new();
+    GServer *gserver = gserver_new(69);
 
-    gserver_init(gserver);
+    gserver_run(gserver);
 }

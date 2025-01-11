@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
         client_main();
     } else if (!strcmp(mode, "gserver")) {
         printf("server\n");
-        test_main();
+        server_main();
     } else if (!strcmp(mode, "cserver")) {
         printf("cserver\n");
     }

@@ -28,6 +28,21 @@ void free_client_connect_event(NetEvent *event) {
     free(event);
 }
 
+NetEvent *try_connect_to_server() {
+    NetEvent *handshake_event = create_handshake_event();
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
+
+    client_setup("TEMP", handshake_event);
+    int succeeded = client_handshake(handshake_event);
+
+    if (succeeded == -1) {
+        printf("Connection to server failed\n");
+        return NULL;
+    }
+
+    return handshake_event;
+}
+
 #define SHMID 1234567890
 
 void client_main(void) {
@@ -41,17 +56,11 @@ void client_main(void) {
     NetArgs_ClientConnect *client_connect = client_connect_event->args;
 
     // Everything below here will be looped in the future!
-
-    NetEvent *handshake_event = create_handshake_event();
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
-
-    client_setup("TEMP", handshake_event);
-    int succeeded = client_handshake(handshake_event);
-
-    if (succeeded == -1) {
-        printf("Connection failed\n");
+    NetEvent *handshake_event = try_connect_to_server();
+    if (handshake_event == NULL) {
         return;
     }
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
 
     int client_id = handshake->client_id;
     int to_server = handshake->client_to_server_fd;
@@ -63,8 +72,8 @@ void client_main(void) {
     client_connect->to_client_fd = from_server;
     send_event_immediate(client_connect_event, to_server);
 
-    NetEventQueue *net_send_queue = net_event_queue_new();
-    NetEventQueue *net_recv_queue = net_event_queue_new();
+    NetEventQueue *send_queue = net_event_queue_new();
+    NetEventQueue *recv_queue = net_event_queue_new();
 
     // SET RECEIVE FO TO NONBLOCK MODE!
     set_nonblock(from_server);
@@ -78,34 +87,30 @@ void client_main(void) {
 
     while (1) {
         // First: receive events
-        empty_net_event_queue(net_recv_queue);
+        empty_net_event_queue(recv_queue);
 
         void *recv_buffer;
         while (recv_buffer = read_into_buffer(from_server)) {
-            recv_event_queue(net_recv_queue, recv_buffer);
+            recv_event_queue(recv_queue, recv_buffer);
 
-            for (int i = 0; i < net_recv_queue->event_count; ++i) {
+            for (int i = 0; i < recv_queue->event_count; ++i) {
 
-                NetEvent *event = net_recv_queue->events[i];
+                NetEvent *event = recv_queue->events[i];
                 void *args = event->args;
 
                 // Run game logic + rendering based on NetEvents HERE
                 switch (event->protocol) {
 
+                case PERIODIC_HANDSHAKE: {
+                    NetArgs_PeriodicHandshake *nargs = args;
+                    printf("we GOT from server: %d\n", nargs->id);
+                    break;
+                }
+
                 default:
                     break;
                 }
             }
-        }
-
-        for (int i = 0; i < 2; ++i) {
-            NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
-            test_args->id = rand();
-
-            printf("rand: %d\n", test_args->id);
-            NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
-
-            insert_event(net_send_queue, test_event);
         }
 
         printf("Current card: Color: %d Num: %d\n", data->color, data->num);
@@ -131,10 +136,20 @@ void client_main(void) {
             }
         }
 
+        for (int i = 0; i < 2; ++i) {
+            NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
+            test_args->id = rand();
+
+            printf("rand: %d\n", test_args->id);
+            NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
+
+            insert_event(send_queue, test_event);
+        }
+
         // Finally, send event queue
         printf("send queue\n");
-        send_event_queue(net_send_queue, to_server);
-        empty_net_event_queue(net_send_queue);
+        send_event_queue(send_queue, to_server);
+        empty_net_event_queue(send_queue);
 
         usleep(TICK_TIME_MICROSECONDS);
     }

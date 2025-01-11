@@ -15,6 +15,6 @@ struct CSubserver {
     NetEvent *handshake_event; // Handshake to complete
 };
 
-int cserver_init();
+// int cserver_init();
 
 #endif

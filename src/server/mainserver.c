@@ -215,6 +215,27 @@ void server_empty_recv_events(Server *this) {
 }
 
 /*
+    Queue a NetEvent to be sent to the client at the ID.
+*/
+void server_send_event_to(Server *this, int client_id, NetEvent *event) {
+    insert_event(this->clients[client_id]->send_queue, event);
+}
+
+/*
+    Queue a NetEvent to be sent to all currently connected clients.
+*/
+void server_send_event_to_all(Server *this, NetEvent *event) {
+    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
+        Client *client = this->clients[client_id];
+        if (client->is_free) {
+            continue;
+        }
+
+        server_send_event_to(this, client_id, event);
+    }
+}
+
+/*
     Dispatches and empties each client's send queue
 */
 void server_send_events(Server *this) {
@@ -229,15 +250,17 @@ void server_send_events(Server *this) {
     }
 }
 
-void server_run(Server *this) {
+void server_start_connection_handler(Server *this) {
     pid_t pid = fork();
     if (pid == 0) {
         connection_handler_init(this);
     } else {
         this->connection_handler_pid = pid;
     }
+}
 
-    struct pollfd *polls;
+void server_run(Server *this) {
+    server_start_connection_handler(this);
 
     while (1) {
         handle_connections(this);

@@ -98,9 +98,6 @@ int server_complete_handshake(NetEvent *handshake_event) {
     }
 
     printf("[SERVER]: Handshake complete\n");
-
-    // Send the event back so the client knows their ACK was correct.
-    send_event_immediate(handshake_event, send_fd);
     return 1;
 }
 
@@ -165,10 +162,6 @@ int client_handshake(NetEvent *handshake_event) {
 
     handshake_args->ack = handshake_args->syn_ack + 1;
     send_event_immediate(handshake_event, send_fd);
-
-    if (client_recv_handshake_event(handshake_event) != HEC_SUCCESS) {
-        return -1;
-    }
 
     return 1;
 }

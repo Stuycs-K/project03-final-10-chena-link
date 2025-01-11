@@ -8,6 +8,7 @@
 
 GServer **game_server_list;
 
+/*
 void csubserver_init(NetEvent *handshake_event) {
     int status = server_complete_handshake(handshake_event);
 
@@ -33,3 +34,4 @@ int cserver_init() {
 
     return 0;
 }
+*/
