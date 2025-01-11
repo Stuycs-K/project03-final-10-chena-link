@@ -2,9 +2,13 @@
 #include <unistd.h>
 
 #include "../network/pipehandshake.h"
+#include "../shared.h"
 #include "connectionhandler.h"
 
 void connection_handler_init(Server *this) {
+    int recv_from_host_server_fd = this->connection_handler_pipe[PIPE_READ];
+    int send_to_host_server_fd = this->connection_handler_pipe[PIPE_WRITE];
+
     NetEvent *handshake_event = server_setup("TEMP");
     if (handshake_event == NULL) { // No clients attempting to connect on this tick.
         return;
@@ -30,6 +34,7 @@ void connection_handler_init(Server *this) {
             printf("ACK Fail\n");
             exit(EXIT_FAILURE);
         }
+        exit(EXIT_SUCCESS);
     } else {
         free_handshake_event(handshake_event);
     }

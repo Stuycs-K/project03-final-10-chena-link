@@ -1,4 +1,3 @@
-#include <poll.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -18,25 +17,12 @@ Server *server_new(int server_id) {
 
     this->name = NULL;
 
-    pipe(this->subserver_pipe);
+    pipe(this->connection_handler_pipe);
 
     this->clients = malloc(sizeof(ClientConnection *) * this->max_clients);
     for (int i = 0; i < this->max_clients; ++i) {
         this->clients[i] = client_connection_new(i);
     }
-
-    /*
-
-    // Populate with inactive subservers
-    this->subservers = malloc(sizeof(Subserver *) * this->max_clients);
-
-    for (int i = 0; i < this->max_clients; ++i) {
-        this->subservers[i] = subserver_new(i);
-
-        // Set the subserver's pipedes
-        memcpy(this->subservers[i]->main_pipe, this->subserver_pipe, sizeof(this->subserver_pipe));
-    }
-    */
 
     return this;
 }
@@ -91,9 +77,9 @@ ClientConnection *get_client_connection(Server *this, NetEvent *handshake_event)
     ClientConnection *connection = this->clients[client_id];
 
     connection->is_free = CONNECTION_IS_USED;
+
     connection->recv_fd = handshake->client_to_server_fd;
     connection->send_fd = handshake->server_to_client_fd;
-    // connection->handshake_event = handshake_event;
 }
 
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
@@ -119,10 +105,16 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
 }
 
 struct pollfd *make_client_pollfds(Server *this) {
+    PollRequestList *requests = malloc(sizeof(PollRequestList));
+    requests->count = 0;
+
     for (int i = 0; i < this->max_clients; ++i) {
-        if (this->clients[i]->is_free) {
+        ClientConnection *current_client = this->clients[i];
+        if (current_client->is_free) {
             continue;
         }
+
+        int recv_fd = current_client->recv_fd;
     }
 }
 
