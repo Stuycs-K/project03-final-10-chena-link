@@ -19,7 +19,6 @@ struct ClientConnection {
 };
 
 ClientConnection *client_connection_new(int id);
-int complete_handshake(ClientConnection *this, NetEvent *handshake_event);
 void disconnect_client(ClientConnection *this);
 void free_client_connection(ClientConnection *this);
 

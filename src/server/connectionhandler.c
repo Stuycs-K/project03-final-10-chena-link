@@ -34,13 +34,14 @@ void connection_handler_init(Server *this) {
         if (pid == 0) {
             int status = server_complete_handshake(handshake_event);
 
-            // Inform the host server that a client connected.
-            send_event_immediate(handshake_event, send_to_host_server_fd);
-
             if (status == -1) {
                 printf("ACK Fail\n");
                 exit(EXIT_FAILURE);
             }
+
+            // Inform the host server that a client connected.
+            send_event_immediate(handshake_event, send_to_host_server_fd);
+
             exit(EXIT_SUCCESS);
         } else {
             free_handshake_event(handshake_event);

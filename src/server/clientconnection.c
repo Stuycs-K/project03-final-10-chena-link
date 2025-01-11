@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <unistd.h>
 
-#include "clientconnection.h"
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"
 #include "../shared.h"
+#include "clientconnection.h"
 
 ClientConnection *client_connection_new(int id) {
     ClientConnection *this = malloc(sizeof(ClientConnection));
@@ -21,29 +22,13 @@ ClientConnection *client_connection_new(int id) {
     return this;
 }
 
-int complete_handshake(ClientConnection *this, NetEvent *handshake_event) {
-    NetArgs_InitialHandshake *handshake = handshake_event->args;
-
-    this->recv_fd = handshake->client_to_server_fd;
-    this->send_fd = handshake->server_to_client_fd;
-
-    int status = server_complete_handshake(handshake_event);
-
-    free_handshake_event(handshake_event);
-
-    if (status == -1) {
-        printf("ACK Fail\n");
-        return -1;
-    }
-
-    return 1;
-}
-
 void disconnect_client(ClientConnection *this) {
     this->is_free = CONNECTION_IS_FREE;
     memset(this->name, 0, MAX_PLAYER_NAME_CHARACTERS);
 
-    // Close them first?
+    close(this->send_fd);
+    close(this->recv_fd);
+
     this->send_fd = -1;
     this->recv_fd = -1;
 

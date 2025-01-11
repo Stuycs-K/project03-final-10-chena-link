@@ -75,7 +75,7 @@ ClientConnection *init_client_connection(Server *this, NetEvent *handshake_event
     NetArgs_InitialHandshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
-    handshake->client_id = client_id;
+    // handshake->client_id = client_id;
 
     ClientConnection *connection = this->clients[client_id];
 
@@ -83,6 +83,10 @@ ClientConnection *init_client_connection(Server *this, NetEvent *handshake_event
 
     connection->recv_fd = handshake->client_to_server_fd;
     connection->send_fd = handshake->server_to_client_fd;
+
+    // Register for polling.
+    struct pollfd *request = insert_pollfd(this->client_poll_list, client_id, connection->recv_fd);
+    request->events = POLLIN; // Only poll for new data to read
 
     this->current_clients++;
 }
@@ -145,6 +149,44 @@ void handle_new_connections(Server *this) {
     empty_net_event_queue(queue);
 }
 
+void server_recv_events(Server *this) {
+    PollList *polls = this->client_poll_list;
+
+    int ret = poll(*polls->requests, polls->count, 0);
+    if (ret <= 0) { // Nobody sent anything
+        return;
+    }
+
+    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
+        ClientConnection *client = this->clients[client_id];
+        if (client->is_free) {
+            continue;
+        }
+
+        struct pollfd *poll_request = polls->requests[client_id];
+
+        if (poll_request->revents & POLLERR) {
+            disconnect_client(client);
+            // Client disconnect.
+        }
+    }
+}
+
+/*
+    Dispatches and empties each client's send queue
+*/
+void server_send_events(Server *this) {
+    for (int i = 0; i < this->max_clients; ++i) {
+        ClientConnection *client = this->clients[i];
+        if (client->is_free) {
+            continue;
+        }
+
+        send_event_queue(client->send_queue, client->send_fd);
+        empty_net_event_queue(client->send_queue);
+    }
+}
+
 void server_run(Server *this) {
     pid_t pid = fork();
     if (pid == 0) {
@@ -154,16 +196,12 @@ void server_run(Server *this) {
     // int recv_fd = this->subserver_pipe[PIPE_READ];
     // set_nonblock(recv_fd);
 
-    NetEventQueue *subserver_recv_queue = net_event_queue_new();
-    NetEventQueue *send_queue = net_event_queue_new();
-
     struct pollfd *polls;
 
     while (1) {
         handle_new_connections(this);
 
         // 2) Read all NetEvents
-        empty_net_event_queue(subserver_recv_queue);
 
         int client_id;
         ssize_t bytes_read;
