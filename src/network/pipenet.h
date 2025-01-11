@@ -44,8 +44,6 @@
 #define PIPENET_H
 
 /*
-    NET_BUFFER_ALLOC
-
     This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
@@ -62,8 +60,6 @@
     }
 
 /*
-    NET_BUFFER_WRITE
-
     This is a function-like macro!
 
     Writes size bytes of ptr to nb->buffer. Checks for resizing and updates offset.
@@ -78,8 +74,6 @@
     (nb)->offset += (size);
 
 /*
-    NET_BUFFER_WRITE_VALUE
-
     This is a function-like macro!
 
     Wraps NET_BUFFER_WRITE. Used to write non-pointer values.
@@ -91,8 +85,6 @@
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
 /*
-    NET_BUFFER_BEGIN_WRITE
-
     This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
@@ -108,8 +100,6 @@
     };
 
 /*
-    NET_BUFFER_BEGIN_WRITE
-
     This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
@@ -125,8 +115,6 @@
     };
 
 /*
-    NET_BUFFER_WRITE_STRING
-
     This is a function-like macro!
 
     Writes a string to nb->buffer.
@@ -143,8 +131,6 @@
     };
 
 /*
-    NET_BUFFER_READ
-
     This is a function-like macro!
 
     Reads size bytes from nb->buffer into ptr.
@@ -158,8 +144,6 @@
     (nb)->offset += (size);
 
 /*
-    NET_BUFFER_READ_VALUE
-
     This is a function-like macro!
 
     Wraps NET_BUFFER_READ. Used to read to non-pointer values
@@ -171,8 +155,6 @@
     NET_BUFFER_READ((nb), &(var), sizeof(var))
 
 /*
-    NET_BUFFER_READ_STRING
-
     This is a function-like macro!
 
     Reads a string from nb->buffer.
@@ -189,9 +171,12 @@
     };
 
 /*
-    size: The current allocated size of buffer, in bytes
-    buffer: The buffer used to write data into / read data from
-    offset: Where in the buffer we currently are
+    Used to compile all the data you need to write / receive into a single buffer
+    The batched data can then be atomically written to a file (by atomic I mean with a single write call), or deserialized "gracefully" enough
+
+    size_t size : The current allocated size of buffer, in bytes
+    void *buffer : The buffer used to write data into / read data from
+    int offset : Where in the buffer we currently are
 */
 typedef struct NetBuffer NetBuffer;
 struct NetBuffer {
@@ -200,20 +185,36 @@ struct NetBuffer {
     int offset;
 };
 
+/*
+    Describes the type of NetEvent.
+    Used to determine which NetEventHandler to use to read / write the event.
+*/
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
     INITIAL_HANDSHAKE,
-    CH_CLIENT_CONNECT, // Used by connection handler
     CLIENT_CONNECT,
     CLIENT_DISCONNECT,
 
     PROTOCOL_COUNT,
 };
 
+/*
+    Don't worry about calling these. They're handled automatically.
+
+    NetBuffer *nb : the NetBuffer
+    void *args: the arguments of a NetEvent
+*/
 typedef void (*NetEventWriter)(NetBuffer *nb, void *args);
 typedef void *(*NetEventReader)(NetBuffer *nb, void *args);
 
+/*
+    Holds pointers to functions that read / write an event of the specified protocol.
+
+    NetProtocol protocol : the protocol
+    NetEventWriter write_fn : the function that will be called to write the event's arguments into the NetBuffer
+    NetEventReader read_fn : the function that will be called to read the event's arguments from the NetBuffer, into a NetEvent's args.
+*/
 typedef struct NetEventHandler NetEventHandler;
 struct NetEventHandler {
     NetProtocol protocol;
@@ -222,9 +223,21 @@ struct NetEventHandler {
     NetEventReader read_fn;
 };
 
+/*
+    NetProtocol protocol : see NetProtocol
+
+    int is_persistent : emptying a NetEventQueue will, by default, free all NetEvents.
+        Setting is_persistent to 1 will exempt it from being freed.
+        Useful for reusing an event instead of constantly rebuilding it.
+
+    void *args : a struct of data linked to the NetProtocol
+        Must be cast into the correct NetArgs object with a statement such as NetArgs_EventName *nargs = event->args;
+        Can be freely manipulated from that point onward.
+*/
 typedef struct NetEvent NetEvent;
 struct NetEvent {
     NetProtocol protocol;
+    int is_persistent;
     void *args;
 };
 

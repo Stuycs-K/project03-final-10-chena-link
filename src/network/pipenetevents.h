@@ -3,6 +3,8 @@
 #ifndef PIPENETEVENTS_H
 #define PIPENETEVENTS_H
 
+#define DECLARE_NET_STRUCT(type_name)
+
 typedef struct NetArgs_PeriodicHandshake NetArgs_PeriodicHandshake;
 struct NetArgs_PeriodicHandshake {
     int id;

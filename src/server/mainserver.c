@@ -175,30 +175,21 @@ void server_recv_events(Server *this) {
     int pollcount = 0;
     struct pollfd pollfds[this->max_clients];
 
-    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        Client *client = this->clients[client_id];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(this) {
         struct pollfd pollfd;
         pollfd.events = POLLIN;
         pollfd.fd = client->recv_fd;
 
         pollfds[pollcount++] = pollfd;
     }
+    END_FOREACH_CLIENT
 
     int ret = poll(pollfds, this->current_clients, 0);
     if (ret <= 0) { // Nobody sent anything
         return;
     }
 
-    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        Client *client = this->clients[client_id];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(this) {
         struct pollfd poll_request = get_pollfd_for_client(pollfds, this->current_clients, client->recv_fd);
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
@@ -221,18 +212,15 @@ void server_recv_events(Server *this) {
             handle_core_server_net_event(this, client_id, queue->events[i]);
         }
     }
+    END_FOREACH_CLIENT
 }
 
 // Call after you finish processing all NetEvents
 void server_empty_recv_events(Server *this) {
-    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        Client *client = this->clients[client_id];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(this) {
         empty_net_event_queue(client->recv_queue);
     }
+    END_FOREACH_CLIENT
 }
 
 /*
@@ -246,29 +234,21 @@ void server_send_event_to(Server *this, int client_id, NetEvent *event) {
     Queue a NetEvent to be sent to all currently connected clients.
 */
 void server_send_event_to_all(Server *this, NetEvent *event) {
-    for (int client_id = 0; client_id < this->max_clients; ++client_id) {
-        Client *client = this->clients[client_id];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(this) {
         server_send_event_to(this, client_id, event);
     }
+    END_FOREACH_CLIENT
 }
 
 /*
     Dispatches and empties each client's send queue
 */
 void server_send_events(Server *this) {
-    for (int i = 0; i < this->max_clients; ++i) {
-        Client *client = this->clients[i];
-        if (client->is_free) {
-            continue;
-        }
-
+    FOREACH_CLIENT(this) {
         send_event_queue(client->send_queue, client->send_fd);
         empty_net_event_queue(client->send_queue);
     }
+    END_FOREACH_CLIENT
 }
 
 void server_start_connection_handler(Server *this) {

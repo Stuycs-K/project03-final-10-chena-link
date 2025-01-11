@@ -5,6 +5,15 @@
 #ifndef MAINSERVER_H
 #define MAINSERVER_H
 
+#define FOREACH_CLIENT(server)                                                \
+    for (int client_id = 0; client_id < (server)->max_clients; ++client_id) { \
+        Client *client = (server)->clients[client_id];                        \
+        if (client->is_free) {                                                \
+            continue;                                                         \
+        }
+
+#define END_FOREACH_CLIENT }
+
 typedef enum ServerStatus ServerStatus;
 enum ServerStatus {
     SSTATUS_OPEN,
