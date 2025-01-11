@@ -47,8 +47,7 @@ NetEvent *net_event_new(NetProtocol protocol, void *args) {
     NetEvent *net_event = malloc(sizeof(NetEvent));
     net_event->protocol = protocol;
     net_event->args = args;
-    net_event->is_persistent = 0;
-    net_event->is_args_persistent = 0;
+    net_event->cleanup_behavior = NEVENT_BASE;
     return net_event;
 }
 
@@ -76,20 +75,29 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event = net_event_queue->events[i];
 
-        if (event->is_args_persistent) {
+        switch (event->cleanup_behavior) {
+
+        case NEVENT_PERSISTENT:
+            net_event_queue->events[i] = NULL;
+            break;
+
+        case NEVENT_PERSISTENT_ARGS:
             event->args = NULL; // Don't free the args!
             free(net_event_queue->events[i]);
-        }
+            net_event_queue->events[i] = NULL;
+            break;
 
-        if (!event->is_persistent) {
+        case NEVENT_BASE:
             free(event->args);
             free(net_event_queue->events[i]);
+            net_event_queue->events[i] = NULL;
+
+        default:
+            break;
         }
 
-        net_event_queue->events[i] = NULL;
+        net_event_queue->event_count = 0;
     }
-
-    net_event_queue->event_count = 0;
 }
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {

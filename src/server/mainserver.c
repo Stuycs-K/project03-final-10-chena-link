@@ -79,7 +79,7 @@ int get_free_client_id(Server *this) {
 
 void send_client_list(Server *this, int client_id) {
     NetEvent *event = net_event_new(CLIENT_LIST, this->client_info_list);
-    event->is_args_persistent = 1; // WE DO NOT WANT TO FREE THE LIST LOCALLY!
+    event->cleanup_behavior = NEVENT_PERSISTENT_ARGS; // WE DO NOT WANT TO FREE THE LIST LOCALLY!
 }
 
 void handle_client_connection(Server *this, NetEvent *handshake_event) {

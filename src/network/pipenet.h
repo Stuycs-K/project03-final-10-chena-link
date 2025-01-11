@@ -212,16 +212,25 @@ enum NetProtocol {
 typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
 
 /*
+    When NetEventQueues are emptied, they have a few options to cleanup the NetEvents:
+
+    NEVENT_BASE: the NetEvent and its args will be freed (default)
+    NEVENT_PERSISTENT_ARGS: the NetEvent will be freed but the args will not
+    NEVENT_PERSISTENT: nothing will be freed
+*/
+typedef enum NetEventCleanupBehavior NetEventCleanupBehavior;
+enum NetEventCleanupBehavior {
+    NEVENT_BASE,
+    NEVENT_PERSISTENT_ARGS,
+    NEVENT_PERSISTENT
+};
+
+/*
     NetEvents wrap networked structs for networking.
 
     NetProtocol protocol : see NetProtocol
 
-    int is_persistent : emptying a NetEventQueue will, by default, free all NetEvents.
-        Setting is_persistent to 1 will exempt it from being freed.
-        Useful for reusing an event instead of constantly rebuilding it.
-
-    int is_args_persistent : setting to 1 will cause the NetEvent wrapper to be freed, but NOT the args.
-        Recommended to set this to 1 for sending events.
+    NetEventCleanupBehavior cleanup_behavior : see NetEventCleanupBehavior
 
     void *args : a struct of data linked to the NetProtocol
         Must be cast into the correct NetArgs object with a statement such as NetArgs_EventName *nargs = event->args;
@@ -230,8 +239,7 @@ typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
 typedef struct NetEvent NetEvent;
 struct NetEvent {
     NetProtocol protocol;
-    int is_persistent;
-    int is_args_persistent;
+    NetEventCleanupBehavior cleanup_behavior;
     void *args;
 };
 

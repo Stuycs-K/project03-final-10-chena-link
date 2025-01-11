@@ -54,7 +54,7 @@ void client_main(void) {
 
     ClientList *gserver_client_list = nargs_client_list();
     NetEvent *gserver_client_list_event = net_event_new(CLIENT_LIST, gserver_client_list);
-    gserver_client_list_event->is_persistent = 1;
+    gserver_client_list_event->cleanup_behavior = NEVENT_PERSISTENT;
 
     NetEvent *client_connect_event = create_client_connect_event();
     NetArgs_ClientConnect *client_connect = client_connect_event->args;
