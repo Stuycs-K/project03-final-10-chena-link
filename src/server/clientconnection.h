@@ -1,5 +1,4 @@
 #include "../network/pipenet.h"
-#include "subserver.h"
 
 #ifndef CLIENTCONNECTION_H
 #define CLIENTCONNECTION_H
