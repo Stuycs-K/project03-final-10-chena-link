@@ -195,6 +195,8 @@ enum NetProtocol {
     HANDSHAKE,
     CLIENT_CONNECT,
     CLIENT_DISCONNECT,
+    CLIENT_LIST,
+    GSERVER_INFO,
 
     PROTOCOL_COUNT,
 };

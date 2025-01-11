@@ -82,21 +82,23 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     int client_id = get_free_client_id(this);
     // handshake->client_id = client_id;
 
-    Client *connection = this->clients[client_id];
+    Client *client = this->clients[client_id];
 
-    connection->is_free = CONNECTION_IS_USED;
+    client->is_free = CONNECTION_IS_USED;
 
     // THE HANDSHAKE FDs ARE NOT THE MAIN SERVER'S FDS! We have to use this magic to open the process's FDs as our own.
     char fd_path[64];
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->client_to_server_fd);
-    connection->recv_fd = open(fd_path, O_RDONLY);
+    client->recv_fd = open(fd_path, O_RDONLY);
 
     snprintf(fd_path, sizeof(fd_path), "/proc/%d/fd/%d", this->connection_handler_pid, handshake->server_to_client_fd);
-    connection->send_fd = open(fd_path, O_WRONLY);
+    client->send_fd = open(fd_path, O_WRONLY);
 
-    printf("CLIENT CONNECTED %d \n", connection->recv_fd);
+    printf("CLIENT CONNECTED %d \n", client->recv_fd);
 
     this->current_clients++;
+
+    // ClientConnection *client_connection = nargs_gserver_connection();
 }
 
 void handle_client_disconnect(Server *this, int client_id) {

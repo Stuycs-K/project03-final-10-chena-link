@@ -111,3 +111,38 @@ DECLARE_HANDLER(NetArgs_ClientConnect, client_connect) {
 END_HANDLER()
 
 //============================================================
+
+DECLARE_CONSTRUCTOR(ClientList, client_list) {
+    nargs->local_client_id = -1;
+    nargs->size = 10;
+    nargs->client_ids = malloc(sizeof(int));
+}
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(ClientList, client_list) {
+    VALUE(nargs->local_client_id);
+    STRING(nargs->client_name);
+}
+END_HANDLER()
+
+DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
+    nargs->id = -1;
+    nargs->visible = 0;
+    nargs->current_clients = 0;
+    nargs->max_clients = 2;
+
+    // Null out the strings
+    nargs->name[0] = 0;
+    nargs->wkp_name[0] = 0;
+}
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(GServerInfo, gserver_info) {
+    VALUE(nargs->id);
+    VALUE(nargs->visible);
+    VALUE(nargs->current_clients);
+    VALUE(nargs->max_clients);
+    STRING(nargs->name);
+    STRING(nargs->wkp_name);
+}
+END_HANDLER()

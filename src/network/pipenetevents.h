@@ -34,6 +34,7 @@ enum HandshakeErrCode {
     HEC_NO_LONGER_ACCEPTING_CONNECTIONS,
 };
 
+// Client-server handshake for GServers and CServers.
 typedef struct NetArgs_Handshake NetArgs_Handshake;
 struct NetArgs_Handshake {
     char *to_client_pipe_name;
@@ -58,5 +59,38 @@ struct NetArgs_ClientConnect {
     int to_client_fd; // The main server will use this to send messages to the clients
 };
 DECLARE_NET_ARGS(NetArgs_ClientConnect, client_connect)
+
+typedef struct ClientInfo ClientInfo;
+struct ClientInfo {
+    int id;
+    char name[20];
+    ClientInfo *next;
+};
+
+// A GServer sends this to the client after they complete the handshake so they know their client id in the server
+typedef struct ClientList ClientList;
+struct ClientList {
+    int local_client_id;
+
+    int size;
+    int *client_ids;
+    char **client_names;
+
+    int client_id;
+    char client_name[20];
+};
+DECLARE_NET_ARGS(ClientList, client_list)
+
+typedef struct GServerInfo GServerInfo;
+struct GServerInfo {
+    int id;
+    int visible;
+    int current_clients;
+    int max_clients;
+
+    char name[20];
+    char wkp_name[10];
+};
+DECLARE_NET_ARGS(GServerInfo, gserver_info)
 
 #endif
