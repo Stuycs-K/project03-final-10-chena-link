@@ -21,7 +21,7 @@ Server *server_new(int server_id) {
     this->id = server_id;
 
     strcpy(this->name, "Server"); // Set default name
-    this->wkp_name[0] = 0;        // Null out WKP
+    strcpy(this->wkp_name, "TEMP");
 
     this->connection_handler_pid = -1;
     this->connection_handler_recv_queue = net_event_queue_new();

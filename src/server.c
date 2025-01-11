@@ -1,8 +1,10 @@
 #include "server.h"
+#include "cserver.h"
 #include "gserver.h"
-#include "network/pipenet.h"
 
 void server_main() {
+    // CServer *cserver = cserver_new(1);
+
     GServer *gserver = gserver_new(69);
 
     gserver_run(gserver);

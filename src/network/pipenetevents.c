@@ -142,7 +142,7 @@ END_HANDLER()
 
 DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs->id = -1;
-    nargs->visible = 0;
+    nargs->status = 0;
     nargs->current_clients = 0;
     nargs->max_clients = 2;
 
@@ -154,7 +154,7 @@ END_CONSTRUCTOR()
 
 DECLARE_HANDLER(GServerInfo, gserver_info) {
     VALUE(nargs->id);
-    VALUE(nargs->visible);
+    VALUE(nargs->status);
     VALUE(nargs->current_clients);
     VALUE(nargs->max_clients);
     STRING(nargs->name);

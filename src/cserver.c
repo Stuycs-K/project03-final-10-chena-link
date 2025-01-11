@@ -4,24 +4,6 @@
 #include "cserver.h"
 #include "shared.h"
 
-/*
-
-*/
-GServer *create_gserver(CServer *this, int id) {
-    GServer *gserver = gserver_new(id);
-    gserver->status = GSS_UNRESERVED;
-
-    Server *internal_gserver = gserver->server;
-
-    char gserver_name_buffer[MAX_GSERVER_NAME_CHARACTERS];
-    snprintf(gserver_name_buffer, sizeof(gserver_name_buffer), "GameServer%d", id);
-    strcpy(internal_gserver->name, gserver_name_buffer);
-
-    char gserver_wkp_name_buffer[GSERVER_WKP_NAME_LEN];
-    snprintf(gserver_wkp_name_buffer, sizeof(gserver_wkp_name_buffer), "G%d", id);
-    strcpy(internal_gserver->wkp_name, gserver_wkp_name_buffer);
-}
-
 CServer *cserver_new(int id) {
     CServer *this = malloc(sizeof(CServer));
 
@@ -33,25 +15,31 @@ CServer *cserver_new(int id) {
     strcpy(this->server->wkp_name, CSERVER_WKP_NAME); // WKP is "CSERVER"
 
     for (int i = 0; i < this->gserver_count; ++i) {
-        this->gserver_list[i] = create_gserver(this, i);
+        this->gserver_list[i] = gserver_new(id);
+        this->gserver_list[i]->status = GSS_UNRESERVED;
     }
 
     return this;
 }
 
 void reserve_gserver(CServer *this) {
-    int gserver_id = -1;
+    GServer *gserver = NULL;
 
+    // Get unreserved GServer
     for (int i = 0; i < this->gserver_count; ++i) {
-        GServer *gserver = this->gserver_list[i];
-
-        if (gserver->status == GSS_UNRESERVED) {
-            gserver_id = i;
+        if (this->gserver_list[i]->status == GSS_UNRESERVED) {
+            gserver = this->gserver_list[i];
             break;
         }
     }
 
-        // Get available GServer
+    if (!gserver) {
+        return;
+    }
+
+    gserver->status = GSS_WAITING_FOR_PLAYERS;
+
+    pipe(gserver->cserver_pipes);
 }
 
 void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {

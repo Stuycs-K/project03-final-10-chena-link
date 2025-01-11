@@ -18,7 +18,7 @@ NetEvent *try_connect_to_server() {
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_Handshake *handshake = handshake_event->args;
 
-    client_setup("TEMP", handshake_event);
+    client_setup("G69", handshake_event);
     int succeeded = client_handshake(handshake_event);
 
     if (succeeded == -1) {

@@ -1,6 +1,8 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#define TESTING_CSERVER
+
 #define PIPE_READ 0
 #define PIPE_WRITE 1
 

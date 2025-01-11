@@ -10,20 +10,18 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 
-static void handle_sigint(int signo) {
-    if (signo != SIGINT) {
-        return;
-    }
-
-    remove("TEMP");
-    exit(EXIT_SUCCESS);
-}
-
 GServer *gserver_new(int id) {
     GServer *this = malloc(sizeof(GServer));
     this->status = GSS_WAITING_FOR_PLAYERS;
-
     this->server = server_new(id);
+
+    char gserver_name_buffer[MAX_GSERVER_NAME_CHARACTERS];
+    snprintf(gserver_name_buffer, sizeof(gserver_name_buffer), "GameServer%d", id);
+    strcpy(this->server->name, gserver_name_buffer);
+
+    char gserver_wkp_name_buffer[GSERVER_WKP_NAME_LEN];
+    snprintf(gserver_wkp_name_buffer, sizeof(gserver_wkp_name_buffer), "G%d", id);
+    strcpy(this->server->wkp_name, gserver_wkp_name_buffer);
 
     return this;
 }
@@ -63,7 +61,6 @@ void gserver_loop(GServer *this) {
 }
 
 void gserver_run(GServer *this) {
-    signal(SIGINT, handle_sigint);
     Server *server = this->server;
 
     server_start_connection_handler(server);

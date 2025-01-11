@@ -63,10 +63,6 @@ struct ClientList {
 };
 DECLARE_NET_ARGS(ClientList, client_list)
 
-typedef struct GServerState GServerState;
-struct GServerState {
-};
-
 // A client wants to reserve
 typedef struct ReserveGServer ReserveGServer;
 struct ReserveGServer {
@@ -76,7 +72,7 @@ struct ReserveGServer {
 typedef struct GServerInfo GServerInfo;
 struct GServerInfo {
     int id;
-    int visible;
+    int status; // The GServerStatus enum
     int current_clients;
     int max_clients;
 
