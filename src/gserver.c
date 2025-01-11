@@ -29,7 +29,7 @@ GServer *gserver_new(int id) {
 }
 
 // HANDLE CLIENT EVENTS (i.e. change game state) HERE
-void handle_net_event(GServer *this, int client_id, NetEvent *event) {
+void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
@@ -51,7 +51,7 @@ void gserver_loop(GServer *this) {
 
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {
-            handle_net_event(this, client_id, queue->events[i]);
+            gserver_handle_net_event(this, client_id, queue->events[i]);
         }
     }
 

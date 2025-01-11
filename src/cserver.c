@@ -2,36 +2,58 @@
 #include <unistd.h>
 
 #include "cserver.h"
-#include "gserver.h"
-#include "network/pipehandshake.h"
-#include "network/pipenet.h"
+#include "shared.h"
 
-GServer **game_server_list;
+CServer *cserver_new(int id) {
+    CServer *this = malloc(sizeof(CServer));
 
-/*
-void csubserver_init(NetEvent *handshake_event) {
-    int status = server_complete_handshake(handshake_event);
+    this->gserver_list = malloc(sizeof(GServer *) * MAX_CSERVER_GSERVERS);
+    this->server = server_new(id);
 
-    free_handshake_event(handshake_event);
-    handshake_event = NULL;
-
-    printf("CLIENT CONNECTED\n");
+    return this;
 }
 
-int cserver_init() {
-    game_server_list = malloc(sizeof(GServer *) * 256);
+void create_gserver() {
+}
 
-    while (1) {
-        NetEvent *handshake_event = server_setup(get_client_to_server_fifo_name());
-        server_get_send_fd(handshake_event);
+void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
+    void *args = event->args;
 
-        pid_t pid = fork();
+    switch (event->protocol) {
 
-        if (pid == 0) {
-            csubserver_init(handshake_event);
+    default:
+        break;
+    }
+}
+
+void cserver_loop(CServer *this) {
+    Server *server = this->server;
+
+    for (int client_id = 0; client_id < server->max_clients; ++client_id) {
+        Client *client = server->clients[client_id];
+        if (client->is_free) {
+            continue;
+        }
+
+        NetEventQueue *queue = client->recv_queue;
+        for (int i = 0; i < queue->event_count; ++i) {
+            cserver_handle_net_event(this, client_id, queue->events[i]);
         }
     }
-
-    return 0;
 }
-*/
+
+void cserver_run(CServer *this) {
+    Server *server = this->server;
+
+    server_start_connection_handler(server);
+
+    while (1) {
+        handle_connections(server);
+        server_recv_events(server);
+
+        server_empty_recv_events(server);
+
+        server_send_events(server);
+        usleep(TICK_TIME_MICROSECONDS);
+    }
+}
