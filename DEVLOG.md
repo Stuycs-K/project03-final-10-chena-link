@@ -24,6 +24,10 @@ This document must be updated daily by EACH group member.
 * Set server reads to nonblocking so they can be put in the same loop as everything else. All of this will be rewritten in favor of using poll() tomorrow. 1 hour.
 * Begin refactoring components of GServer into base server modules. 1 hour.
 
+### 2024-01-10 - Overhaul
+* Servers no longer use subservers. Instead, they use poll. Much cleaner. 2 hours.
+* Finish refactoring GServer, started yesterday. 2 hours.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
