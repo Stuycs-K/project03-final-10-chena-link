@@ -6,8 +6,6 @@
 typedef struct Client Client;
 struct Client {
     int id;
-    char *name;
-
     int is_free;
 
     int send_fd;

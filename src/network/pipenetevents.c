@@ -114,14 +114,33 @@ END_HANDLER()
 
 DECLARE_CONSTRUCTOR(ClientList, client_list) {
     nargs->local_client_id = -1;
-    nargs->size = 10;
-    nargs->client_ids = malloc(sizeof(int));
+    nargs->info_list = NULL;
 }
 END_CONSTRUCTOR()
 
 DECLARE_HANDLER(ClientList, client_list) {
     VALUE(nargs->local_client_id);
-    STRING(nargs->client_name);
+
+    if (mode == 0) {
+        // Writing the linked list:
+        ClientInfoNode *node = nargs->info_list;
+        while (node != NULL) {
+            VALUE(node->id);
+            STRING(node->name);
+            node = node->next;
+        }
+    } else {
+        // First, free the existiing linked list.
+        if (nargs->info_list != NULL) {
+            free_client_list(nargs->info_list);
+        }
+
+        int total_clients;
+        NET_BUFFER_READ_VALUE(nb, total_clients);
+
+        for (int i = 0; i < total_clients; ++i) {
+        }
+    }
 }
 END_HANDLER()
 

@@ -1,5 +1,7 @@
 #include "pipenet.h"
 
+#include "clientlist.h"
+
 /*
     Use this macro after every NetArgs typedef.
 
@@ -60,24 +62,11 @@ struct NetArgs_ClientConnect {
 };
 DECLARE_NET_ARGS(NetArgs_ClientConnect, client_connect)
 
-typedef struct ClientInfo ClientInfo;
-struct ClientInfo {
-    int id;
-    char name[20];
-    ClientInfo *next;
-};
-
 // A GServer sends this to the client after they complete the handshake so they know their client id in the server
 typedef struct ClientList ClientList;
 struct ClientList {
     int local_client_id;
-
-    int size;
-    int *client_ids;
-    char **client_names;
-
-    int client_id;
-    char client_name[20];
+    ClientInfoNode *info_list;
 };
 DECLARE_NET_ARGS(ClientList, client_list)
 
