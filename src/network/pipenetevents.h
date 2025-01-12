@@ -105,7 +105,7 @@ DECLARE_NET_ARGS(GServerInfo, gserver_info)
 
 typedef struct GServerInfoList GServerInfoList;
 struct GServerInfoList {
-    GServerInfo **gserver_list;
+    GServerInfo **list;
 };
 DECLARE_NET_ARGS(GServerInfoList, gserver_info_list)
 

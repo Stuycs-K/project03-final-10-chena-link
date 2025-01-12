@@ -44,7 +44,7 @@ void print_gserver_list(GServerInfoList *nargs) {
     }
 
     printf("======= Game Server List\n");
-    GServerInfo **recv_gserver_list = nargs->gserver_list;
+    GServerInfo **recv_gserver_list = nargs->list;
 
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         GServerInfo *info = recv_gserver_list[i];
@@ -92,7 +92,7 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
             return;
         }
 
-        GServerInfo *server_info = gservers->gserver_list[gserver_id];
+        GServerInfo *server_info = gservers->list[gserver_id];
         printf("%s\n", server_info->wkp_name);
 
         connect_to_gserver(gclient, server_info);
@@ -154,7 +154,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         int which_server;
         sscanf(input, "j %d", &which_server);
 
-        GServerInfo *gserver_info = gservers->gserver_list[which_server];
+        GServerInfo *gserver_info = gservers->list[which_server];
         GServerStatus status = gserver_info->status;
 
         // Server must be in the waiting for players phase and not be full

@@ -225,24 +225,24 @@ DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
 DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
-    nargs->gserver_list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
+    nargs->list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        nargs->gserver_list[i] = nargs_gserver_info();
+        nargs->list[i] = nargs_gserver_info();
     }
 }
 END_CONSTRUCTOR()
 
 DECLARE_HANDLER(GServerInfoList, gserver_info_list) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        handler_gserver_info(nb, nargs->gserver_list[i], mode);
+        handler_gserver_info(nb, nargs->list[i], mode);
     }
 }
 END_CONSTRUCTOR()
 
 DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        destroy_gserver_info(nargs->gserver_list[i]);
+        destroy_gserver_info(nargs->list[i]);
     }
-    free(nargs->gserver_list);
+    free(nargs->list);
 }
 END_DESTRUCTOR()

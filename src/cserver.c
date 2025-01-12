@@ -24,7 +24,7 @@ CServer *cserver_new(int id) {
         new_gserver->status = GSS_UNRESERVED;
         this->gserver_list[gserver_id] = new_gserver;
 
-        GServerInfo *current_gserver_info = info_list->gserver_list[gserver_id];
+        GServerInfo *current_gserver_info = info_list->list[gserver_id];
 
         // Initialize our copy of GServerInfo for this GServer
         current_gserver_info->id = gserver_id;
@@ -75,7 +75,7 @@ static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
     NetEvent *server_list_event = this->server_list_event;
     GServerInfoList *nargs = server_list_event->args;
 
-    GServerInfo *local_server_info = nargs->gserver_list[recv_server_info->id];
+    GServerInfo *local_server_info = nargs->list[recv_server_info->id];
 
     local_server_info->status = recv_server_info->status;
     local_server_info->current_clients = recv_server_info->current_clients;
