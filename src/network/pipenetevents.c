@@ -216,9 +216,7 @@ END_CONSTRUCTOR()
 
 DECLARE_HANDLER(GServerInfoList, gserver_info_list) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *server_info = nargs_gserver_info();
-        handler_gserver_info(nb, server_info, mode);
-        nargs->gserver_list[i] = server_info;
+        handler_gserver_info(nb, nargs->gserver_list[i], mode);
     }
 }
 END_CONSTRUCTOR()

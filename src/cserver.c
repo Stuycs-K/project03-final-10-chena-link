@@ -18,9 +18,9 @@ CServer *cserver_new(int id) {
     strcpy(this->server->name, "CentralServer");
     strcpy(this->server->wkp_name, CSERVER_WKP_NAME); // WKP is "CSERVER"
 
-    for (int i = 0; i < this->gserver_count; ++i) {
-        this->gserver_list[i] = gserver_new(id);
-        this->gserver_list[i]->status = GSS_UNRESERVED;
+    for (int gserver_id = 0; gserver_id < this->gserver_count; ++gserver_id) {
+        this->gserver_list[gserver_id] = gserver_new(gserver_id);
+        this->gserver_list[gserver_id]->status = GSS_UNRESERVED;
     }
 
     return this;
@@ -78,13 +78,11 @@ void cserver_send_server_list(CServer *this) {
 
         server_info->id = internal->id;
         server_info->status = gserver->status;
-        server_info->current_clients = internal->status;
-        server_info->max_clients = internal->status;
+        server_info->current_clients = internal->current_clients;
+        server_info->max_clients = internal->max_clients;
         strcpy(server_info->name, internal->name);
         strcpy(server_info->wkp_name, internal->wkp_name);
     }
-
-    printf("%d\n", nargs->gserver_list[0]->id);
 }
 
 void cserver_loop(CServer *this) {
