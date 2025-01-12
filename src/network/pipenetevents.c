@@ -184,6 +184,19 @@ DECLARE_DESTRUCTOR(ClientList, client_list) {
 }
 END_DESTRUCTOR()
 
+DECLARE_CONSTRUCTOR(ReserveGServer, reserve_gserver) {
+    nargs->gserver_id = -1;
+}
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(ReserveGServer, reserve_gserver) {
+    VALUE(nargs->gserver_id);
+}
+END_CONSTRUCTOR()
+
+DECLARE_DESTRUCTOR(ReserveGServer, reserve_gserver)
+END_DESTRUCTOR()
+
 DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs->id = -1;
     nargs->status = 0;

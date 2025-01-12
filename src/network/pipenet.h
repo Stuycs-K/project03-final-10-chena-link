@@ -197,6 +197,9 @@ enum NetProtocol {
     GSERVER_INFO,
     GSERVER_LIST,
 
+    RESERVE_GSERVER,
+    JOIN_GSERVER,
+
     PROTOCOL_COUNT,
 };
 

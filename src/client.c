@@ -19,6 +19,13 @@
 #define SHMID 123456789
 #define DONT
 
+typedef enum ClientState ClientState;
+enum ClientState {
+    IN_CSERVER,
+    IN_GSERVER,
+};
+
+ClientState client_state;
 char username[MAX_PLAYER_NAME_CHARACTERS];
 
 void print_gserver_list(GServerInfoList *nargs) {
@@ -57,9 +64,25 @@ void get_username() {
     printf("\n\n");
 }
 
-void request_gserver(BaseClient *client) {
+void input_for_cserver(BaseClient *client) {
+    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
+
+    char option = input[0];
+    switch (option) {
+
+    case 'c':
+        NetEvent *reserve_event = net_event_new(RESERVE_GSERVER, nargs_reserve_gserver());
+        insert_event(client->send_queue, reserve_event);
+        break;
+
+    case 'j':
+        break;
+
+    default:
+        break;
+    }
 }
 
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
@@ -107,6 +130,10 @@ void client_main(void) {
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
             NetEvent *event = cclient->recv_queue->events[i];
             handle_cserver_net_event(cclient, event);
+        }
+
+        if (cclient->client_id >= 0) {
+            input_for_cserver(cclient);
         }
 
         client_send_to_server(cclient);

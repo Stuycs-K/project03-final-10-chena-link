@@ -242,4 +242,5 @@ void net_init() {
     BIND(CLIENT_LIST, client_list);
     BIND(GSERVER_INFO, gserver_info);
     BIND(GSERVER_LIST, gserver_info_list);
+    BIND(RESERVE_GSERVER, reserve_gserver);
 }

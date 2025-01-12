@@ -52,6 +52,12 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
     switch (event->protocol) {
 
+    case RESERVE_GSERVER: {
+        ReserveGServer *nargs = args;
+        printf("reserve\n");
+        break;
+    }
+
     default:
         break;
     }

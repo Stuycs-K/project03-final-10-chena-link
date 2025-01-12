@@ -80,6 +80,7 @@ typedef struct ReserveGServer ReserveGServer;
 struct ReserveGServer {
     int gserver_id;
 };
+DECLARE_NET_ARGS(ReserveGServer, reserve_gserver)
 
 // Used for client modifying GServer properties
 typedef struct GServerConfig GServerConfig;
