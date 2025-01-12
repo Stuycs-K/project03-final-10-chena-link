@@ -10,6 +10,7 @@ CServer *cserver_new(int id) {
 
     GServerInfoList *info_list = nargs_gserver_info_list();
     this->server_list_event = net_event_new(GSERVER_LIST, info_list);
+    this->server_list_updated = 0;
 
     this->gserver_count = MAX_CSERVER_GSERVERS;
     this->gserver_list = malloc(sizeof(GServer *) * this->gserver_count);
@@ -64,8 +65,13 @@ void cserver_send_server_list(CServer *this) {
     GServerInfoList *nargs = server_list_event->args;
 
     // Attach server list event to all clients' send queue to automatically send it.
+    // Only do this if they just joined OR a GServer status changed.
     FOREACH_CLIENT(this->server) {
-        attach_event(client->send_queue, server_list_event);
+        if (client->recently_connected || this->server_list_updated) {
+            attach_event(client->send_queue, server_list_event);
+        } else {
+            detach_event(client->send_queue, server_list_event);
+        }
     }
     END_FOREACH_CLIENT()
 
@@ -83,6 +89,8 @@ void cserver_send_server_list(CServer *this) {
         strcpy(server_info->name, internal->name);
         strcpy(server_info->wkp_name, internal->wkp_name);
     }
+
+    this->server_list_updated = 0;
 }
 
 void cserver_loop(CServer *this) {

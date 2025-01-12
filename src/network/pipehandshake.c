@@ -17,13 +17,13 @@
 #define HANDSHAKE_DEBUG
 
 NetEvent *create_handshake_event() {
-    NetArgs_Handshake *nargs = nargs_handshake();
+    Handshake *nargs = nargs_handshake();
     NetEvent *handshake_event = net_event_new(HANDSHAKE, nargs);
     return handshake_event;
 }
 
 void free_handshake_event(NetEvent *handshake_event) {
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
     free(handshake_args->to_client_pipe_name);
 
     free(handshake_event->args);
@@ -32,7 +32,7 @@ void free_handshake_event(NetEvent *handshake_event) {
 
 NetEvent *server_setup(char *client_to_server_fifo) {
     NetEvent *handshake_event = create_handshake_event();
-    NetArgs_Handshake *handshake = handshake_event->args;
+    Handshake *handshake = handshake_event->args;
 
     remove(client_to_server_fifo);
 
@@ -50,7 +50,7 @@ NetEvent *server_setup(char *client_to_server_fifo) {
 }
 
 void server_abort_handshake(NetEvent *handshake_event, HandshakeErrCode errcode) {
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
 
     handshake_args->errcode = errcode;
 
@@ -58,7 +58,7 @@ void server_abort_handshake(NetEvent *handshake_event, HandshakeErrCode errcode)
 }
 
 void server_get_send_fd(NetEvent *handshake_event) {
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
 
     printf("[SERVER]: Waiting for SYN...\n");
 
@@ -71,7 +71,7 @@ void server_get_send_fd(NetEvent *handshake_event) {
 int server_complete_handshake(NetEvent *handshake_event) {
     // SYN-ACK
     int syn_ack_value = rand();
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
     handshake_args->syn_ack = syn_ack_value;
 
     int send_fd = handshake_args->server_to_client_fd;
@@ -101,7 +101,7 @@ int server_complete_handshake(NetEvent *handshake_event) {
 }
 
 HandshakeErrCode client_recv_handshake_event(NetEvent *handshake_event) {
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
 
     recv_event_immediate(handshake_args->server_to_client_fd, handshake_event);
 
@@ -134,7 +134,7 @@ void client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     remove(pid_string); // Just in case
 
     // Copy over SYN
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
     strcpy(handshake_args->to_client_pipe_name, pid_string);
 
     int mkfifo_ret = mkfifo(pid_string, 0644);
@@ -144,7 +144,7 @@ void client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
 }
 
 int client_handshake(NetEvent *handshake_event) {
-    NetArgs_Handshake *handshake_args = handshake_event->args;
+    Handshake *handshake_args = handshake_event->args;
     int send_fd = handshake_args->client_to_server_fd;
 
     send_event_immediate(handshake_event, send_fd);

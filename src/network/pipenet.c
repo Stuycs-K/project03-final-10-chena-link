@@ -112,15 +112,16 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
 }
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
-    if (net_event_queue->event_count == 0) {
-        return;
-    }
-
+    // Add attached events
     for (int i = 0; i < PROTOCOL_COUNT; ++i) {
         NetEvent *attached_event = net_event_queue->attached_events[i];
         if (attached_event != NULL) {
             insert_event(net_event_queue, attached_event);
         }
+    }
+
+    if (net_event_queue->event_count == 0) {
+        return;
     }
 
     NetBuffer *nb = net_buffer_send();

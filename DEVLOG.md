@@ -32,6 +32,7 @@ This document must be updated daily by EACH group member.
 ## 2024-01-11 - 
 * Implement a networked client list so that clients can know which other clients are connected. 1 hour.
 * Cleanup client.c by offloading network functions into the baseclient module. 2 hours.
+* Implement server list display for the client. 1 hour.
 
 ## Kevin Lin
 

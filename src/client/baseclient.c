@@ -25,7 +25,7 @@ BaseClient *client_new(char *name) {
 // Performs handshake
 int client_connect(BaseClient *this, char *wkp) {
     NetEvent *handshake_event = create_handshake_event();
-    NetArgs_Handshake *handshake = handshake_event->args;
+    Handshake *handshake = handshake_event->args;
     strcpy(handshake->client_name, this->name);
 
     client_setup(wkp, handshake_event);

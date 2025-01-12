@@ -94,7 +94,7 @@ void send_client_list(Server *this, int client_id) {
 }
 
 void handle_client_connection(Server *this, NetEvent *handshake_event) {
-    NetArgs_Handshake *handshake = handshake_event->args;
+    Handshake *handshake = handshake_event->args;
 
     int client_id = get_free_client_id(this);
     Client *client = this->clients[client_id];

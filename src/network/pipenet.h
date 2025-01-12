@@ -233,14 +233,14 @@ enum NetEventCleanupBehavior {
 };
 
 /*
-    NetEvents wrap networked structs for networking.
+    NetEvents wrap structs for networking.
 
     NetProtocol protocol : see NetProtocol
 
     NetEventCleanupBehavior cleanup_behavior : see NetEventCleanupBehavior
 
     void *args : a struct of data linked to the NetProtocol
-        Must be cast into the correct NetArgs object with a statement such as NetArgs_EventName *nargs = event->args;
+        Must be cast into the correct NetArgs object with a statement such as EventName *nargs = event->args;
         Can be freely manipulated from that point onward.
 */
 typedef struct NetEvent NetEvent;

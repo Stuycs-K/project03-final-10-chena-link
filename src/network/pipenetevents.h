@@ -11,11 +11,11 @@
     2) The write / read function
     3) A destructor for the struct
 
-    Example: DECLARE_NET_ARGS(NetArgs_Handshake, handshake) generates:
+    Example: DECLARE_NET_ARGS(Handshake, handshake) generates:
 
-        NetArgs_Handshake *nargs_handshake();
+        Handshake *nargs_handshake();
         void *handler_handshake(NetBuffer *nb, void *args, int mode);
-        void free_handshake(NetArgs_Handshake *nargs);
+        void free_handshake(Handshake *nargs);
 
     net_args_type_name : the type name of the struct (from typedef)
 
@@ -46,8 +46,8 @@ enum HandshakeErrCode {
 };
 
 // Client-server handshake for GServers and CServers.
-typedef struct NetArgs_Handshake NetArgs_Handshake;
-struct NetArgs_Handshake {
+typedef struct Handshake Handshake;
+struct Handshake {
     char *client_name;
     char *to_client_pipe_name;
 
@@ -62,7 +62,7 @@ struct NetArgs_Handshake {
 
     int client_id;
 };
-DECLARE_NET_ARGS(NetArgs_Handshake, handshake)
+DECLARE_NET_ARGS(Handshake, handshake)
 
 // The list of clients connected to the server. The server sends this whenever a client leaves / joins.
 typedef struct ClientList ClientList;

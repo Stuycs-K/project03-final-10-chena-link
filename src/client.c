@@ -53,6 +53,7 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
 void get_username() {
     printf("Enter your username:\n");
     fgets(username, sizeof(username), stdin);
+    username[strcspn(username, "\n")] = 0;
     printf("\n\n");
 }
 
