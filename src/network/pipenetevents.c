@@ -56,6 +56,7 @@
         net_args_type_name *nargs = args;
 
 // Read / write a non-pointer field
+// USE THIS TO READ / WRITE A char[] OR ANY []
 #define VALUE(field)                      \
     if (mode == 0) {                      \
         NET_BUFFER_WRITE_VALUE(nb, field) \
@@ -72,7 +73,7 @@
     }
 
 // Read / write a string (char *) field
-// USE VALUE TO WRITE A char[] !!!
+// USE VALUE TO READ / WRITE A char[]
 #define STRING(field)                      \
     if (mode == 0) {                       \
         NET_BUFFER_WRITE_STRING(nb, field) \

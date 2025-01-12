@@ -68,10 +68,6 @@ void print_gserver_list(GServerInfoList *nargs) {
             break;
         }
 
-        if (i == 0) {
-            printf("%ld\n", strlen(info->name));
-        }
-
         printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
     }
 }
@@ -111,14 +107,26 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
 char *get_username() {
     char *username = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
 
-    char input[256];
-    printf("Enter your username:\n");
+    char input[MAX_PLAYER_NAME_CHARACTERS + 1];
+    printf("Enter your username (%d characters maximum):\n", MAX_PLAYER_NAME_CHARACTERS - 1);
 
-    fgets(input, MAX_PLAYER_NAME_CHARACTERS, stdin);
-    strcpy(username, input);
+    fgets(input, sizeof(input), stdin);
 
     // Remove the newline, if it exists
-    username[strcspn(username, "\n")] = 0;
+    input[strcspn(input, "\n")] = 0;
+
+    if (strlen(input) > MAX_PLAYER_NAME_CHARACTERS - 1) {
+        printf("Name is too long\n");
+        return NULL;
+    }
+
+    strncpy(username, input, MAX_PLAYER_NAME_CHARACTERS);
+
+    /*
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+    }
+    */
 
     printf("\n\n");
 
@@ -183,6 +191,9 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 void client_main(void) {
     client_state = IN_CSERVER;
     char *username = get_username();
+    if (username == NULL) {
+        exit(EXIT_FAILURE);
+    }
 
 #ifdef DONT
     // First, try to connect to the central server
