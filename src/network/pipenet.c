@@ -200,6 +200,7 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
         NetEvent *attached_event = net_event_queue->attached_events[protocol];
         if (attached_event != NULL) {
             handlers[protocol](nb, attached_event->args, 1);
+            insert_event(net_event_queue, attached_event);
             continue;
         }
 

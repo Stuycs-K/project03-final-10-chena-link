@@ -69,7 +69,7 @@ void cserver_send_server_list(CServer *this) {
     }
     END_FOREACH_CLIENT()
 
-    // Update all GServerInfo
+    // Update all GServerInfo (really annoying!)
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
         Server *internal = gserver->server;
@@ -83,6 +83,8 @@ void cserver_send_server_list(CServer *this) {
         strcpy(server_info->name, internal->name);
         strcpy(server_info->wkp_name, internal->wkp_name);
     }
+
+    printf("%d\n", nargs->gserver_list[0]->id);
 }
 
 void cserver_loop(CServer *this) {

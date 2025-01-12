@@ -15,12 +15,23 @@
 #include "util/file.h"
 
 #include "client/baseclient.h"
-#include "client/gserverlist.h"
 
 #define SHMID 123456789
 #define DONT
 
-GServerList *gserver_list;
+void print_gserver_list(GServerInfoList *nargs) {
+    printf("======= Game Server List\n");
+    GServerInfo **recv_gserver_list = nargs->gserver_list;
+
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        GServerInfo *info = recv_gserver_list[i];
+        if (info->status == 1) {
+            continue;
+        }
+
+        printf("[%d] %s: %d / %d\n", info->id, info->name, info->current_clients, info->max_clients);
+    }
+}
 
 void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
@@ -30,12 +41,8 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     case GSERVER_LIST: {
         printf("mhm\n");
         GServerInfoList *nargs = args;
-        GServerInfo **recv_gserver_list = nargs->gserver_list;
-
-        int did_change = update_gserver_list(gserver_list, recv_gserver_list);
-        if (did_change) {
-            print_gserver_list(gserver_list);
-        }
+        // GServerInfo **recv_gserver_list = nargs->gserver_list;
+        print_gserver_list(nargs);
     }
 
     default:
@@ -67,8 +74,6 @@ void client_main(void) {
     shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
 
-    gserver_list = gserver_list_new();
-
 #ifdef DONT
     BaseClient *cclient = client_new();
     int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
@@ -76,6 +81,10 @@ void client_main(void) {
         printf("[CLIENT]: Failed to establish connection with the central server\n");
         exit(EXIT_FAILURE);
     }
+
+    GServerInfoList *info_list_nargs = nargs_gserver_info_list();
+    NetEvent *info_list_event = net_event_new(GSERVER_LIST, info_list_nargs);
+    attach_event(cclient->recv_queue, info_list_event);
 
     while (1) {
         client_recv_from_server(cclient);
