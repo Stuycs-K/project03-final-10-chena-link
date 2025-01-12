@@ -88,9 +88,10 @@ struct GServerInfo {
     char wkp_name[GSERVER_WKP_NAME_LEN];
 };
 
-typedef struct GServerList GServerList;
-struct GServerList {
+typedef struct NetArgs_GServerList NetArgs_GServerList;
+struct NetArgs_GServerList {
+    GServerInfo **gserver_list;
 };
-DECLARE_NET_ARGS(GServerInfo, gserver_info)
+DECLARE_NET_ARGS(NetArgs_GServerList, gserver_list)
 
 #endif

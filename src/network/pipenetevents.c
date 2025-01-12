@@ -152,12 +152,23 @@ DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
 }
 END_CONSTRUCTOR()
 
-DECLARE_HANDLER(GServerInfo, gserver_info) {
-    VALUE(nargs->id);
-    VALUE(nargs->status);
-    VALUE(nargs->current_clients);
-    VALUE(nargs->max_clients);
-    STRING(nargs->name);
-    STRING(nargs->wkp_name);
+DECLARE_CONSTRUCTOR(NetArgs_GServerList, gserver_list) {
+    nargs->gserver_list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
 }
-END_HANDLER()
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(NetArgs_GServerList, gserver_list) {
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        GServerInfo *server_info = nargs_gserver_info();
+
+        VALUE(server_info->id);
+        VALUE(server_info->status);
+        VALUE(server_info->current_clients);
+        VALUE(server_info->max_clients);
+        STRING(server_info->name);
+        STRING(server_info->wkp_name);
+
+        nargs->gserver_list[i] = server_info;
+    }
+}
+END_CONSTRUCTOR()

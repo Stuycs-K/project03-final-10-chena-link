@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "cserver.h"
+#include "network/pipenetevents.h"
 #include "shared.h"
 
 CServer *cserver_new(int id) {
@@ -52,6 +53,29 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     }
 }
 
+void cserver_send_server_list(CServer *this) {
+    NetArgs_GServerList *nargs = nargs_gserver_list();
+
+    // Yeah, we do this every server tick
+    for (int i = 0; i < this->gserver_count; ++i) {
+        GServer *gserver = this->gserver_list[i];
+        Server *internal = gserver->server;
+
+        GServerInfo *server_info = malloc(sizeof(GServerInfo));
+        server_info->id = internal->id;
+        server_info->status = gserver->status;
+        server_info->current_clients = internal->status;
+        server_info->max_clients = internal->status;
+        strcpy(server_info->name, internal->name);
+        strcpy(server_info->wkp_name, internal->wkp_name);
+
+        nargs->gserver_list[i] = server_info;
+    }
+
+    NetEvent *event = net_event_new(GSERVER_LIST, nargs);
+    server_send_event_to_all(this->server, event);
+}
+
 void cserver_loop(CServer *this) {
     Server *server = this->server;
 
@@ -66,6 +90,8 @@ void cserver_loop(CServer *this) {
             cserver_handle_net_event(this, client_id, queue->events[i]);
         }
     }
+
+    cserver_send_server_list(this);
 }
 
 void cserver_run(CServer *this) {

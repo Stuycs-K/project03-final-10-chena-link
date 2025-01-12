@@ -213,5 +213,5 @@ void net_init() {
     BIND(PERIODIC_HANDSHAKE, periodic_handshake);
     BIND(HANDSHAKE, handshake);
     BIND(CLIENT_LIST, client_list);
-    BIND(GSERVER_INFO, gserver_info);
+    BIND(GSERVER_LIST, gserver_list);
 }

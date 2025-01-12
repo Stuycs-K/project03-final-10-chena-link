@@ -194,7 +194,7 @@ enum NetProtocol {
     PERIODIC_HANDSHAKE,
     HANDSHAKE,
     CLIENT_LIST,
-    GSERVER_INFO,
+    GSERVER_LIST,
 
     PROTOCOL_COUNT,
 };
