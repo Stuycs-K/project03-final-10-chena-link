@@ -22,7 +22,6 @@
 typedef enum ClientState ClientState;
 enum ClientState {
     IN_CSERVER,
-    JOINIING_GSERVER,
     IN_GSERVER,
 };
 
@@ -30,6 +29,11 @@ ClientState client_state;
 GServerInfoList *gservers; // Global server list
 
 void print_gserver_list(GServerInfoList *nargs) {
+    // Don't print the server list if we're in a game server.
+    if (client_state == IN_GSERVER) {
+        return;
+    }
+
     printf("======= Game Server List\n");
     GServerInfo **recv_gserver_list = nargs->gserver_list;
 
@@ -84,7 +88,13 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
         GServerInfo *server_info = gservers->gserver_list[gserver_id];
         printf("%s\n", server_info->wkp_name);
 
-        client_connect(gclient, server_info->wkp_name);
+        int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
+        if (connected_to_gserver == -1) {
+            printf("[CLIENT]: Failed to connect to GServer\n");
+            return;
+        }
+        client_state = IN_GSERVER;
+
         break;
     }
 
@@ -107,6 +117,10 @@ char *get_username() {
 }
 
 void input_for_cserver(BaseClient *client) {
+    if (client_state == IN_GSERVER) {
+        return;
+    }
+
     printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
@@ -145,6 +159,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 }
 
 void client_main(void) {
+    client_state = IN_CSERVER;
     char *username = get_username();
 
 #ifdef DONT
@@ -164,6 +179,7 @@ void client_main(void) {
     attach_event(cclient->recv_queue, info_list_event);
 
     while (1) {
+        // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
             NetEvent *event = cclient->recv_queue->events[i];
@@ -172,6 +188,30 @@ void client_main(void) {
 
         if (cclient->client_id >= 0) {
             input_for_cserver(cclient);
+        }
+
+        if (client_is_connected(gclient)) {
+            client_recv_from_server(gclient);
+            for (int i = 0; i < gclient->recv_queue->event_count; ++i) {
+                NetEvent *event = gclient->recv_queue->events[i];
+                handle_gserver_net_event(gclient, event);
+            }
+
+            if (gclient->client_id < 0) {
+                continue;
+            }
+
+            for (int i = 0; i < 1; ++i) {
+                NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
+                test_args->id = rand();
+
+                printf("rand: %d\n", test_args->id);
+                NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
+
+                client_send_event(gclient, test_event);
+            }
+
+            client_send_to_server(gclient);
         }
 
         client_send_to_server(cclient);
