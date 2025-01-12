@@ -22,6 +22,10 @@ BaseClient *client_new(char *name) {
     return this;
 }
 
+int client_is_connected(BaseClient *this) {
+    return (this->from_server_fd != -1 && this->to_server_fd != -1);
+}
+
 // Performs handshake
 int client_connect(BaseClient *this, char *wkp) {
     NetEvent *handshake_event = create_handshake_event();
@@ -87,6 +91,25 @@ void client_send_event(BaseClient *this, NetEvent *event) {
 
 void client_send_to_server(BaseClient *this) {
     send_event_queue(this->send_queue, this->to_server_fd);
+    empty_net_event_queue(this->send_queue);
+}
+
+void client_disconnect_from_server(BaseClient *this) {
+    if (!client_is_connected(this)) {
+        return;
+    }
+
+    free_client_list(this->client_info_list); // Forget client list
+
+    close(this->to_server_fd);
+    close(this->from_server_fd);
+
+    this->to_server_fd = -1;
+    this->from_server_fd = -1;
+
+    this->client_id = -1;
+
+    empty_net_event_queue(this->recv_queue);
     empty_net_event_queue(this->send_queue);
 }
 

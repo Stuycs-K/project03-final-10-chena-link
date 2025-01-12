@@ -22,6 +22,7 @@
 typedef enum ClientState ClientState;
 enum ClientState {
     IN_CSERVER,
+    JOINIING_GSERVER,
     IN_GSERVER,
 };
 
@@ -60,7 +61,7 @@ void print_gserver_list(GServerInfoList *nargs) {
     }
 }
 
-void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
+void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
@@ -82,6 +83,8 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
 
         GServerInfo *server_info = gservers->gserver_list[gserver_id];
         printf("%s\n", server_info->wkp_name);
+
+        client_connect(gclient, server_info->wkp_name);
         break;
     }
 
@@ -144,12 +147,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 void client_main(void) {
     char *username = get_username();
 
-    srand(getpid());
-    int shmid;
-    card *data;
-    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
-    data = shmat(shmid, 0, 0);
-
 #ifdef DONT
     // First, try to connect to the central server
     BaseClient *cclient = client_new(username);
@@ -159,7 +156,9 @@ void client_main(void) {
         exit(EXIT_FAILURE);
     }
 
-    // For networking the server list
+    BaseClient *gclient = client_new(username);
+
+    // Set up the networked server list
     gservers = nargs_gserver_info_list();
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
@@ -168,7 +167,7 @@ void client_main(void) {
         client_recv_from_server(cclient);
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
             NetEvent *event = cclient->recv_queue->events[i];
-            handle_cserver_net_event(cclient, event);
+            handle_cserver_net_event(cclient, gclient, event);
         }
 
         if (cclient->client_id >= 0) {
@@ -181,6 +180,12 @@ void client_main(void) {
 #endif
 
 #ifndef DONT
+    srand(getpid());
+    int shmid;
+    card *data;
+    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
+    data = shmat(shmid, 0, 0);
+
     BaseClient *gclient = client_new();
     int connected_to_gserver = client_connect(gclient, "G69");
 
