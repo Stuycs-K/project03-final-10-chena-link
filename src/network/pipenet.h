@@ -202,13 +202,21 @@ enum NetProtocol {
 
 /*
     Don't worry about calling this. It's handled automagically.
-    Reads / writes an event of a specific protocol. Composed with macros in pipenetevents.c
+    Reads / writes an event of a specific protocol. Composed with DECLARE_HANDLER in pipenetevents.c
 
     NetBuffer *nb : the NetBuffer
     void *args: the arguments of a NetEvent
     int mode : 0 is write mode, 1 is read mode
 */
 typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
+
+/*
+    Don't worry about calling this. It's handled automagically.
+    Frees the argument struct of a NetEvent. Composed with DECLARE_DESTRUCTOR in pipenetevents.c
+
+    void *args: the arguments of a NetEvent that this will free
+*/
+typedef void (*NetEventDestructor)(void *args);
 
 /*
     When NetEventQueues are emptied, they have a few options to cleanup the NetEvents:

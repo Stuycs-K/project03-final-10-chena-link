@@ -9,6 +9,13 @@
     Declares 2 functions:
     1) A constructor for the struct
     2) The write / read function
+    3) A destructor for the struct
+
+    Example: DECLARE_NET_ARGS(NetArgs_Handshake, handshake) generates:
+
+        NetArgs_Handshake *nargs_handshake();
+        void *handler_handshake(NetBuffer *nb, void *args, int mode);
+        void free_handshake(NetArgs_Handshake *nargs);
 
     net_args_type_name : the type name of the struct (from typedef)
 
@@ -16,9 +23,10 @@
         Convention is to chop off the NetArgs_ prefix of the type name and convert the rest to snake_case
         So the internal name would for NetArgs_DoThis is do_this
 */
-#define DECLARE_NET_ARGS(net_args_type_name, internal_name) \
-    net_args_type_name *(nargs_##internal_name)();          \
-    void *handler_##internal_name(NetBuffer *nb, void *args, int mode);
+#define DECLARE_NET_ARGS(net_args_type_name, internal_name)             \
+    net_args_type_name *(nargs_##internal_name)();                      \
+    void *handler_##internal_name(NetBuffer *nb, void *args, int mode); \
+    void destroy_##internal_name(void *args);
 
 #ifndef PIPENETEVENTS_H
 #define PIPENETEVENTS_H

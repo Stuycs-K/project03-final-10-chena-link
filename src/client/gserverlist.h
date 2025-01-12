@@ -12,6 +12,8 @@ struct GServerList {
 
 GServerList *gserver_list_new();
 
+int update_gserver_list(GServerList *this, GServerInfo **server_info_list);
+
 void print_gserver_list(GServerList *this);
 
 #endif

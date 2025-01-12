@@ -5,10 +5,12 @@
 #include "pipenet.h"
 #include "pipenetevents.h"
 
-#define BIND(protocol, internal_name) \
-    handlers[protocol] = handler_##internal_name;
+#define BIND(protocol, internal_name)             \
+    handlers[protocol] = handler_##internal_name; \
+    destructors[protocol] = destroy_##internal_name;
 
 NetEventHandler handlers[PROTOCOL_COUNT];
+NetEventDestructor destructors[PROTOCOL_COUNT];
 
 NetBuffer *net_buffer_send() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
@@ -77,27 +79,27 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
 
         switch (event->cleanup_behavior) {
 
-        case NEVENT_PERSISTENT:
+        case NEVENT_PERSISTENT: // Simply remove it from the queue
             net_event_queue->events[i] = NULL;
             break;
 
         case NEVENT_PERSISTENT_ARGS:
-            event->args = NULL; // Don't free the args!
-            free(net_event_queue->events[i]);
+            event->args = NULL;               // Don't free the args!
+            free(net_event_queue->events[i]); // Do free the event wrapper
             net_event_queue->events[i] = NULL;
             break;
 
         case NEVENT_BASE:
-            free(event->args);
+            destructors[event->protocol](event->args); // Call destructor
             free(net_event_queue->events[i]);
             net_event_queue->events[i] = NULL;
 
         default:
             break;
         }
-
-        net_event_queue->event_count = 0;
     }
+
+    net_event_queue->event_count = 0;
 }
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {

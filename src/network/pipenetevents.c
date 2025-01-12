@@ -10,7 +10,12 @@
 #include "../shared.h"
 #include "pipenetevents.h"
 
-// The variable "nargs" is available and has the correct type
+/*
+    Builds a constructor for the struct
+
+    net_args_type_name : the type name of the struct (from typedef)
+    internal_name : the suffix for each of the 3 functions
+*/
 #define DECLARE_CONSTRUCTOR(net_args_type_name, internal_name) \
     net_args_type_name *(nargs_##internal_name)() {            \
         net_args_type_name *nargs = malloc(sizeof(net_args_type_name));
@@ -19,7 +24,30 @@
     return nargs;         \
     }
 
-// The variable "nargs" is available and has the correct type
+/*
+    Builds a destructor for the struct, used for freeing it if needed
+    It's only necessary to fill in the body if the struct has malloced pointers
+
+    Otherwise, just write DECLARE_DESTRUCTOR and END_DESTRUCTOR on the next line
+
+    net_args_type_name : the type name of the struct (from typedef)
+    internal_name : the suffix for each of the 3 functions
+*/
+#define DECLARE_DESTRUCTOR(net_args_type_name, internal_name) \
+    void destroy_##internal_name(void *args) {                \
+        net_args_type_name *nargs = args;
+
+#define END_DESTRUCTOR() \
+    free(nargs);         \
+    }
+
+/*
+    Builds a handler for the struct, used to write it as raw bytes to a file or reconstruct it from raw data read from a file
+    Use the VALUE, PTR, and STRING macros to serialize / deserialize fields
+
+    net_args_type_name : the type name of the struct (from typedef)
+    internal_name : the suffix for each of the 3 functions
+*/
 #define DECLARE_HANDLER(net_args_type_name, internal_name)               \
     void *handler_##internal_name(NetBuffer *nb, void *args, int mode) { \
         if (args == NULL) {                                              \
@@ -67,6 +95,9 @@ DECLARE_HANDLER(NetArgs_PeriodicHandshake, periodic_handshake) {
 }
 END_HANDLER()
 
+DECLARE_DESTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake)
+END_DESTRUCTOR()
+
 //============================================================
 
 DECLARE_CONSTRUCTOR(NetArgs_Handshake, handshake) {
@@ -96,6 +127,11 @@ DECLARE_HANDLER(NetArgs_Handshake, handshake) {
     VALUE(nargs->client_id);
 }
 END_HANDLER()
+
+DECLARE_DESTRUCTOR(NetArgs_Handshake, handshake) {
+    free(nargs->to_client_pipe_name);
+}
+END_DESTRUCTOR()
 
 //============================================================
 
@@ -140,6 +176,11 @@ DECLARE_HANDLER(ClientList, client_list) {
 }
 END_HANDLER()
 
+DECLARE_DESTRUCTOR(ClientList, client_list) {
+    free_client_list(nargs->info_list);
+}
+END_DESTRUCTOR()
+
 DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs->id = -1;
     nargs->status = 0;
@@ -162,6 +203,9 @@ DECLARE_HANDLER(GServerInfo, gserver_info) {
 }
 END_CONSTRUCTOR()
 
+DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
+END_DESTRUCTOR()
+
 DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
     nargs->gserver_list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
 }
@@ -175,3 +219,7 @@ DECLARE_HANDLER(GServerInfoList, gserver_info_list) {
     }
 }
 END_CONSTRUCTOR()
+
+DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list)
+
+END_DESTRUCTOR()

@@ -28,8 +28,14 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     switch (event->protocol) {
 
     case GSERVER_LIST: {
+        printf("mhm\n");
         GServerInfoList *nargs = args;
         GServerInfo **recv_gserver_list = nargs->gserver_list;
+
+        int did_change = update_gserver_list(gserver_list, recv_gserver_list);
+        if (did_change) {
+            print_gserver_list(gserver_list);
+        }
     }
 
     default:
@@ -68,6 +74,17 @@ void client_main(void) {
     if (connected_to_cserver == -1) {
         printf("[CLIENT]: Failed to establish connection with the central server\n");
         exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        client_recv_from_server(cclient);
+        for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
+            NetEvent *event = cclient->recv_queue->events[i];
+            handle_cserver_net_event(cclient, event);
+        }
+
+        client_send_to_server(cclient);
+        usleep(TICK_TIME_MICROSECONDS);
     }
 
 #ifndef DONT

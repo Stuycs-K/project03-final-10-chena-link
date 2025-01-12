@@ -13,7 +13,25 @@ GServerList *gserver_list_new() {
     return this;
 }
 
-void update_gserver_list(GServerList *this, GServerInfo **server_info_list) {
+int update_gserver_list(GServerList *this, GServerInfo **server_info_list) {
+    int did_change = 0;
+
+    for (int i = 0; i < this->total_servers; ++i) {
+        GServerInfo *recv_info = server_info_list[i];
+        GServerInfo *stored_info = this->gserver_info_list[i];
+
+        // Only fields that change
+        printf("yueah\n");
+        stored_info->current_clients = recv_info->current_clients;
+
+        stored_info->max_clients = recv_info->max_clients;
+
+        stored_info->status = recv_info->status;
+
+        strcpy(stored_info->name, recv_info->name);
+    }
+
+    return did_change;
 }
 
 void print_gserver_list(GServerList *this) {
