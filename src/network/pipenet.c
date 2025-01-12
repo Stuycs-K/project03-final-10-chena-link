@@ -26,7 +26,6 @@ NetEventDestructor destructors[PROTOCOL_COUNT];
     RETURNS: none
 */
 void net_init() {
-    BIND(PERIODIC_HANDSHAKE, periodic_handshake);
     BIND(HANDSHAKE, handshake);
     BIND(CLIENT_LIST, client_list);
     BIND(GSERVER_INFO, gserver_info);
