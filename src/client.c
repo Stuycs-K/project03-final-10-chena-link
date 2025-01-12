@@ -40,9 +40,47 @@ void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     client_state = IN_GSERVER;
 }
 
+<<<<<<< HEAD
 void print_gserver_list(GServerInfoList *nargs) {
     // Don't print the server list if we're in a game server.
     if (client_state == IN_GSERVER) {
+=======
+void free_client_connect_event(NetEvent *event) {
+    NetArgs_ClientConnect *nargs = event->args;
+    free(nargs->name);
+    free(event->args);
+    free(event);
+}
+
+NetEvent *create_card_count_event(){
+  NetArgs_CardCount *nargs = malloc(sizeof(NetArgs_CardCount));
+  nargs->card_count = 7;
+  return net_event_new(CARD_COUNT, nargs);
+}
+#define SHMID 1234567890
+
+void client_main(void) {
+    srand(getpid());
+    int shmid;
+    card *data;
+    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
+    data = shmat(shmid, 0, 0);
+    net_init();
+
+    NetEvent *client_connect_event = create_client_connect_event();
+    NetArgs_ClientConnect *client_connect = client_connect_event->args;
+
+    // Everything below here will be looped in the future!
+
+    NetEvent *handshake_event = create_handshake_event();
+    NetArgs_InitialHandshake *handshake = handshake_event->args;
+
+    client_setup("TEMP", handshake_event);
+    int succeeded = client_handshake(handshake_event);
+
+    if (succeeded == -1) {
+        printf("Connection failed\n");
+>>>>>>> 80b08123f68df61ed682db03f9c0500769fc2aef
         return;
     }
 
@@ -276,6 +314,7 @@ void client_main(void) {
     card deck[100];
     int num_cards = 7;
     generate_cards(deck, num_cards);
+
     // Should be done by server on setup not by client
     data->lastPlayed = generate_card();
     char input[10];
@@ -313,6 +352,7 @@ void client_main(void) {
                 num_cards--;
             }
         }
+<<<<<<< HEAD
 
         for (int i = 0; i < 1; ++i) {
             NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
@@ -326,6 +366,15 @@ void client_main(void) {
 
         client_send_to_server(gclient);
 
+=======
+        NetEvent * card_counts = create_card_count_event();
+        NetArgs_CardCount *card_num = card_counts->args;
+        card_num->card_count = num_cards;
+        insert_event(net_send_queue, card_counts);
+        // Finally, send event queue
+        send_event_queue(net_send_queue, to_server);
+        empty_net_event_queue(net_send_queue);
+>>>>>>> 80b08123f68df61ed682db03f9c0500769fc2aef
         usleep(TICK_TIME_MICROSECONDS);
     }
 #endif

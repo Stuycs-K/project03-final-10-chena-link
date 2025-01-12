@@ -1,6 +1,14 @@
 #include <stdio.h>
+<<<<<<< HEAD
 #include <unistd.h>
 
+=======
+<<<<<<< HEAD
+=======
+
+>>>>>>> e7867147ddb8cf24ae7f5f6aa8bac133f1415003
+#include "clientconnection.h"
+>>>>>>> 80b08123f68df61ed682db03f9c0500769fc2aef
 #include "../network/pipehandshake.h"
 #include "../network/pipenetevents.h"
 #include "../shared.h"

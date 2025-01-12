@@ -90,6 +90,7 @@
 DECLARE_CONSTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake) {
     nargs->id = 69420;
 }
+<<<<<<< HEAD
 END_CONSTRUCTOR()
 
 DECLARE_HANDLER(NetArgs_PeriodicHandshake, periodic_handshake) {
@@ -246,3 +247,13 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
     free(nargs->gserver_list);
 }
 END_DESTRUCTOR()
+
+void send_card_count(NetBuffer *nb, void *args){
+  NetArgs_CardCount *nargs = args;
+  NET_BUFFER_WRITE_VALUE(nb, nargs->card_count);
+}
+void * recv_card_count(NetBuffer *nb, void *args){
+  NetArgs_CardCount *nargs = args;
+  NET_BUFFER_READ_VALUE(nb, nargs->card_count);
+  return nargs;
+}

@@ -237,10 +237,28 @@ NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event) {
 }
 
 void net_init() {
+<<<<<<< HEAD
     BIND(PERIODIC_HANDSHAKE, periodic_handshake);
     BIND(HANDSHAKE, handshake);
     BIND(CLIENT_LIST, client_list);
     BIND(GSERVER_INFO, gserver_info);
     BIND(GSERVER_LIST, gserver_info_list);
     BIND(RESERVE_GSERVER, reserve_gserver);
+=======
+    for (int i = 0; i < PROTOCOL_COUNT; ++i) {
+        net_event_handlers[i] = NULL;
+    }
+
+    bind_send_event(PERIODIC_HANDSHAKE, send_periodic_handshake);
+    bind_recv_event(PERIODIC_HANDSHAKE, recv_periodic_handshake);
+
+    bind_send_event(INITIAL_HANDSHAKE, send_initial_handshake);
+    bind_recv_event(INITIAL_HANDSHAKE, recv_initial_handshake);
+
+    bind_send_event(CLIENT_CONNECT, send_client_connect);
+    bind_recv_event(CLIENT_CONNECT, recv_client_connect);
+
+    bind_send_event(CARD_COUNT, send_card_count);
+    bind_recv_event(CARD_COUNT, recv_card_count);
+>>>>>>> 80b08123f68df61ed682db03f9c0500769fc2aef
 }

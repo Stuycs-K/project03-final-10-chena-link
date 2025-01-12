@@ -83,7 +83,53 @@ void gserver_run(GServer *this) {
         server_empty_recv_events(server);
         server_recv_events(server);
 
+<<<<<<< HEAD
         gserver_loop(this);
+=======
+        while (1) {
+            bytes_read = read(recv_fd, &client_id, sizeof(client_id));
+            if (bytes_read <= 0) {
+                break;
+            }
+
+            char *event_buffer = read_into_buffer(recv_fd);
+            recv_event_queue(recv_queue, event_buffer);
+
+            printf("ID: %d | Count: %d \n", client_id, recv_queue->event_count);
+
+            // ALL of these events come from client_id
+            for (int i = 0; i < recv_queue->event_count; ++i) {
+
+                NetEvent *event = recv_queue->events[i];
+                void *args = event->args;
+
+                // The cases are wrapped in braces so we can keep using "nargs"
+                switch (event->protocol) {
+
+                case PERIODIC_HANDSHAKE: {
+                    NetArgs_PeriodicHandshake *nargs = args;
+                    printf("n: %d\n", nargs->id);
+
+                    break;
+                }
+
+                case CLIENT_CONNECT: {
+                    NetArgs_ClientConnect *nargs = args;
+                    printf("client %d connected \n", client_id);
+                    break;
+                }
+                case CARD_COUNT:{
+                    NetArgs_CardCount *nargs = args;
+                    printf("sent card\n");
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+            printf("loop done\n");
+        }
+>>>>>>> 80b08123f68df61ed682db03f9c0500769fc2aef
 
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);
