@@ -27,8 +27,11 @@ CServer *cserver_new(int id) {
     return this;
 }
 
-void reserve_gserver(CServer *this) {
+void reserve_gserver(CServer *this, int client_id) {
     GServer *gserver = NULL;
+
+    ReserveGServer *reserve_info = nargs_reserve_gserver();
+    NetEvent *reserve_event = net_event_new(RESERVE_GSERVER, reserve_info);
 
     // Get unreserved GServer
     for (int i = 0; i < this->gserver_count; ++i) {
@@ -38,7 +41,8 @@ void reserve_gserver(CServer *this) {
         }
     }
 
-    if (!gserver) {
+    if (!gserver) { // Send -1 to the client to let them know they can't reserve anymore servers!
+        server_send_event_to(this->server, client_id, reserve_event);
         return;
     }
 
@@ -50,6 +54,10 @@ void reserve_gserver(CServer *this) {
     } else {
         gserver->status = GSS_WAITING_FOR_PLAYERS;
         this->server_list_updated = 1;
+
+        // Tell the client which server they reserved so they can join!
+        reserve_info->gserver_id = gserver->server->id;
+        server_send_event_to(this->server, client_id, reserve_event);
     }
 }
 
@@ -60,8 +68,8 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
     case RESERVE_GSERVER: {
         ReserveGServer *nargs = args;
-        reserve_gserver(this);
-        printf("reserve\n");
+        printf("reserved\n");
+        reserve_gserver(this, client_id);
         break;
     }
 
@@ -77,7 +85,7 @@ void cserver_send_server_list(CServer *this) {
     NetEvent *server_list_event = this->server_list_event;
     GServerInfoList *nargs = server_list_event->args;
 
-    // Attach server list event to all clients' send queue to automatically send it.
+    // Attach server list event to all clients' send queue to automatically send it (no mallocing a new one).
     // Only do this if they just joined OR a GServer status changed.
     FOREACH_CLIENT(this->server) {
         if (client->recently_connected || this->server_list_updated) {

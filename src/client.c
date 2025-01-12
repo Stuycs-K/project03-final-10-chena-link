@@ -26,7 +26,7 @@ enum ClientState {
 };
 
 ClientState client_state;
-char username[MAX_PLAYER_NAME_CHARACTERS];
+GServerInfoList *gservers; // Global server list
 
 void print_gserver_list(GServerInfoList *nargs) {
     printf("======= Game Server List\n");
@@ -68,6 +68,21 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     case GSERVER_LIST: {
         GServerInfoList *nargs = args;
         print_gserver_list(nargs);
+        break;
+    }
+
+    case RESERVE_GSERVER: {
+        ReserveGServer *nargs = args;
+        int gserver_id = nargs->gserver_id;
+
+        if (gserver_id == -1) {
+            printf("Crap! Can't join any servers\n");
+            return;
+        }
+
+        GServerInfo *server_info = gservers->gserver_list[gserver_id];
+        printf("%s\n", server_info->wkp_name);
+        break;
     }
 
     default:
@@ -75,11 +90,17 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
-void get_username() {
+char *get_username() {
+    char *username = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
+
     printf("Enter your username:\n");
-    fgets(username, sizeof(username), stdin);
+
+    fgets(username, MAX_PLAYER_NAME_CHARACTERS, stdin);
     username[strcspn(username, "\n")] = 0;
+
     printf("\n\n");
+
+    return username;
 }
 
 void input_for_cserver(BaseClient *client) {
@@ -121,7 +142,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 }
 
 void client_main(void) {
-    get_username();
+    char *username = get_username();
 
     srand(getpid());
     int shmid;
@@ -139,8 +160,8 @@ void client_main(void) {
     }
 
     // For networking the server list
-    GServerInfoList *info_list_nargs = nargs_gserver_info_list();
-    NetEvent *info_list_event = net_event_new(GSERVER_LIST, info_list_nargs);
+    gservers = nargs_gserver_info_list();
+    NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
 
     while (1) {
