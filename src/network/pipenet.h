@@ -215,7 +215,7 @@ typedef void *(*NetEventHandler)(NetBuffer *nb, void *args, int mode);
 
 /*
     Don't worry about calling this. It's handled automagically.
-    Frees the argument struct of a NetEvent. Composed with DECLARE_DESTRUCTOR in pipenetevents.c
+    Frees the wrapped struct of a NetEvent. Composed with DECLARE_DESTRUCTOR in pipenetevents.c
 
     void *args: the arguments of a NetEvent that this will free
 */
@@ -259,7 +259,7 @@ struct NetEvent {
     int event_count : how many NetEvents are being sent / received
     int max_events : the maximum size of the queue
 
-    NetEvent **attached_events :
+    NetEvent **attached_events : see attach_event in pipenet.c
 
     NetEvent **events : a contiguous array of NetEvents
 */

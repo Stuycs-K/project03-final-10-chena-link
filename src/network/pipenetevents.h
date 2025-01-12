@@ -31,12 +31,6 @@
 #ifndef PIPENETEVENTS_H
 #define PIPENETEVENTS_H
 
-typedef struct NetArgs_PeriodicHandshake NetArgs_PeriodicHandshake;
-struct NetArgs_PeriodicHandshake {
-    int id;
-};
-DECLARE_NET_ARGS(NetArgs_PeriodicHandshake, periodic_handshake)
-
 typedef enum HandshakeErrCode HandshakeErrCode;
 enum HandshakeErrCode {
     HEC_SUCCESS = -1,

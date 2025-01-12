@@ -171,12 +171,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
 
-    case PERIODIC_HANDSHAKE: {
-        NetArgs_PeriodicHandshake *nargs = args;
-        printf("we GOT from server: %d\n", nargs->id);
-        break;
-    }
-
     default:
         break;
     }
@@ -264,18 +258,6 @@ void client_main(void) {
                     num_cards--;
                 }
             }
-
-            /*
-            for (int i = 0; i < 1; ++i) {
-                NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
-                test_args->id = rand();
-
-                printf("rand: %d\n", test_args->id);
-                NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
-
-                client_send_event(gclient, test_event);
-            }
-            */
 
             client_send_to_server(gclient);
         }

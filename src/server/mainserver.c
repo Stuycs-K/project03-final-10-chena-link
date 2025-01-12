@@ -164,12 +164,6 @@ void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) 
     // The cases are wrapped in braces so we can keep using "nargs"
     switch (event->protocol) {
 
-    case PERIODIC_HANDSHAKE: {
-        NetArgs_PeriodicHandshake *nargs = args;
-        printf("n: %d\n", nargs->id);
-        break;
-    }
-
     default:
         break;
     }

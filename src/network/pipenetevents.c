@@ -87,21 +87,6 @@
 
 //============================================================
 
-DECLARE_CONSTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake) {
-    nargs->id = 69420;
-}
-END_CONSTRUCTOR()
-
-DECLARE_HANDLER(NetArgs_PeriodicHandshake, periodic_handshake) {
-    VALUE(nargs->id);
-}
-END_HANDLER()
-
-DECLARE_DESTRUCTOR(NetArgs_PeriodicHandshake, periodic_handshake)
-END_DESTRUCTOR()
-
-//============================================================
-
 DECLARE_CONSTRUCTOR(Handshake, handshake) {
     nargs->client_name = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
     nargs->ack = -1;

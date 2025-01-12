@@ -115,16 +115,6 @@ void gserver_loop(GServer *this) {
     }
     END_FOREACH_CLIENT()
 
-    /* BELOW IS A TEST FOR SERVER SEND
-    NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
-    test_args->id = rand();
-
-    printf("rand: %d\n", test_args->id);
-    NetEvent *test_event = net_event_new(PERIODIC_HANDSHAKE, test_args);
-
-    server_send_event_to_all(server, test_event);
-    */
-
     // Last
     send_to_cserver(this);
 }
