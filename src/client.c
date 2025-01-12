@@ -34,11 +34,29 @@ void print_gserver_list(GServerInfoList *nargs) {
 
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         GServerInfo *info = recv_gserver_list[i];
+
+        /*
         if (info->status == 1) {
             continue;
         }
+        */
 
-        printf("[%d] %s: %d / %d\n", info->id, info->name, info->current_clients, info->max_clients);
+        char status[100];
+        switch (info->status) {
+
+        case 0:
+            strcpy(status, "UNRESERVED");
+            break;
+
+        case 1:
+            strcpy(status, "WAITING FOR PLAYERS");
+            break;
+
+        default:
+            break;
+        }
+
+        printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
     }
 }
 
@@ -65,7 +83,7 @@ void get_username() {
 }
 
 void input_for_cserver(BaseClient *client) {
-    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A SERVER ID TO JOIN A SERVER\n");
+    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
 

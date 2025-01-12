@@ -42,9 +42,15 @@ void reserve_gserver(CServer *this) {
         return;
     }
 
-    gserver->status = GSS_WAITING_FOR_PLAYERS;
-
     pipe(gserver->cserver_pipes);
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        gserver_run(gserver);
+    } else {
+        gserver->status = GSS_WAITING_FOR_PLAYERS;
+        this->server_list_updated = 1;
+    }
 }
 
 void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
@@ -54,6 +60,7 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
     case RESERVE_GSERVER: {
         ReserveGServer *nargs = args;
+        reserve_gserver(this);
         printf("reserve\n");
         break;
     }
