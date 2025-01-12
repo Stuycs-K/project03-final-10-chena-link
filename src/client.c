@@ -24,7 +24,10 @@ enum ClientState {
     IN_CSERVER,
     IN_GSERVER,
 };
-
+typedef struct gameState{
+    card lastPlayed;
+    int turn;
+};
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
 
@@ -182,6 +185,11 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         printf("we GOT from server: %d\n", nargs->id);
         break;
     }
+    case CARD_COUNT:{
+        NetArgs_CardCounts *nargs = args;
+        printf("first deck: %d, second deck:%d\n",nargs->decks[0],nargs->decks[1]);
+        break;
+    }
 
     default:
         break;
@@ -259,7 +267,7 @@ void client_main(void) {
     srand(getpid());
     int shmid;
     card *data;
-    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
+    shmid = shmget(SHMID, sizeof(gameState), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
 
     BaseClient *gclient = client_new();
@@ -269,7 +277,7 @@ void client_main(void) {
     int num_cards = 7;
     generate_cards(deck, num_cards);
     // Should be done by server on setup not by client
-    *data = generate_card();
+    data->lastPlayed = generate_card();
     char input[10];
 
     while (1) {

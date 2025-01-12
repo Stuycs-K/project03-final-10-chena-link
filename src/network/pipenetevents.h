@@ -35,6 +35,14 @@ typedef struct NetArgs_PeriodicHandshake NetArgs_PeriodicHandshake;
 struct NetArgs_PeriodicHandshake {
     int id;
 };
+typedef struct NetArgs_CardCounts NetArgs_CardCounts;
+struct NetArgs_CardCounts {
+    int decks[2];
+};
+typedef struct NetArgs_CardCounts NetArgs_CardCounts;
+struct NetArgs_CardCounts {
+    int num;
+};
 DECLARE_NET_ARGS(NetArgs_PeriodicHandshake, periodic_handshake)
 
 typedef enum HandshakeErrCode HandshakeErrCode;

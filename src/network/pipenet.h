@@ -201,6 +201,7 @@ enum NetProtocol {
     JOIN_GSERVER,
 
     PROTOCOL_COUNT,
+    CARD_COUNT,
 };
 
 /*

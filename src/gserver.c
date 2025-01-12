@@ -33,7 +33,8 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
-
+        case CARD_COUNT:
+            break;
     default:
         break;
     }
@@ -60,6 +61,15 @@ void gserver_loop(GServer *this) {
 
     server_send_event_to_all(server, test_event);
     */
+    /*
+    this->decks[0] = 1;
+    this->decks[1] = 1;
+    NetArgs_CardCounts *test_args = malloc(sizeof(NetArgs_CardCounts));
+    memcpy(test_args->decks, this->decks, sizeof(this->decks));
+
+    NetEvent *test_event = net_event_new(CARD_COUNT, test_args);
+
+    server_send_event_to_all(server, test_event);*/
 }
 
 void gserver_run(GServer *this) {

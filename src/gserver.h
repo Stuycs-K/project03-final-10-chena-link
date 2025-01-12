@@ -16,6 +16,7 @@ struct GServer {
     int cserver_pipes[2];
 
     Server *server;
+    int decks[2];
 };
 
 void gserver_run(GServer *gserver);
