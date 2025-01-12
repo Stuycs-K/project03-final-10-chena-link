@@ -28,6 +28,15 @@ enum ClientState {
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
 
+void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
+    int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
+    if (connected_to_gserver == -1) {
+        printf("[CLIENT]: Failed to connect to GServer\n");
+        return;
+    }
+    client_state = IN_GSERVER;
+}
+
 void print_gserver_list(GServerInfoList *nargs) {
     // Don't print the server list if we're in a game server.
     if (client_state == IN_GSERVER) {
@@ -39,26 +48,28 @@ void print_gserver_list(GServerInfoList *nargs) {
 
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         GServerInfo *info = recv_gserver_list[i];
-
         /*
         if (info->status == 1) {
             continue;
         }
         */
-
         char status[100];
         switch (info->status) {
 
-        case 0:
+        case GSS_UNRESERVED:
             strcpy(status, "UNRESERVED");
             break;
 
-        case 1:
+        case GSS_WAITING_FOR_PLAYERS:
             strcpy(status, "WAITING FOR PLAYERS");
             break;
 
         default:
             break;
+        }
+
+        if (i == 0) {
+            printf("%ld\n", strlen(info->name));
         }
 
         printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
@@ -70,13 +81,13 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
 
     switch (event->protocol) {
 
-    case GSERVER_LIST: {
+    case GSERVER_LIST: { // Print server list
         GServerInfoList *nargs = args;
         print_gserver_list(nargs);
         break;
     }
 
-    case RESERVE_GSERVER: {
+    case RESERVE_GSERVER: { // The CServer has given us the GServer to join
         ReserveGServer *nargs = args;
         int gserver_id = nargs->gserver_id;
 
@@ -88,13 +99,7 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
         GServerInfo *server_info = gservers->gserver_list[gserver_id];
         printf("%s\n", server_info->wkp_name);
 
-        int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
-        if (connected_to_gserver == -1) {
-            printf("[CLIENT]: Failed to connect to GServer\n");
-            return;
-        }
-        client_state = IN_GSERVER;
-
+        connect_to_gserver(gclient, server_info);
         break;
     }
 
@@ -106,9 +111,13 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
 char *get_username() {
     char *username = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
 
+    char input[256];
     printf("Enter your username:\n");
 
-    fgets(username, MAX_PLAYER_NAME_CHARACTERS, stdin);
+    fgets(input, MAX_PLAYER_NAME_CHARACTERS, stdin);
+    strcpy(username, input);
+
+    // Remove the newline, if it exists
     username[strcspn(username, "\n")] = 0;
 
     printf("\n\n");
@@ -116,7 +125,7 @@ char *get_username() {
     return username;
 }
 
-void input_for_cserver(BaseClient *client) {
+void input_for_cserver(BaseClient *client, BaseClient *gclient) {
     if (client_state == IN_GSERVER) {
         return;
     }
@@ -134,6 +143,19 @@ void input_for_cserver(BaseClient *client) {
         break;
 
     case 'j':
+        int which_server;
+        sscanf(input, "j %d", &which_server);
+
+        GServerInfo *gserver_info = gservers->gserver_list[which_server];
+        GServerStatus status = gserver_info->status;
+
+        // Server must be in the waiting for players phase and not be full
+        if (status == GSS_WAITING_FOR_PLAYERS || gserver_info->current_clients >= gserver_info->max_clients) {
+            connect_to_gserver(gclient, gserver_info);
+        } else {
+            printf("YOU CAN'T JOIN THAT ONE!\n");
+        }
+
         break;
 
     default:
@@ -187,9 +209,10 @@ void client_main(void) {
         }
 
         if (cclient->client_id >= 0) {
-            input_for_cserver(cclient);
+            input_for_cserver(cclient, gclient);
         }
 
+        // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
             client_recv_from_server(gclient);
             for (int i = 0; i < gclient->recv_queue->event_count; ++i) {
@@ -201,6 +224,7 @@ void client_main(void) {
                 continue;
             }
 
+            /*
             for (int i = 0; i < 1; ++i) {
                 NetArgs_PeriodicHandshake *test_args = malloc(sizeof(NetArgs_PeriodicHandshake));
                 test_args->id = rand();
@@ -210,6 +234,7 @@ void client_main(void) {
 
                 client_send_event(gclient, test_event);
             }
+            */
 
             client_send_to_server(gclient);
         }

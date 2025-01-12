@@ -72,6 +72,7 @@
     }
 
 // Read / write a string (char *) field
+// USE VALUE TO WRITE A char[] !!!
 #define STRING(field)                      \
     if (mode == 0) {                       \
         NET_BUFFER_WRITE_STRING(nb, field) \
@@ -214,8 +215,8 @@ DECLARE_HANDLER(GServerInfo, gserver_info) {
     VALUE(nargs->status);
     VALUE(nargs->current_clients);
     VALUE(nargs->max_clients);
-    STRING(nargs->name);
-    STRING(nargs->wkp_name);
+    VALUE(nargs->name);
+    VALUE(nargs->wkp_name);
 }
 END_CONSTRUCTOR()
 

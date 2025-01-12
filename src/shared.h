@@ -7,7 +7,7 @@
 #define PIPE_WRITE 1
 
 #define MAX_PLAYER_NAME_CHARACTERS 20
-#define MAX_GSERVER_NAME_CHARACTERS 20
+#define MAX_GSERVER_NAME_CHARACTERS 30
 
 #define GSERVER_WKP_NAME_LEN 12
 
@@ -23,5 +23,14 @@
 #define TICK_TIME_MICROSECONDS 100000
 
 #define CSERVER_WKP_NAME "CSERVER"
+
+typedef enum GServerStatus GServerStatus;
+enum GServerStatus {
+    GSS_UNRESERVED,
+    GSS_WAITING_FOR_PLAYERS, // Not reached max_clients
+    GSS_FULL,                // Server has reached max_clients
+    GSS_STARTING,            // Host has started countdown
+    GSS_GAME_IN_PROGRESS     // We're playing the game
+};
 
 #endif

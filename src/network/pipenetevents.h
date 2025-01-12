@@ -94,7 +94,7 @@ DECLARE_NET_ARGS(GServerConfig, gserver_config)
 typedef struct GServerInfo GServerInfo;
 struct GServerInfo {
     int id;
-    int status; // The GServerStatus enum
+    GServerStatus status;
     int current_clients;
     int max_clients;
 
