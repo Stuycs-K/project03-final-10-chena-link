@@ -71,6 +71,10 @@ struct ClientList {
 };
 DECLARE_NET_ARGS(ClientList, client_list)
 
+/*
+    First sent by a client to ask for a GServer.
+    The CServer responds with the ID of the GServer.
+*/
 typedef struct ReserveGServer ReserveGServer;
 struct ReserveGServer {
     int gserver_id;

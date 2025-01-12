@@ -17,7 +17,7 @@
 #include "client/baseclient.h"
 
 #define SHMID 123456789
-#define DONT
+// #define DONT
 
 void print_gserver_list(GServerInfoList *nargs) {
     printf("======= Game Server List\n");
@@ -39,15 +39,18 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     switch (event->protocol) {
 
     case GSERVER_LIST: {
-        printf("mhm\n");
         GServerInfoList *nargs = args;
-        // GServerInfo **recv_gserver_list = nargs->gserver_list;
         print_gserver_list(nargs);
     }
 
     default:
         break;
     }
+}
+
+void request_gserver(BaseClient *client) {
+    char input[256];
+    fgets(input, sizeof(input), stdin);
 }
 
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
@@ -75,6 +78,7 @@ void client_main(void) {
     data = shmat(shmid, 0, 0);
 
 #ifdef DONT
+    // First, try to connect to the central server
     BaseClient *cclient = client_new();
     int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
     if (connected_to_cserver == -1) {
@@ -82,6 +86,7 @@ void client_main(void) {
         exit(EXIT_FAILURE);
     }
 
+    // For networking the server list
     GServerInfoList *info_list_nargs = nargs_gserver_info_list();
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, info_list_nargs);
     attach_event(cclient->recv_queue, info_list_event);
