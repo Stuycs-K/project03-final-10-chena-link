@@ -154,6 +154,7 @@ void handle_client_disconnect(Server *this, int client_id) {
         END_FOREACH_CLIENT()
     }
 
+    this->clients[client_id]->recently_disconnected = 1;
     this->current_clients--;
 }
 
@@ -189,6 +190,10 @@ void handle_connections(Server *this) {
     FOREACH_CLIENT(this) {
         if (client->recently_connected) {
             client->recently_connected = 0;
+        }
+
+        if (client->recently_disconnected) {
+            client->recently_disconnected = 0;
         }
     }
     END_FOREACH_CLIENT()
