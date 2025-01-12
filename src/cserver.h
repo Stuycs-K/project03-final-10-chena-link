@@ -8,6 +8,7 @@
 
 typedef struct CServer CServer;
 struct CServer {
+    NetEvent *server_list_event;
     GServer **gserver_list;
     int gserver_count;
     Server *server;

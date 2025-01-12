@@ -73,6 +73,15 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
     net_event_queue->events[net_event_queue->event_count++] = event;
 }
 
+void attach_event(NetEventQueue *net_event_queue, NetEvent *event) {
+    event->cleanup_behavior = NEVENT_PERSISTENT;
+    net_event_queue->attached_events[event->protocol] = event;
+}
+
+void detach_event(NetEventQueue *net_event_queue, NetEvent *event) {
+    net_event_queue->attached_events[event->protocol] = NULL;
+}
+
 void empty_net_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event = net_event_queue->events[i];
@@ -105,6 +114,13 @@ void empty_net_event_queue(NetEventQueue *net_event_queue) {
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd) {
     if (net_event_queue->event_count == 0) {
         return;
+    }
+
+    for (int i = 0; i < PROTOCOL_COUNT; ++i) {
+        NetEvent *attached_event = net_event_queue->attached_events[i];
+        if (attached_event != NULL) {
+            insert_event(net_event_queue, attached_event);
+        }
     }
 
     NetBuffer *nb = net_buffer_send();
@@ -167,11 +183,6 @@ void *read_into_buffer(int recv_fd) {
     }
 
     return recv_buffer;
-}
-
-void attach_event(NetEventQueue *net_event_queue, NetEvent *event) {
-    event->cleanup_behavior = NEVENT_PERSISTENT;
-    net_event_queue->attached_events[event->protocol] = event;
 }
 
 // Populates a NetEventQueue with deserialized NetEvents

@@ -256,7 +256,7 @@ struct NetEvent {
     int event_count : how many NetEvents are being sent / received
     int max_events : the maximum size of the queue
 
-    NetEvent **attached_events : used only for RECEIVING
+    NetEvent **attached_events :
 
     NetEvent **events : a contiguous array of NetEvents
 */
@@ -274,6 +274,10 @@ NetEvent *net_event_new(NetProtocol protocol, void *args);
 NetEventQueue *net_event_queue_new();
 
 void insert_event(NetEventQueue *net_event_queue, NetEvent *event);
+
+void attach_event(NetEventQueue *net_event_queue, NetEvent *event);
+
+void detach_event(NetEventQueue *net_event_queue, NetEvent *event);
 
 void empty_net_event_queue(NetEventQueue *net_event_queue);
 

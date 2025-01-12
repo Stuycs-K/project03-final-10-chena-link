@@ -8,6 +8,9 @@
 CServer *cserver_new(int id) {
     CServer *this = malloc(sizeof(CServer));
 
+    GServerInfoList *info_list = nargs_gserver_info_list();
+    this->server_list_event = net_event_new(GSERVER_LIST, info_list);
+
     this->gserver_count = MAX_CSERVER_GSERVERS;
     this->gserver_list = malloc(sizeof(GServer *) * this->gserver_count);
     this->server = server_new(id);
@@ -57,14 +60,21 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
 */
 void cserver_send_server_list(CServer *this) {
-    GServerInfoList *nargs = nargs_gserver_info_list();
+    NetEvent *server_list_event = this->server_list_event;
+    GServerInfoList *nargs = server_list_event->args;
 
-    // Yeah, we do this every server tick
+    // Attach server list event to all clients' send queue to automatically send it.
+    FOREACH_CLIENT(this->server) {
+        attach_event(client->send_queue, server_list_event);
+    }
+    END_FOREACH_CLIENT()
+
+    // Update all GServerInfo
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
         Server *internal = gserver->server;
 
-        GServerInfo *server_info = nargs_gserver_info();
+        GServerInfo *server_info = nargs->gserver_list[i];
 
         server_info->id = internal->id;
         server_info->status = gserver->status;
@@ -72,12 +82,7 @@ void cserver_send_server_list(CServer *this) {
         server_info->max_clients = internal->status;
         strcpy(server_info->name, internal->name);
         strcpy(server_info->wkp_name, internal->wkp_name);
-
-        nargs->gserver_list[i] = server_info;
     }
-
-    NetEvent *event = net_event_new(GSERVER_LIST, nargs);
-    server_send_event_to_all(this->server, event);
 }
 
 void cserver_loop(CServer *this) {

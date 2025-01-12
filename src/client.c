@@ -18,7 +18,7 @@
 #include "client/gserverlist.h"
 
 #define SHMID 123456789
-// #define DONT
+#define DONT
 
 GServerList *gserver_list;
 

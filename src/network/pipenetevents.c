@@ -208,6 +208,9 @@ END_DESTRUCTOR()
 
 DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
     nargs->gserver_list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        nargs->gserver_list[i] = nargs_gserver_info();
+    }
 }
 END_CONSTRUCTOR()
 
@@ -220,6 +223,10 @@ DECLARE_HANDLER(GServerInfoList, gserver_info_list) {
 }
 END_CONSTRUCTOR()
 
-DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list)
-
+DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        destroy_gserver_info(nargs->gserver_list[i]);
+    }
+    free(nargs->gserver_list);
+}
 END_DESTRUCTOR()
