@@ -10,6 +10,11 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 
+/*
+    Updates the networked interface of the GServer to transmit to the CServer.
+    Called whenever a player connects or disconnects.
+    The only fields that will change are the server's status, current clients, maximum clients, and visible name
+*/
 void update_gserver_info(GServer *this) {
     GServerInfo *server_info = this->info_event->args;
 
@@ -18,8 +23,6 @@ void update_gserver_info(GServer *this) {
     server_info->max_clients = this->server->max_clients;
     server_info->status = this->status;
     strcpy(server_info->name, this->server->name);
-
-    // int to_cserver_fd = this->cserver_pipes[PIPE_WRITE];
 }
 
 /*
@@ -53,6 +56,7 @@ void check_update_gserver_info(GServer *this) {
 */
 void send_to_cserver(GServer *this) {
     send_event_queue(this->cserver_send_queue, this->cserver_pipes[PIPE_WRITE]);
+    empty_net_event_queue(this->cserver_send_queue);
 }
 
 GServer *gserver_new(int id) {
@@ -62,8 +66,9 @@ GServer *gserver_new(int id) {
     this->info_event = net_event_new(GSERVER_INFO, server_info);
 
     this->cserver_send_queue = net_event_queue_new();
+    this->cserver_recv_queue = net_event_queue_new();
 
-    this->status = GSS_WAITING_FOR_PLAYERS;
+    this->status = GSS_UNRESERVED;
 
     this->server = server_new(id);
     this->server->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
@@ -126,6 +131,7 @@ void gserver_loop(GServer *this) {
 
 void gserver_run(GServer *this) {
     Server *server = this->server;
+    this->status = GSS_WAITING_FOR_PLAYERS;
 
     server_start_connection_handler(server);
 

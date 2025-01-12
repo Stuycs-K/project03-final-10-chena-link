@@ -20,8 +20,19 @@ CServer *cserver_new(int id) {
     strcpy(this->server->wkp_name, CSERVER_WKP_NAME); // WKP is "CSERVER"
 
     for (int gserver_id = 0; gserver_id < this->gserver_count; ++gserver_id) {
-        this->gserver_list[gserver_id] = gserver_new(gserver_id);
-        this->gserver_list[gserver_id]->status = GSS_UNRESERVED;
+        GServer *new_gserver = gserver_new(gserver_id);
+        new_gserver->status = GSS_UNRESERVED;
+        this->gserver_list[gserver_id] = new_gserver;
+
+        GServerInfo *current_gserver_info = info_list->gserver_list[gserver_id];
+
+        // Initialize our copy of GServerInfo for this GServer
+        current_gserver_info->id = gserver_id;
+        current_gserver_info->status = GSS_UNRESERVED;
+        current_gserver_info->current_clients = 0;
+        current_gserver_info->max_clients = new_gserver->server->max_clients;
+        strcpy(current_gserver_info->name, new_gserver->server->name);
+        strcpy(current_gserver_info->wkp_name, new_gserver->server->wkp_name);
     }
 
     return this;
@@ -41,7 +52,7 @@ void reserve_gserver(CServer *this, int client_id) {
         }
     }
 
-    if (!gserver) { // Send -1 to the client to let them know they can't reserve anymore servers!
+    if (!gserver) { // Send -1 to the client to let them know they can't reserve any more servers!
         server_send_event_to(this->server, client_id, reserve_event);
         return;
     }
@@ -52,12 +63,112 @@ void reserve_gserver(CServer *this, int client_id) {
     if (pid == 0) {
         gserver_run(gserver);
     } else {
-        gserver->status = GSS_WAITING_FOR_PLAYERS;
         this->server_list_updated = 1;
 
         // Tell the client which server they reserved so they can join!
         reserve_info->gserver_id = gserver->server->id;
         server_send_event_to(this->server, client_id, reserve_event);
+    }
+}
+
+static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
+    NetEvent *server_list_event = this->server_list_event;
+    GServerInfoList *nargs = server_list_event->args;
+
+    GServerInfo *local_server_info = nargs->gserver_list[recv_server_info->id];
+
+    local_server_info->status = recv_server_info->status;
+    local_server_info->current_clients = recv_server_info->current_clients;
+    local_server_info->max_clients = recv_server_info->max_clients;
+    strcpy(local_server_info->name, recv_server_info->name);
+
+    this->server_list_updated = 1;
+}
+
+/*
+
+*/
+void cserver_send_server_list(CServer *this) {
+    NetEvent *server_list_event = this->server_list_event;
+    GServerInfoList *nargs = server_list_event->args;
+
+    // Attach server list event to clients' send queue to automatically send it (no mallocing a new one).
+    // Only do this if they just joined OR a GServer status changed.
+    FOREACH_CLIENT(this->server) {
+        if (client->recently_connected || this->server_list_updated) {
+            attach_event(client->send_queue, server_list_event);
+        } else {
+            detach_event(client->send_queue, server_list_event);
+        }
+    }
+    END_FOREACH_CLIENT()
+
+    this->server_list_updated = 0;
+}
+
+void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *event) {
+    void *args = event->args;
+
+    switch (event->protocol) {
+
+    case GSERVER_INFO: {
+        GServerInfo *server_info = event->args;
+        printf("SERVER LIST UPDATED\n");
+        update_gserver_list(this, server_info);
+    }
+
+    default:
+        break;
+    }
+}
+
+void cserver_recv_gserver_events(CServer *this) {
+    // Setup poll
+    int pollcount = 0;
+    struct pollfd pollfds[this->gserver_count];
+
+    for (int i = 0; i < this->gserver_count; ++i) {
+        GServer *gserver = this->gserver_list[i];
+
+        struct pollfd pollfd;
+        pollfd.events = POLLIN;
+        pollfd.fd = gserver->cserver_pipes[PIPE_READ];
+
+        pollfds[pollcount++] = pollfd;
+    }
+
+    int ret = poll(pollfds, pollcount, 0);
+    if (ret <= 0) { // No GServer updates
+        return;
+    }
+
+    for (int i = 0; i < this->gserver_count; ++i) {
+        GServer *gserver = this->gserver_list[i];
+
+        struct pollfd poll_request = pollfds[i];
+
+        if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
+            printf("GSERVER DIED\n");
+            continue;
+        }
+
+        if (!(poll_request.revents & POLLIN)) { // GServer sent nothing
+            continue;
+        }
+
+        char *event_buffer = read_into_buffer(gserver->cserver_pipes[PIPE_READ]);
+
+        NetEventQueue *queue = gserver->cserver_recv_queue;
+        recv_event_queue(queue, event_buffer);
+
+        for (int i = 0; i < queue->event_count; ++i) {
+            cserver_handle_gserver_net_event(this, i, queue->events[i]);
+        }
+    }
+
+    for (int i = 0; i < this->gserver_count; ++i) {
+        GServer *gserver = this->gserver_list[i];
+        empty_net_event_queue(gserver->cserver_recv_queue);
     }
 }
 
@@ -78,42 +189,6 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     }
 }
 
-/*
-
-*/
-void cserver_send_server_list(CServer *this) {
-    NetEvent *server_list_event = this->server_list_event;
-    GServerInfoList *nargs = server_list_event->args;
-
-    // Attach server list event to all clients' send queue to automatically send it (no mallocing a new one).
-    // Only do this if they just joined OR a GServer status changed.
-    FOREACH_CLIENT(this->server) {
-        if (client->recently_connected || this->server_list_updated) {
-            attach_event(client->send_queue, server_list_event);
-        } else {
-            detach_event(client->send_queue, server_list_event);
-        }
-    }
-    END_FOREACH_CLIENT()
-
-    // Update all GServerInfo (really annoying!)
-    for (int i = 0; i < this->gserver_count; ++i) {
-        GServer *gserver = this->gserver_list[i];
-        Server *internal = gserver->server;
-
-        GServerInfo *server_info = nargs->gserver_list[i];
-
-        server_info->id = internal->id;
-        server_info->status = gserver->status;
-        server_info->current_clients = internal->current_clients;
-        server_info->max_clients = internal->max_clients;
-        strcpy(server_info->name, internal->name);
-        strcpy(server_info->wkp_name, internal->wkp_name);
-    }
-
-    this->server_list_updated = 0;
-}
-
 void cserver_loop(CServer *this) {
     Server *server = this->server;
 
@@ -124,6 +199,8 @@ void cserver_loop(CServer *this) {
         }
     }
     END_FOREACH_CLIENT()
+
+    cserver_recv_gserver_events(this);
 
     cserver_send_server_list(this);
 }

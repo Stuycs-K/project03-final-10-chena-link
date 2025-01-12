@@ -238,6 +238,21 @@ void handle_connections(Server *this) {
     END_FOREACH_CLIENT()
 }
 
+/*
+    Polls each connected client's client-to-server FD.
+    If the poll returns an error event, the client is disconnected.
+    If there's nothing to read from, the client is skipped.
+    Otherwise, the client's FD is read into the server's receive queue for that client.
+
+    The client's NetEvents henceforth can be accessible and manipulated in this server tick with another FOREACH_CLIENT loop.
+
+    The base server handles some base NetEvents here, such as client name changes.
+
+    PARAMS:
+        Server *this : the server object
+
+    RETURNS: void
+*/
 void server_recv_events(Server *this) {
     // Setup poll
     int pollcount = 0;

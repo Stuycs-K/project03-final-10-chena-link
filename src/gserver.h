@@ -14,6 +14,7 @@ typedef struct GServer GServer;
 struct GServer {
     NetEvent *info_event;
     NetEventQueue *cserver_send_queue;
+    NetEventQueue *cserver_recv_queue;
 
     GServerStatus status;
     int cserver_pipes[2];
