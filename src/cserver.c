@@ -53,15 +53,19 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     }
 }
 
+/*
+
+*/
 void cserver_send_server_list(CServer *this) {
-    NetArgs_GServerList *nargs = nargs_gserver_list();
+    GServerInfoList *nargs = nargs_gserver_info_list();
 
     // Yeah, we do this every server tick
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
         Server *internal = gserver->server;
 
-        GServerInfo *server_info = malloc(sizeof(GServerInfo));
+        GServerInfo *server_info = nargs_gserver_info();
+
         server_info->id = internal->id;
         server_info->status = gserver->status;
         server_info->current_clients = internal->status;

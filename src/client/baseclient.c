@@ -20,7 +20,7 @@ BaseClient *client_new() {
 }
 
 // Performs handshake
-void client_connect(BaseClient *this, char *wkp) {
+int client_connect(BaseClient *this, char *wkp) {
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_Handshake *handshake = handshake_event->args;
 
@@ -31,7 +31,7 @@ void client_connect(BaseClient *this, char *wkp) {
         printf("Connection to server failed\n");
         free_handshake_event(handshake_event);
 
-        return;
+        return -1;
     }
 
     this->to_server_fd = handshake->client_to_server_fd;
@@ -39,6 +39,7 @@ void client_connect(BaseClient *this, char *wkp) {
     set_nonblock(this->from_server_fd); // MUST SET NONBLOCK HERE
 
     free_handshake_event(handshake_event);
+    return 1;
 }
 
 void on_recv_client_list(BaseClient *this, ClientList *nargs) {

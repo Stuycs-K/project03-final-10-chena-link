@@ -23,7 +23,7 @@ struct BaseClient {
 
 BaseClient *client_new();
 
-void client_connect(BaseClient *this, char *wkp);
+int client_connect(BaseClient *this, char *wkp);
 
 void on_recv_client_list(BaseClient *this, ClientList *nargs);
 

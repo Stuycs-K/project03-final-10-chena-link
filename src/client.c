@@ -15,13 +15,22 @@
 #include "util/file.h"
 
 #include "client/baseclient.h"
+#include "client/gserverlist.h"
 
-#define SHMID 1234567890
+#define SHMID 123456789
+#define DONT
+
+GServerList *gserver_list;
 
 void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
+
+    case GSERVER_LIST: {
+        GServerInfoList *nargs = args;
+        GServerInfo **recv_gserver_list = nargs->gserver_list;
+    }
 
     default:
         break;
@@ -52,8 +61,18 @@ void client_main(void) {
     shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
 
+    gserver_list = gserver_list_new();
+
+    BaseClient *cclient = client_new();
+    int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
+    if (connected_to_cserver == -1) {
+        printf("[CLIENT]: Failed to establish connection with the central server\n");
+        exit(EXIT_FAILURE);
+    }
+
+#ifndef DONT
     BaseClient *gclient = client_new();
-    client_connect(gclient, "G69");
+    int connected_to_gserver = client_connect(gclient, "G69");
 
     card deck[100];
     int num_cards = 7;
@@ -110,4 +129,5 @@ void client_main(void) {
 
         usleep(TICK_TIME_MICROSECONDS);
     }
+#endif
 }

@@ -13,6 +13,9 @@ GServerList *gserver_list_new() {
     return this;
 }
 
+void update_gserver_list(GServerList *this, GServerInfo **server_info_list) {
+}
+
 void print_gserver_list(GServerList *this) {
     printf("======= Game Server List\n");
     printf("======= Servers: %d\n", this->visible_server_count);
