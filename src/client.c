@@ -18,7 +18,7 @@
 #include "client/gserverlist.h"
 
 #define SHMID 123456789
-#define DONT
+// #define DONT
 
 GServerList *gserver_list;
 
@@ -69,6 +69,7 @@ void client_main(void) {
 
     gserver_list = gserver_list_new();
 
+#ifdef DONT
     BaseClient *cclient = client_new();
     int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
     if (connected_to_cserver == -1) {
@@ -86,6 +87,7 @@ void client_main(void) {
         client_send_to_server(cclient);
         usleep(TICK_TIME_MICROSECONDS);
     }
+#endif
 
 #ifndef DONT
     BaseClient *gclient = client_new();

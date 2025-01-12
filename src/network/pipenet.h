@@ -250,11 +250,22 @@ struct NetEvent {
     void *args;
 };
 
+/*
+    NetEventQueues batch NetEvents together for a singular read / write operation after some time.
+
+    int event_count : how many NetEvents are being sent / received
+    int max_events : the maximum size of the queue
+
+    NetEvent **attached_events : used only for RECEIVING
+
+    NetEvent **events : a contiguous array of NetEvents
+*/
 typedef struct NetEventQueue NetEventQueue;
 struct NetEventQueue {
     int event_count;
     int max_events;
 
+    NetEvent **attached_events;
     NetEvent **events;
 };
 

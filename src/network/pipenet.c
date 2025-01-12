@@ -60,13 +60,13 @@ NetEventQueue *net_event_queue_new() {
     net_event_queue->max_events = 255;
 
     net_event_queue->events = malloc(sizeof(NetEvent *) * net_event_queue->max_events);
+    net_event_queue->attached_events = calloc(sizeof(NetEvent *), PROTOCOL_COUNT);
 
     return net_event_queue;
 }
 
 void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
     if (net_event_queue->event_count >= net_event_queue->max_events) {
-        printf("Queue full! Dropping event\n");
         return;
     }
 
@@ -169,6 +169,11 @@ void *read_into_buffer(int recv_fd) {
     return recv_buffer;
 }
 
+void attach_event(NetEventQueue *net_event_queue, NetEvent *event) {
+    event->cleanup_behavior = NEVENT_PERSISTENT;
+    net_event_queue->attached_events[event->protocol] = event;
+}
+
 // Populates a NetEventQueue with deserialized NetEvents
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
     NetBuffer *nb = net_buffer_recv(recv_buffer);
@@ -179,6 +184,13 @@ void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer) {
     for (int i = 0; i < event_count; ++i) {
         NetProtocol protocol;
         NET_BUFFER_READ_VALUE(nb, protocol);
+
+        // Serialize into the attached event's args directly.
+        NetEvent *attached_event = net_event_queue->attached_events[protocol];
+        if (attached_event != NULL) {
+            handlers[protocol](nb, attached_event->args, 1);
+            continue;
+        }
 
         void *data = handlers[protocol](nb, NULL, 1);
         insert_event(net_event_queue, net_event_new(protocol, data));

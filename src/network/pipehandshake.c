@@ -24,7 +24,6 @@ NetEvent *create_handshake_event() {
 
 void free_handshake_event(NetEvent *handshake_event) {
     NetArgs_Handshake *handshake_args = handshake_event->args;
-
     free(handshake_args->to_client_pipe_name);
 
     free(handshake_event->args);
