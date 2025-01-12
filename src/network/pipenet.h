@@ -1,5 +1,5 @@
 /*
-    pipenet.h
+    Packet serialization / deserialization
 
     NetEvent packet format:
         [protocol][args...]

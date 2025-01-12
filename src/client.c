@@ -122,12 +122,6 @@ char *get_username() {
 
     strncpy(username, input, MAX_PLAYER_NAME_CHARACTERS);
 
-    /*
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) {
-    }
-    */
-
     printf("\n\n");
 
     return username;
