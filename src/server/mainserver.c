@@ -120,6 +120,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     // Update client info list
     this->client_info_changed = 1;
     this->client_info_list = insert_client_list(this->client_info_list, client_id);
+    strcpy(this->client_info_list->name, handshake->client_name);
 }
 
 // This gets called during the receive phase.

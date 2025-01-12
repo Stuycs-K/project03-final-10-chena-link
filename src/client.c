@@ -17,7 +17,9 @@
 #include "client/baseclient.h"
 
 #define SHMID 123456789
-// #define DONT
+#define DONT
+
+char username[MAX_PLAYER_NAME_CHARACTERS];
 
 void print_gserver_list(GServerInfoList *nargs) {
     printf("======= Game Server List\n");
@@ -48,6 +50,12 @@ void handle_cserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
+void get_username() {
+    printf("Enter your username:\n");
+    fgets(username, sizeof(username), stdin);
+    printf("\n\n");
+}
+
 void request_gserver(BaseClient *client) {
     char input[256];
     fgets(input, sizeof(input), stdin);
@@ -71,6 +79,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 }
 
 void client_main(void) {
+    get_username();
+
     srand(getpid());
     int shmid;
     card *data;
@@ -79,7 +89,7 @@ void client_main(void) {
 
 #ifdef DONT
     // First, try to connect to the central server
-    BaseClient *cclient = client_new();
+    BaseClient *cclient = client_new(username);
     int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
     if (connected_to_cserver == -1) {
         printf("[CLIENT]: Failed to establish connection with the central server\n");

@@ -48,6 +48,7 @@ enum HandshakeErrCode {
 // Client-server handshake for GServers and CServers.
 typedef struct NetArgs_Handshake NetArgs_Handshake;
 struct NetArgs_Handshake {
+    char *client_name;
     char *to_client_pipe_name;
 
     int are_fds_finalized;

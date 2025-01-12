@@ -101,6 +101,7 @@ END_DESTRUCTOR()
 //============================================================
 
 DECLARE_CONSTRUCTOR(NetArgs_Handshake, handshake) {
+    nargs->client_name = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
     nargs->ack = -1;
     nargs->errcode = -1;
     nargs->syn_ack = -1;
@@ -113,6 +114,7 @@ DECLARE_CONSTRUCTOR(NetArgs_Handshake, handshake) {
 END_CONSTRUCTOR()
 
 DECLARE_HANDLER(NetArgs_Handshake, handshake) {
+    STRING(nargs->client_name);
     VALUE(nargs->syn_ack);
     VALUE(nargs->ack);
     VALUE(nargs->errcode);
@@ -129,6 +131,7 @@ DECLARE_HANDLER(NetArgs_Handshake, handshake) {
 END_HANDLER()
 
 DECLARE_DESTRUCTOR(NetArgs_Handshake, handshake) {
+    free(nargs->client_name);
     free(nargs->to_client_pipe_name);
 }
 END_DESTRUCTOR()

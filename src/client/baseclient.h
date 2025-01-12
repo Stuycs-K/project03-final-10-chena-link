@@ -11,6 +11,7 @@
 typedef struct BaseClient BaseClient;
 struct BaseClient {
     int client_id;
+    char name[MAX_PLAYER_NAME_CHARACTERS];
 
     int to_server_fd;
     int from_server_fd;

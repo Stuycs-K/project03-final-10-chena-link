@@ -5,11 +5,14 @@
 #include "../util/file.h"
 #include "baseclient.h"
 
-BaseClient *client_new() {
+BaseClient *client_new(char *name) {
     BaseClient *this = malloc(sizeof(BaseClient));
+
     this->client_id = -1;
     this->from_server_fd = -1;
     this->to_server_fd = -1;
+
+    strcpy(this->name, name);
 
     this->client_info_list = NULL;
 
@@ -23,6 +26,7 @@ BaseClient *client_new() {
 int client_connect(BaseClient *this, char *wkp) {
     NetEvent *handshake_event = create_handshake_event();
     NetArgs_Handshake *handshake = handshake_event->args;
+    strcpy(handshake->client_name, this->name);
 
     client_setup(wkp, handshake_event);
 
