@@ -10,21 +10,17 @@
 #include "../shared.h"
 #include "pipenetevents.h"
 
-#define DECLARE_NON_STRUCT_CONSTRUCTOR(net_args_type_name, internal_name) \
-    net_args_type_name *(nargs_##internal_name)() {                       \
-        net_args_type_name *nargs;
-
 /*
-    Builds a constructor for the struct. You should only use this for networked structs.
-    For networked POINTERS (e.g. a list of structs) or PRIMITIVES (e.g. one int, one char, etc.),
-    use DELCARE_NON_STRUCT_CONSTRUCTOR
+    Builds a constructor for the struct / primitive / pointer / whatever.
+
+    The variable nargs will be provided for you. You must malloc what you want first.
 
     net_args_type_name : the type name of the struct (from typedef)
     internal_name : the suffix for each of the 3 functions
 */
 #define DECLARE_CONSTRUCTOR(net_args_type_name, internal_name) \
     net_args_type_name *(nargs_##internal_name)() {            \
-        net_args_type_name *nargs = malloc(sizeof(net_args_type_name));
+        net_args_type_name *nargs;
 
 #define END_CONSTRUCTOR() \
     return nargs;         \
@@ -94,6 +90,7 @@
 //============================================================
 
 DECLARE_CONSTRUCTOR(Handshake, handshake) {
+    nargs = malloc(sizeof(Handshake));
     nargs->client_name = calloc(sizeof(char), MAX_PLAYER_NAME_CHARACTERS);
     nargs->ack = -1;
     nargs->errcode = -1;
@@ -132,6 +129,7 @@ END_DESTRUCTOR()
 //============================================================
 
 DECLARE_CONSTRUCTOR(ClientList, client_list) {
+    nargs = malloc(sizeof(ClientList));
     nargs->local_client_id = -1;
     nargs->info_list = NULL;
 }
@@ -178,6 +176,7 @@ DECLARE_DESTRUCTOR(ClientList, client_list) {
 END_DESTRUCTOR()
 
 DECLARE_CONSTRUCTOR(ReserveGServer, reserve_gserver) {
+    nargs = malloc(sizeof(ReserveGServer));
     nargs->gserver_id = -1;
 }
 END_CONSTRUCTOR()
@@ -191,6 +190,7 @@ DECLARE_DESTRUCTOR(ReserveGServer, reserve_gserver)
 END_DESTRUCTOR()
 
 DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
+    nargs = malloc(sizeof(GServerInfo));
     nargs->id = -1;
     nargs->status = 0;
     nargs->current_clients = 0;
@@ -215,7 +215,7 @@ END_CONSTRUCTOR()
 DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
-DECLARE_NON_STRUCT_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
+DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
     nargs = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         nargs[i] = nargs_gserver_info();
