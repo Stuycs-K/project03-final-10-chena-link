@@ -7,6 +7,13 @@
 #ifndef MAINSERVER_H
 #define MAINSERVER_H
 
+/*
+    A macro to loop through all connected clients. Use END_FOREACHCLIENT() to close the loop.
+    The Client variable is named "client."
+
+    server : the Server object. You can't do FOREACH_CLIENT(gserver->server), though.
+    You must first do Server *server = gserver->server and then FOREACH_CLIENT(server).
+*/
 #define FOREACH_CLIENT(server)                                                \
     for (int client_id = 0; client_id < (server)->max_clients; ++client_id) { \
         Client *client = (server)->clients[client_id];                        \
@@ -22,14 +29,17 @@ enum ServerStatus {
     SSTATUS_CLOSED,
 };
 
+/*
+    A base Server, which communicactes with clients. CServer and GServer both use this.
+*/
 typedef struct Server Server;
 struct Server {
-    ServerStatus status;
+    ServerStatus status; // See ServerStatus enum
 
-    int max_clients;
-    int current_clients;
+    int max_clients;     // The maximum number of clients that can connect to this server.
+    int current_clients; // How many clients are currently connected.
 
-    int id; // Given by the central server
+    int id; // An identifier given by the central server
 
     char name[MAX_GSERVER_NAME_CHARACTERS]; // A name a client can give the server.
     char wkp_name[GSERVER_WKP_NAME_LEN];    // Given by the central server. Used by clients to connect.
@@ -39,11 +49,10 @@ struct Server {
     int client_info_changed;          // A flag to send client_info_list if a client joined / disconnected
     ClientInfoNode *client_info_list; // Networked to clients
 
-    pid_t connection_handler_pid;
-    NetEventQueue *connection_handler_recv_queue;
+    pid_t connection_handler_pid;                 // The PID of the connection handler. Used solely to do magic (see handle_client_connection).
+    NetEventQueue *connection_handler_recv_queue; // A queue for the connection handler so that it can inform the server about clients connecting.
 
-    int *recv_fd_list;
-    int connection_handler_pipe[2];
+    int connection_handler_pipe[2]; // FDs to and from the connection handler.
 };
 
 Server *server_new(int server_id);

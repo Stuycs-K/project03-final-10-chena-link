@@ -9,6 +9,9 @@
 
 char wkp_name[GSERVER_WKP_NAME_LEN];
 
+/*
+    Signal handler that removes the WKP.
+*/
 static void handle_sigint(int signo) {
     if (signo != SIGINT) {
         return;
@@ -21,10 +24,8 @@ static void handle_sigint(int signo) {
 /*
     Listens to WKP. When a client opens it, they complete the handshake.
 
-    Then, check the server to see if we should accept the client.
-
     If they send the correct ACK, send the handshake struct back to the host server
-    to inform them that the client connected.
+    to inform them that the client connected and which file descriptors to use.
 */
 void connection_handler_init(Server *this) {
     signal(SIGINT, handle_sigint);
@@ -41,16 +42,6 @@ void connection_handler_init(Server *this) {
         Handshake *handshake = handshake_event->args;
 
         server_get_send_fd(handshake_event);
-
-        // TODO: Used shared memory to check this?
-        // A client connected, but the server is full!
-        if (this->current_clients >= this->max_clients) {
-            server_abort_handshake(handshake_event, HEC_SERVER_IS_FULL);
-            free_handshake_event(handshake_event);
-
-            printf("server is full!\n");
-            return;
-        }
 
         pid_t pid = fork();
 

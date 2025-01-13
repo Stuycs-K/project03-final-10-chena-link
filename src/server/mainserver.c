@@ -11,6 +11,16 @@
 #include "connectionhandler.h"
 #include "mainserver.h"
 
+/*
+    Constructs a new Server.
+
+    Allocates clients and sets up connection handler pipe.
+
+    PARAMS:
+        int server_id : an identifier for the server
+
+    RETURNS: the new Server
+*/
 Server *server_new(int server_id) {
     Server *this = malloc(sizeof(Server));
 
@@ -38,6 +48,17 @@ Server *server_new(int server_id) {
     return this;
 }
 
+/*
+    Changes the max client count.
+    Allocates new Clients if we're increasing max clients.
+    Frees Clients if we're decreasing max clients.
+
+    PARAMS:
+        Server *this : the Server
+        int max_clients : the new value for max clients
+
+    RETURNS: none
+*/
 void server_set_max_clients(Server *this, int max_clients) {
     int old_max_clients = this->max_clients;
 
@@ -66,9 +87,18 @@ void server_set_max_clients(Server *this, int max_clients) {
 
         this->clients = realloc(this->clients, sizeof(Client *) * max_clients);
     }
+
+    this->max_clients = max_clients;
 }
 
-// -1 indicates the server is full
+/*
+    Gets a Client object that isn't currently handling communication.
+
+    PARAMS:
+        Server *this : the Server
+
+    RETURNS: a free client ID. -1 if none can be found.
+*/
 int get_free_client_id(Server *this) {
     for (int i = 0; i < this->max_clients; ++i) {
         if (this->clients[i]->is_free) {
@@ -93,6 +123,17 @@ void send_client_list(Server *this, int client_id) {
     server_send_event_to(this, client_id, event);
 }
 
+/*
+    Handles a new client connecting to the server.
+    Gets a Client object to store connection information (FDs mainly)
+    Marks the Client object as recently connected, then updates the client info list.
+
+    PARAMS:
+        Server *this : the Server
+        NetEvent *handshake_event : NetEvent containing the client's handshake performed with the connection handler
+
+    RETURNS: none
+*/
 void handle_client_connection(Server *this, NetEvent *handshake_event) {
     Handshake *handshake = handshake_event->args;
 
@@ -123,16 +164,26 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     strcpy(this->client_info_list->name, handshake->client_name);
 }
 
-// This gets called during the receive phase.
-// By this point, if any clients joined, we've already sent the client list to each client's queue.
-// That means, of course, we have to go into each client's send queue and update the event. Wow.
-// Otherwise, if no one else joined this tick, we have to send to client list to everyone.
+/*
+    Handles a client disconnecting from the server.
+    Updates the client info list.
+
+    PARAMS:
+        Server *this : the Server
+        int client_id : the ID of the client disconnecting
+
+    RETURNS: none
+*/
 void handle_client_disconnect(Server *this, int client_id) {
     disconnect_client(this->clients[client_id]);
 
     // Update client info list
     this->client_info_list = remove_client_list_by_id(this->client_info_list, client_id);
 
+    // This gets called during the receive phase.
+    // By this point, if any clients joined, we've already sent the client list to each client's queue.
+    // That means, of course, we have to go into each client's send queue and update the event. Wow.
+    // Otherwise, if no one else joined this tick, we have to send to client list to everyone.
     if (this->client_info_changed) {
         FOREACH_CLIENT(this) {
             NetEventQueue *send_queue = client->send_queue;
@@ -158,6 +209,16 @@ void handle_client_disconnect(Server *this, int client_id) {
     this->current_clients--;
 }
 
+/*
+    Handles a client disconnecting from the server.
+    Updates the client info list.
+
+    PARAMS:
+        Server *this : the Server
+        int client_id : the ID of the client disconnecting
+
+    RETURNS: none
+*/
 void handle_core_server_net_event(Server *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
@@ -178,6 +239,16 @@ struct pollfd get_pollfd_for_client(struct pollfd *pollfds, int size, int fd) {
     }
 }
 
+/*
+    Polls the connection handler to accept new clients.
+    Then updates the client info list.
+
+    PARAMS:
+        Server *this : the Server
+        int client_id : the ID of the client disconnecting
+
+    RETURNS: none
+*/
 void handle_connections(Server *this) {
     this->client_info_changed = 0; // Reset flag
 
@@ -243,7 +314,7 @@ void handle_connections(Server *this) {
     The base server handles some base NetEvents here, such as client name changes.
 
     PARAMS:
-        Server *this : the server object
+        Server *this : the Server
 
     RETURNS: void
 */
@@ -293,7 +364,15 @@ void server_recv_events(Server *this) {
     END_FOREACH_CLIENT()
 }
 
-// Call after you finish processing all NetEvents
+/*
+    Clears all clients' receive queues.
+    Call after finishing processing all NetEvents
+
+    PARAMS:
+        Server *this : the Server
+
+    RETURNS: none
+*/
 void server_empty_recv_events(Server *this) {
     FOREACH_CLIENT(this) {
         clear_event_queue(client->recv_queue);
@@ -303,6 +382,13 @@ void server_empty_recv_events(Server *this) {
 
 /*
     Queue a NetEvent to be sent to the client at the ID.
+
+    PARAMS:
+        Server *this : the Server
+        int client_id : which client
+        NetEvent *event : the NetEvent to send to the client
+
+    RETURNS: none
 */
 void server_send_event_to(Server *this, int client_id, NetEvent *event) {
     insert_event(this->clients[client_id]->send_queue, event);
@@ -310,6 +396,12 @@ void server_send_event_to(Server *this, int client_id, NetEvent *event) {
 
 /*
     Queue a NetEvent to be sent to all currently connected clients.
+
+    PARAMS:
+        Server *this : the Server
+        NetEvent *event : the NetEvent to send to all clients
+
+    RETURNS: none
 */
 void server_send_event_to_all(Server *this, NetEvent *event) {
     FOREACH_CLIENT(this) {
@@ -319,7 +411,12 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
 }
 
 /*
-    Dispatches and empties each client's send queue
+    Sends and empties each client's send queue
+
+    PARAMS:
+        Server *this : the Server
+
+    RETURNS: none
 */
 void server_send_events(Server *this) {
     FOREACH_CLIENT(this) {
@@ -329,6 +426,14 @@ void server_send_events(Server *this) {
     END_FOREACH_CLIENT()
 }
 
+/*
+    Forks the connection handler. The Server is now able to accept connections.
+
+    PARAMS:
+        Server *this : the Server
+
+    RETURNS: none
+*/
 void server_start_connection_handler(Server *this) {
     pid_t pid = fork();
     if (pid == 0) {
@@ -341,6 +446,9 @@ void server_start_connection_handler(Server *this) {
 void server_shutdown(Server *this) {
 }
 
+/*
+    UNUSED
+*/
 void server_run(Server *this) {
     server_start_connection_handler(this);
 
