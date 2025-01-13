@@ -91,6 +91,16 @@ void reserve_gserver(CServer *this, int client_id) {
     }
 }
 
+/*
+    Updates the CServer's list of information about the GServers.
+    Handles a GServer's NetEvent that they send when a client joins.
+
+    PARAMS:
+        CServer *this : the CServer
+        GServerInfo *recv_server_info : the GServer's new, updated information
+
+    RETURNS: none
+*/
 static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
     NetEvent *server_list_event = this->server_list_event;
     GServerInfoList *server_list = server_list_event->args;
@@ -106,7 +116,13 @@ static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
 }
 
 /*
+    Sends the server list to all clients.
+    Called when the CServer receives an update about a GServer.
 
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
 */
 void cserver_send_server_list(CServer *this) {
     NetEvent *server_list_event = this->server_list_event;
@@ -126,6 +142,17 @@ void cserver_send_server_list(CServer *this) {
     this->server_list_updated = 0;
 }
 
+/*
+    Receives and calls handlers for GServer NetEvents.
+    Current NetEvents: GSERVER_INFO (update_gserver_list)
+
+    PARAMS:
+        CServer *this : the CServer
+        int gserver_id : which GServer
+        NetEvent *event : the received event
+
+    RETURNS: none
+*/
 void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *event) {
     void *args = event->args;
 
