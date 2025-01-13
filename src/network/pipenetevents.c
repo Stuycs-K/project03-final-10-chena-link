@@ -10,8 +10,14 @@
 #include "../shared.h"
 #include "pipenetevents.h"
 
+#define DECLARE_NON_STRUCT_CONSTRUCTOR(net_args_type_name, internal_name) \
+    net_args_type_name *(nargs_##internal_name)() {                       \
+        net_args_type_name *nargs;
+
 /*
-    Builds a constructor for the struct
+    Builds a constructor for the struct. You should only use this for networked structs.
+    For networked POINTERS (e.g. a list of structs) or PRIMITIVES (e.g. one int, one char, etc.),
+    use DELCARE_NON_STRUCT_CONSTRUCTOR
 
     net_args_type_name : the type name of the struct (from typedef)
     internal_name : the suffix for each of the 3 functions
@@ -209,25 +215,25 @@ END_CONSTRUCTOR()
 DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
-DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
-    nargs->list = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
+DECLARE_NON_STRUCT_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
+    nargs = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        nargs->list[i] = nargs_gserver_info();
+        nargs[i] = nargs_gserver_info();
     }
 }
 END_CONSTRUCTOR()
 
 DECLARE_HANDLER(GServerInfoList, gserver_info_list) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        handler_gserver_info(nb, nargs->list[i], mode);
+        handler_gserver_info(nb, nargs[i], mode);
     }
 }
 END_CONSTRUCTOR()
 
 DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        destroy_gserver_info(nargs->list[i]);
+        destroy_gserver_info(nargs[i]);
     }
-    free(nargs->list);
+    free(nargs);
 }
 END_DESTRUCTOR()

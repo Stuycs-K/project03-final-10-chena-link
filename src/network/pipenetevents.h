@@ -106,13 +106,11 @@ struct GServerInfo {
 DECLARE_NET_ARGS(GServerInfo, gserver_info)
 
 /*
-    List of GServers. Sent to clients from CServers when the CServer receives an update
+    List of GServerInfo. Sent to clients from CServers when the CServer receives an update
     to a GServerInfo struct from a GServer.
 */
-typedef struct GServerInfoList GServerInfoList;
-struct GServerInfoList {
-    GServerInfo **list; // List of GServerInfo
-};
+typedef GServerInfo *GServerInfoList;
+
 DECLARE_NET_ARGS(GServerInfoList, gserver_info_list)
 
 #endif
