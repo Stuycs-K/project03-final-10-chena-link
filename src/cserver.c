@@ -5,6 +5,14 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 
+/*
+    Construct a new CServer, which initializes new GServers.
+
+    PARAMS:
+        int id : just a random number. Not important.
+
+    RETURNS: the new CServer
+*/
 CServer *cserver_new(int id) {
     CServer *this = malloc(sizeof(CServer));
 
@@ -38,6 +46,18 @@ CServer *cserver_new(int id) {
     return this;
 }
 
+/*
+    Responds to the ReserveGServer event. If an unreserved GServer is found,
+    the CServer forks and runs the GServer.
+    The CServer then sends the client that asked for a reservation the ID of the
+    started GServer, which they can then join.
+
+    PARAMS:
+        CServer *this : the CServer
+        int client_id : which client is asking for a reservation
+
+    RETURNS: none
+*/
 void reserve_gserver(CServer *this, int client_id) {
     GServer *gserver = NULL;
 
