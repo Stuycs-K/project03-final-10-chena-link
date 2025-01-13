@@ -211,7 +211,6 @@ DECLARE_HANDLER(GServerInfo, gserver_info) {
     VALUE(nargs->wkp_name);
 }
 END_CONSTRUCTOR()
-
 DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
@@ -235,5 +234,22 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
         destroy_gserver_info(nargs[i]);
     }
     free(nargs);
+}
+END_DESTRUCTOR()
+DECLARE_CONSTRUCTOR(CardCountArray,card_count_array){
+  nargs = malloc(sizeof(int)*2);
+  for(int i = 0; i < 2; i ++){
+    nargs[i] = 7;
+  }
+}
+END_CONSTRUCTOR()
+DECLARE_HANDLER(CardCountArray,card_count_array){
+  for(int i = 0; i < 2; i++){
+    VALUE(nargs[i]);
+  }
+}
+END_HANDLER()
+DECLARE_DESTRUCTOR(CardCountArray,card_count_array){
+  free(nargs);
 }
 END_DESTRUCTOR()

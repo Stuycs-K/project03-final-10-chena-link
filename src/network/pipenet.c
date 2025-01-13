@@ -31,6 +31,7 @@ void net_init() {
     BIND(GSERVER_INFO, gserver_info);
     BIND(GSERVER_LIST, gserver_info_list);
     BIND(RESERVE_GSERVER, reserve_gserver);
+    BIND(CARD_COUNT,card_count_array);
 }
 
 /*
