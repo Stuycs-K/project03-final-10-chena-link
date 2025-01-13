@@ -8,8 +8,8 @@
 #include "../shared.h"
 #include "../util/file.h"
 
+#include "baseserver.h"
 #include "connectionhandler.h"
-#include "mainserver.h"
 
 /*
     Constructs a new Server.

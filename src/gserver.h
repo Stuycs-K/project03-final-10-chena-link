@@ -1,7 +1,7 @@
 #include <sys/types.h>
 
 #include "network/pipenet.h"
-#include "server/mainserver.h"
+#include "server/baseserver.h"
 
 #ifndef GSERVER_H
 #define GSERVER_H
