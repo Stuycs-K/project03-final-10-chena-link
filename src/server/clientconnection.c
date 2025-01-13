@@ -30,8 +30,8 @@ void disconnect_client(Client *this) {
     this->send_fd = -1;
     this->recv_fd = -1;
 
-    empty_net_event_queue(this->send_queue);
-    empty_net_event_queue(this->recv_queue);
+    clear_event_queue(this->send_queue);
+    clear_event_queue(this->recv_queue);
 }
 
 void free_client_connection(Client *this) {

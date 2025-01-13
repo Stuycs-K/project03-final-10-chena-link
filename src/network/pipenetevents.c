@@ -26,7 +26,7 @@
 
 /*
     Builds a destructor for the struct, used for freeing it if needed
-    It's only necessary to fill in the body if the struct has malloced pointers
+    It's only necessary to fill in the body if the struct has malloc'd pointers
 
     Otherwise, just write DECLARE_DESTRUCTOR and END_DESTRUCTOR on the next line
 

@@ -56,7 +56,7 @@ void check_update_gserver_info(GServer *this) {
 */
 void send_to_cserver(GServer *this) {
     send_event_queue(this->cserver_send_queue, this->cserver_pipes[PIPE_WRITE]);
-    empty_net_event_queue(this->cserver_send_queue);
+    clear_event_queue(this->cserver_send_queue);
 }
 
 GServer *gserver_new(int id) {

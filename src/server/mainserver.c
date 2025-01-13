@@ -193,7 +193,7 @@ void handle_connections(Server *this) {
     END_FOREACH_CLIENT()
 
     NetEventQueue *queue = this->connection_handler_recv_queue;
-    empty_net_event_queue(queue);
+    clear_event_queue(queue);
 
     int connection_handler_read_fd = this->connection_handler_pipe[PIPE_READ];
 
@@ -222,7 +222,7 @@ void handle_connections(Server *this) {
     }
 
     event_buffer = NULL; // I don't know if this is necessary
-    empty_net_event_queue(queue);
+    clear_event_queue(queue);
 
     // The first event sent to all clients is the client list.
     // Newly joined clients MUST set their client_id as soon as possible.
@@ -296,7 +296,7 @@ void server_recv_events(Server *this) {
 // Call after you finish processing all NetEvents
 void server_empty_recv_events(Server *this) {
     FOREACH_CLIENT(this) {
-        empty_net_event_queue(client->recv_queue);
+        clear_event_queue(client->recv_queue);
     }
     END_FOREACH_CLIENT()
 }
@@ -324,7 +324,7 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
 void server_send_events(Server *this) {
     FOREACH_CLIENT(this) {
         send_event_queue(client->send_queue, client->send_fd);
-        empty_net_event_queue(client->send_queue);
+        clear_event_queue(client->send_queue);
     }
     END_FOREACH_CLIENT()
 }

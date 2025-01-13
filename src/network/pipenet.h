@@ -44,7 +44,6 @@
 #define PIPENET_H
 
 /*
-    This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
     Resizes nb->buffer using a growth factor of 2 if writing alloc_size bytes
@@ -60,8 +59,6 @@
     }
 
 /*
-    This is a function-like macro!
-
     Writes size bytes of ptr to nb->buffer. Checks for resizing and updates offset.
 
     NetBuffer *nb : the NetBuffer
@@ -74,8 +71,6 @@
     (nb)->offset += (size);
 
 /*
-    This is a function-like macro!
-
     Wraps NET_BUFFER_WRITE. Used to write non-pointer values.
 
     NetBuffer *nb : the NetBuffer
@@ -85,7 +80,6 @@
     NET_BUFFER_WRITE((nb), &(value), sizeof((value)))
 
 /*
-    This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
     Reserves sizeof(size_t) bytes at the beginning of nb->buffer to record the packet size
@@ -100,7 +94,6 @@
     };
 
 /*
-    This is a function-like macro!
     This is a helper macro and should NEVER be used externally!
 
     Writes the total packet size to the space reserved by NET_BUFFER_BEGIN_WRITE.
@@ -115,8 +108,6 @@
     };
 
 /*
-    This is a function-like macro!
-
     Writes a string to nb->buffer.
     First writes strlen(string), then the raw bytes of the string.
 
@@ -131,8 +122,6 @@
     };
 
 /*
-    This is a function-like macro!
-
     Reads size bytes from nb->buffer into ptr.
 
     NetBuffer *nb : the NetBuffer
@@ -144,8 +133,6 @@
     (nb)->offset += (size);
 
 /*
-    This is a function-like macro!
-
     Wraps NET_BUFFER_READ. Used to read to non-pointer values
 
     NetBuffer *nb : the NetBuffer
@@ -155,8 +142,6 @@
     NET_BUFFER_READ((nb), &(var), sizeof(var))
 
 /*
-    This is a function-like macro!
-
     Reads a string from nb->buffer.
     First reads strlen(string). Then reads strlen(string) bytes.
 
@@ -272,6 +257,8 @@ struct NetEventQueue {
     NetEvent **events;
 };
 
+void net_init();
+
 NetEvent *net_event_new(NetProtocol protocol, void *args);
 
 NetEventQueue *net_event_queue_new();
@@ -282,7 +269,7 @@ void attach_event(NetEventQueue *net_event_queue, NetEvent *event);
 
 void detach_event(NetEventQueue *net_event_queue, NetEvent *event);
 
-void empty_net_event_queue(NetEventQueue *net_event_queue);
+void clear_event_queue(NetEventQueue *net_event_queue);
 
 void send_event_queue(NetEventQueue *net_event_queue, int send_fd);
 
@@ -293,7 +280,5 @@ void *read_into_buffer(int recv_fd);
 void recv_event_queue(NetEventQueue *net_event_queue, void *recv_buffer);
 
 NetEvent *recv_event_immediate(int recv_fd, NetEvent *recv_event);
-
-void net_init();
 
 #endif

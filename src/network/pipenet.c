@@ -41,7 +41,7 @@ void net_init() {
 
     RETURNS: the created NetBuffer
 */
-NetBuffer *net_buffer_send() {
+static NetBuffer *net_buffer_send() {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
 
     new_net_buffer->size = 512;
@@ -60,7 +60,7 @@ NetBuffer *net_buffer_send() {
 
     RETURNS: the created NetBuffer
 */
-NetBuffer *net_buffer_recv(void *buffer) {
+static NetBuffer *net_buffer_recv(void *buffer) {
     NetBuffer *new_net_buffer = malloc(sizeof(NetBuffer));
 
     new_net_buffer->size = 0;
@@ -79,7 +79,7 @@ NetBuffer *net_buffer_recv(void *buffer) {
 
     RETURNS: the created NetBuffer
 */
-void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
+static void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
     ssize_t bytes_written = write(target_fd, net_buffer->buffer, net_buffer->offset);
     if (bytes_written <= 0) {
         printf("%d\n", target_fd);
@@ -95,7 +95,7 @@ void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
 
     RETURNS: none
 */
-void free_net_buffer(NetBuffer *net_buffer) {
+static void free_net_buffer(NetBuffer *net_buffer) {
     free(net_buffer->buffer);
     free(net_buffer);
 }
@@ -156,7 +156,7 @@ void insert_event(NetEventQueue *net_event_queue, NetEvent *event) {
 
 /*
     Add a NetEvent to the attached events list and sets its cleanup behavior to be persistent.
-    Attached events aren't removed in empty_net_event_queue, so you must use detach_event.
+    Attached events aren't removed in clear_event_queue, so you must use detach_event.
     There can only be one attached NetEvent per protocol.
 
     Useful for reusing a NetEvent.
@@ -206,7 +206,7 @@ void detach_event(NetEventQueue *net_event_queue, NetEvent *event) {
 
     RETURNS: none
 */
-void empty_net_event_queue(NetEventQueue *net_event_queue) {
+void clear_event_queue(NetEventQueue *net_event_queue) {
     for (int i = 0; i < net_event_queue->event_count; ++i) {
         NetEvent *event = net_event_queue->events[i];
 

@@ -61,7 +61,7 @@ void on_recv_client_list(BaseClient *this, ClientList *nargs) {
 }
 
 void client_recv_from_server(BaseClient *this) {
-    empty_net_event_queue(this->recv_queue);
+    clear_event_queue(this->recv_queue);
 
     void *recv_buffer;
     while (recv_buffer = read_into_buffer(this->from_server_fd)) {
@@ -91,7 +91,7 @@ void client_send_event(BaseClient *this, NetEvent *event) {
 
 void client_send_to_server(BaseClient *this) {
     send_event_queue(this->send_queue, this->to_server_fd);
-    empty_net_event_queue(this->send_queue);
+    clear_event_queue(this->send_queue);
 }
 
 void client_disconnect_from_server(BaseClient *this) {
@@ -109,8 +109,8 @@ void client_disconnect_from_server(BaseClient *this) {
 
     this->client_id = -1;
 
-    empty_net_event_queue(this->recv_queue);
-    empty_net_event_queue(this->send_queue);
+    clear_event_queue(this->recv_queue);
+    clear_event_queue(this->send_queue);
 }
 
 void free_client(BaseClient *this) {
@@ -119,8 +119,8 @@ void free_client(BaseClient *this) {
     close(this->to_server_fd);
     close(this->from_server_fd);
 
-    empty_net_event_queue(this->recv_queue);
-    empty_net_event_queue(this->send_queue);
+    clear_event_queue(this->recv_queue);
+    clear_event_queue(this->send_queue);
 
     free(this->recv_queue);
     free(this->send_queue);

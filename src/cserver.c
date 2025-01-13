@@ -168,7 +168,7 @@ void cserver_recv_gserver_events(CServer *this) {
 
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
-        empty_net_event_queue(gserver->cserver_recv_queue);
+        clear_event_queue(gserver->cserver_recv_queue);
     }
 }
 
