@@ -3,26 +3,25 @@
 #include "network/pipenet.h"
 #include "server/mainserver.h"
 
-/*
-    GServer, or game server handles players for a single game instance.
-*/
-
 #ifndef GSERVER_H
 #define GSERVER_H
 
+/*
+    GServer (the G stands for game) handles players for a single game instance.
+*/
 typedef struct GServer GServer;
 struct GServer {
-    NetEvent *info_event;
-    NetEventQueue *cserver_send_queue;
-    NetEventQueue *cserver_recv_queue;
+    NetEvent *info_event;              // Wraps GServerInfo, used to tell the CServer about any updates
+    NetEventQueue *cserver_send_queue; // Communication to the CServer
+    NetEventQueue *cserver_recv_queue; // Communication from the CServer
 
-    GServerStatus status;
-    int cserver_pipes[2];
+    GServerStatus status; // See GServerStatus
+    int cserver_pipes[2]; // Pipes to and from the CServer
 
-    Server *server;
+    Server *server; // Internal Server object
 };
 
-void gserver_run(GServer *gserver);
+void gserver_run(GServer *this);
 GServer *gserver_new(int id);
 
 #endif

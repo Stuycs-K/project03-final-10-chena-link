@@ -35,6 +35,9 @@ This document must be updated daily by EACH group member.
 * Implement server list display for the client. 1 hour.
 * Clients can reserve and join servers on the server list. 2 hours.
 
+## 2024-01-12 - Long overdue documentation
+* Document mainserver, cserver, gserver, baseclient, pipenet, and pipenetevents. 1.5 hours.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions

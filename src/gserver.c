@@ -14,6 +14,11 @@
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
     The only fields that will change are the server's status, current clients, maximum clients, and visible name
+
+    PARAMS:
+        GServer *this : the GServer
+
+    RETURNS: none
 */
 void update_gserver_info(GServer *this) {
     GServerInfo *server_info = this->info_event->args;
@@ -29,6 +34,11 @@ void update_gserver_info(GServer *this) {
     If any clients recently joined, update our GServerInfo and send it
     to the CServer so they can update their information about us and inform
     all clients.
+
+    PARAMS:
+        GServer *this : the GServer
+
+    RETURNS: none
 */
 void check_update_gserver_info(GServer *this) {
     Server *server = this->server;
@@ -52,13 +62,27 @@ void check_update_gserver_info(GServer *this) {
 }
 
 /*
-    Send any events to the CServer
+    Send any events to the CServer. This will usually just be the GServerInfo.
+
+    PARAMS:
+        GServer *this : the GServer
+
+    RETURNS: none
 */
 void send_to_cserver(GServer *this) {
     send_event_queue(this->cserver_send_queue, this->cserver_pipes[PIPE_WRITE]);
     clear_event_queue(this->cserver_send_queue);
 }
 
+/*
+    Creates a new GServer.
+    The default name used is "GameServer" + id, and the WKP is "G" + id.
+
+    PARAMS:
+        int id : the GServer's ID. Given by the CServer.
+
+    RETURNS: the new GServer
+*/
 GServer *gserver_new(int id) {
     GServer *this = malloc(sizeof(GServer));
 
@@ -90,7 +114,16 @@ GServer *gserver_new(int id) {
     return this;
 }
 
-// HANDLE CLIENT EVENTS (i.e. change game state) HERE
+/*
+    Handles all client NetEvents (i.e. playing the game, starting the game)
+
+    PARAMS:
+        GServer *this : the GServer
+        int client_id : which client
+        NetEvent *event : the NetEvent this client sent us
+
+    RETURNS: none
+*/
 void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
@@ -101,7 +134,18 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     }
 }
 
-// ALL GAME LOGIC GOES HERE
+/*
+    The GServeer loop.
+    1) Update GServerInfo.
+    2) Processes client NetEvents.
+    3) Update the game state and queues any NetEvents that needed to be sent back to clients.
+    4) Send any events to the CServer.
+
+    PARAMS:
+        GServer *this : the GServer
+
+    RETURNS: none
+*/
 void gserver_loop(GServer *this) {
     Server *server = this->server;
 
@@ -119,6 +163,14 @@ void gserver_loop(GServer *this) {
     send_to_cserver(this);
 }
 
+/*
+    Starts the GServer. It will accept clients and be able to send / receive events.
+
+    PARAMS:
+        GServer *this : the GServer
+
+    RETURNS: none
+*/
 void gserver_run(GServer *this) {
     Server *server = this->server;
     this->status = GSS_WAITING_FOR_PLAYERS;

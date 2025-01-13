@@ -5,6 +5,14 @@
 #include "../util/file.h"
 #include "baseclient.h"
 
+/*
+    Creates a BaseClient with the given username.
+
+    PARAMS:
+        char *name : the username
+
+    RETURNS: the new BaseClient
+*/
 BaseClient *client_new(char *name) {
     BaseClient *this = malloc(sizeof(BaseClient));
 
@@ -22,11 +30,27 @@ BaseClient *client_new(char *name) {
     return this;
 }
 
+/*
+    Checks if the client can actively receive / send NetEvents to a server.
+
+    PARAMS:
+        BaseClient *this : the BaseClient
+
+    RETURNS: 1 if both upstream and downstream FDs are valid, 0 otherwise.
+*/
 int client_is_connected(BaseClient *this) {
     return (this->from_server_fd != -1 && this->to_server_fd != -1);
 }
 
-// Performs handshake
+/*
+    Attempts to establish a connection with a server.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+        char *wkp : the name of the WKP to perform a handshake through
+
+    RETURNS: 1 if connection succeeded, -1 if the handshake failed.
+*/
 int client_connect(BaseClient *this, char *wkp) {
     NetEvent *handshake_event = create_handshake_event();
     Handshake *handshake = handshake_event->args;
@@ -50,6 +74,15 @@ int client_connect(BaseClient *this, char *wkp) {
     return 1;
 }
 
+/*
+    Updates the client's client_id and information about other clients connected.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+        ClientList *nargs : the net args to update with
+
+    RETURNS: none
+*/
 void on_recv_client_list(BaseClient *this, ClientList *nargs) {
     this->client_id = nargs->local_client_id;
     printf("Our client ID: %d\n", this->client_id);
@@ -60,6 +93,15 @@ void on_recv_client_list(BaseClient *this, ClientList *nargs) {
     print_client_list(this->client_info_list);
 }
 
+/*
+    Deserializes and creates NetEvents for all incoming server events.
+    Handles CLIENT_LIST.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+
+    RETURNS: none
+*/
 void client_recv_from_server(BaseClient *this) {
     clear_event_queue(this->recv_queue);
 
@@ -85,15 +127,41 @@ void client_recv_from_server(BaseClient *this) {
     }
 }
 
+/*
+    Queues a NetEvent to be sent to the server.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+        NetEvent *event : the NetEvent to queue up to the server
+
+    RETURNS: none
+*/
 void client_send_event(BaseClient *this, NetEvent *event) {
     insert_event(this->send_queue, event);
 }
 
+/*
+    Sends the event queue to the server.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+
+    RETURNS: none
+*/
 void client_send_to_server(BaseClient *this) {
     send_event_queue(this->send_queue, this->to_server_fd);
     clear_event_queue(this->send_queue);
 }
 
+/*
+    Disconnects from the server this is currently connected to.
+    Clears event queues and invalidates FDs.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+
+    RETURNS: none
+*/
 void client_disconnect_from_server(BaseClient *this) {
     if (!client_is_connected(this)) {
         return;
@@ -113,6 +181,14 @@ void client_disconnect_from_server(BaseClient *this) {
     clear_event_queue(this->send_queue);
 }
 
+/*
+    Frees the client.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+
+    RETURNS: none
+*/
 void free_client(BaseClient *this) {
     free_client_list(this->client_info_list);
 
