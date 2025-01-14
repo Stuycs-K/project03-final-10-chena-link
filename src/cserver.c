@@ -146,6 +146,20 @@ void cserver_send_server_list(CServer *this) {
 }
 
 /*
+    Sends SIGINT to the GServer with the given ID
+
+    PARAMS:
+        CServer *this : the CServer
+        int gserver_id : which GServer to shut down
+
+    RETURNS: none
+*/
+void kill_gserver(CServer *this, int gserver_id) {
+    kill(this->gserver_list[gserver_id]->server->pid, SIGINT);
+    this->gserver_list[gserver_id]->server->pid = -1;
+}
+
+/*
     Calls handlers for GServer NetEvents.
     Current NetEvents: GSERVER_INFO (update_gserver_list)
 
@@ -166,8 +180,7 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
 
         // Everybody in this GServer left. Shut it down!
         if (server_info->current_clients == 0 && server_info->status == GSS_SHUTTING_DOWN) {
-            kill(this->gserver_list[gserver_id]->server->pid, SIGINT);
-
+            kill_gserver(this, gserver_id);
             server_info->status = GSS_UNRESERVED; // Locally set the GServerInfo to unreserved
         }
 
@@ -212,11 +225,14 @@ void cserver_recv_gserver_events(CServer *this) {
 
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
+        if (gserver->server->pid == -1) {
+            continue;
+        }
 
         struct pollfd poll_request = pollfds[i];
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
-            printf("GSERVER DIED\n");
+            kill_gserver(this, i);
             continue;
         }
 

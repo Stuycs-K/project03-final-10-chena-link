@@ -41,6 +41,7 @@ This document must be updated daily by EACH group member.
 ### 2024-01-13 - Disconnects and documentation
 * Document CServer. Done in class.
 * More gracefully handle client disconnections. GServers are shut down properly when there's no players in them. 1 hour.
+* SDL2 installed and should be available. 15 minutes.
 
 ## Kevin Lin
 
