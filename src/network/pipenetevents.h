@@ -116,3 +116,4 @@ DECLARE_NET_ARGS(GServerInfoList, gserver_info_list)
 typedef int CardCountArray;
 DECLARE_NET_ARGS(CardCountArray, card_count_array)
 #endif
+DECLARE_NET_ARGS(int,shmid)

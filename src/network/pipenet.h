@@ -178,6 +178,7 @@ typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
     CARD_COUNT,
+    SHMID,
     HANDSHAKE,
     CLIENT_LIST,
     GSERVER_INFO,
