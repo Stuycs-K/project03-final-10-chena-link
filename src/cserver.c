@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -5,6 +6,14 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 
+/*
+    Construct a new CServer, which initializes new GServers.
+
+    PARAMS:
+        int id : just a random number. Not important.
+
+    RETURNS: the new CServer
+*/
 CServer *cserver_new(int id) {
     CServer *this = malloc(sizeof(CServer));
 
@@ -38,6 +47,18 @@ CServer *cserver_new(int id) {
     return this;
 }
 
+/*
+    Responds to the ReserveGServer event. If an unreserved GServer is found,
+    the CServer forks and runs the GServer.
+    The CServer then sends the client that asked for a reservation the ID of the
+    started GServer, which they can then join.
+
+    PARAMS:
+        CServer *this : the CServer
+        int client_id : which client is asking for a reservation
+
+    RETURNS: none
+*/
 void reserve_gserver(CServer *this, int client_id) {
     GServer *gserver = NULL;
 
@@ -67,10 +88,22 @@ void reserve_gserver(CServer *this, int client_id) {
 
         // Tell the client which server they reserved so they can join!
         reserve_info->gserver_id = gserver->server->id;
+        gserver->server->pid = pid;
+
         server_send_event_to(this->server, client_id, reserve_event);
     }
 }
 
+/*
+    Updates the CServer's list of information about the GServers.
+    Handles a GServer's NetEvent that they send when a client joins.
+
+    PARAMS:
+        CServer *this : the CServer
+        GServerInfo *recv_server_info : the GServer's new, updated information
+
+    RETURNS: none
+*/
 static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
     NetEvent *server_list_event = this->server_list_event;
     GServerInfoList *server_list = server_list_event->args;
@@ -86,7 +119,13 @@ static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
 }
 
 /*
+    Sends the server list to all clients.
+    Called when the CServer receives an update about a GServer.
 
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
 */
 void cserver_send_server_list(CServer *this) {
     NetEvent *server_list_event = this->server_list_event;
@@ -106,13 +145,45 @@ void cserver_send_server_list(CServer *this) {
     this->server_list_updated = 0;
 }
 
+/*
+    Sends SIGINT to the GServer with the given ID
+
+    PARAMS:
+        CServer *this : the CServer
+        int gserver_id : which GServer to shut down
+
+    RETURNS: none
+*/
+void kill_gserver(CServer *this, int gserver_id) {
+    kill(this->gserver_list[gserver_id]->server->pid, SIGINT);
+    this->gserver_list[gserver_id]->server->pid = -1;
+}
+
+/*
+    Calls handlers for GServer NetEvents.
+    Current NetEvents: GSERVER_INFO (update_gserver_list)
+
+    PARAMS:
+        CServer *this : the CServer
+        int gserver_id : which GServer
+        NetEvent *event : the received event
+
+    RETURNS: none
+*/
 void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
 
     case GSERVER_INFO: {
-        GServerInfo *server_info = event->args;
+        GServerInfo *server_info = args;
+
+        // Everybody in this GServer left. Shut it down!
+        if (server_info->current_clients == 0 && server_info->status == GSS_SHUTTING_DOWN) {
+            kill_gserver(this, gserver_id);
+            server_info->status = GSS_UNRESERVED; // Locally set the GServerInfo to unreserved
+        }
+
         printf("SERVER LIST UPDATED\n");
         update_gserver_list(this, server_info);
     }
@@ -122,6 +193,16 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
     }
 }
 
+/*
+    Polls and adds GServer NetEvents to their queues.
+    Afterwards, they're processed with cserver_handle_gserver_net_event.
+    This is very similar to the client polling done by the base Server.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_recv_gserver_events(CServer *this) {
     // Setup poll
     int pollcount = 0;
@@ -144,11 +225,14 @@ void cserver_recv_gserver_events(CServer *this) {
 
     for (int i = 0; i < this->gserver_count; ++i) {
         GServer *gserver = this->gserver_list[i];
+        if (gserver->server->pid == -1) {
+            continue;
+        }
 
         struct pollfd poll_request = pollfds[i];
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
-            printf("GSERVER DIED\n");
+            kill_gserver(this, i);
             continue;
         }
 
@@ -172,6 +256,17 @@ void cserver_recv_gserver_events(CServer *this) {
     }
 }
 
+/*
+    Calls handlers for client NetEvents.
+    Current NetEvents: RESERVE_GSERVER
+
+    PARAMS:
+        CServer *this : the CServer
+        int client_id : which client sent the event
+        NetEvent *event : the event
+
+    RETURNS: none
+*/
 void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
@@ -179,7 +274,6 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
     case RESERVE_GSERVER: {
         ReserveGServer *nargs = args;
-        printf("reserved\n");
         reserve_gserver(this, client_id);
         break;
     }
@@ -189,6 +283,17 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     }
 }
 
+/*
+    Runs one tick of CServer logic.
+    1) Handle each client's NetEvents
+    2) Receive and handle each GServer's NetEvents.
+    3) Update clients on the GServers, if needed.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_loop(CServer *this) {
     Server *server = this->server;
 
@@ -205,6 +310,15 @@ void cserver_loop(CServer *this) {
     cserver_send_server_list(this);
 }
 
+/*
+    Essentially the main function of the CServer.
+    Runs the loop that loops all of the logic.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_run(CServer *this) {
     Server *server = this->server;
 

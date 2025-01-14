@@ -16,7 +16,7 @@
 
 #include "client/baseclient.h"
 
-#define SHMID 123456789
+// #define SHMID 123456789
 #define DONT
 
 typedef enum ClientState ClientState;
@@ -44,19 +44,25 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
     }
 
     printf("======= Game Server List\n");
+
+    int reserved_server_count = 0;
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         GServerInfo *info = recv_gserver_list[i];
-        /*
-        if (info->status == 1) {
+        if (info->status != GSS_UNRESERVED) {
+            reserved_server_count++;
+        }
+    }
+    printf("Available game servers: %d\n", reserved_server_count);
+
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        GServerInfo *info = recv_gserver_list[i];
+
+        if (info->status == GSS_UNRESERVED) { // Don't display unreserved servers
             continue;
         }
-        */
+
         char status[100];
         switch (info->status) {
-
-        case GSS_UNRESERVED:
-            strcpy(status, "UNRESERVED");
-            break;
 
         case GSS_WAITING_FOR_PLAYERS:
             strcpy(status, "WAITING FOR PLAYERS");
@@ -68,6 +74,7 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
 
         printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
     }
+    printf("========================\n");
 }
 
 void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent *event) {
@@ -90,8 +97,6 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
         }
 
         GServerInfo *server_info = gservers[gserver_id];
-        printf("%s\n", server_info->wkp_name);
-
         connect_to_gserver(gclient, server_info);
         break;
     }
@@ -162,12 +167,28 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
     }
 }
 
+void disconnect_from_gserver(BaseClient *client) {
+    if (client_state != IN_GSERVER) {
+        return;
+    }
+
+    client_disconnect_from_server(client);
+    client_state = IN_CSERVER;
+}
+
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
+    int *arg = args;
 
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
-
+    case CARD_COUNT:
+        printf("client received: %d\n", arg[0]);
+        break;
+    case SHMID:
+        int *shmid = args;
+        printf("client recieved shmid: %d\n", shmid[0]);
+        break;
     default:
         break;
     }
@@ -197,16 +218,11 @@ void client_main(void) {
 
     // Game stuff (should be in a separate function)
     srand(getpid());
-    int shmid;
-    card *data;
-    shmid = shmget(SHMID, sizeof(card), IPC_CREAT | 0640);
-    data = shmat(shmid, 0, 0);
 
     card deck[100];
+    int others = 0;
     int num_cards = 7;
     generate_cards(deck, num_cards);
-    // Should be done by server on setup not by client
-    *data = generate_card();
     char input[10];
 
     while (1) {
@@ -233,7 +249,6 @@ void client_main(void) {
                 continue;
             }
 
-            printf("Current card: Color: %d Num: %d\n", data->color, data->num);
             for (int i = 0; i < num_cards; i++) {
                 printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
             }
@@ -249,16 +264,23 @@ void client_main(void) {
                 sscanf(input + 1, "%d %d", &col, &num);
                 picked.color = col;
                 picked.num = num;
-                if (picked.num == data->num || picked.color == data->color) {
+                /*if (picked.num == data->num || picked.color == data->color) {
                     *data = picked;
                     play_card(deck, picked, num_cards);
                     num_cards--;
-                }
+                }*/
             }
-            CardCountArray * cardcounts = nargs_card_count_array();
-            NetEvent * card_counts = net_event_new(CARD_COUNT,cardcounts);
-            client_send_event(gclient,card_counts);
+            CardCountArray *cardcounts = nargs_card_count_array();
+            cardcounts[0] = num_cards;
+            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+            client_send_event(gclient, card_counts);
             client_send_to_server(gclient);
+
+            // TEMP DISCONNECT INPUT
+            if (input[0] == 'D') {
+                disconnect_from_gserver(gclient);
+                continue;
+            }
         }
 
         client_send_to_server(cclient);

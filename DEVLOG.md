@@ -29,14 +29,19 @@ This document must be updated daily by EACH group member.
 * Finish refactoring GServer, started yesterday. Also refactor the pipenet library so that there's less manual labor involved. 2 hours.
 * Begin writing CServer. 20 minutes.
 
-## 2024-01-11 - CServer
+### 2024-01-11 - CServer
 * Implement a networked client list so that clients can know which other clients are connected. 1 hour.
 * Cleanup client.c by offloading network functions into the baseclient module. 2 hours.
 * Implement server list display for the client. 1 hour.
 * Clients can reserve and join servers on the server list. 2 hours.
 
-## 2024-01-12 - Long overdue documentation
+### 2024-01-12 - Long overdue documentation
 * Document mainserver, cserver, gserver, baseclient, pipenet, and pipenetevents. 1.5 hours.
+
+### 2024-01-13 - Disconnects and documentation
+* Document CServer. Done in class.
+* More gracefully handle client disconnections. GServers are shut down properly when there's no players in them. 1 hour.
+* SDL2 installed and should be available. 15 minutes.
 
 ## Kevin Lin
 
@@ -56,3 +61,8 @@ Added functions to send card count to server. Done in class
 
 ### 2024-01-10 - Client server interaction functions
 Added functions for client to send card count to server.
+
+### 2024-01-13 - Setting up shmid and gamedata send
+Added shmid to server(sending it causes client to segfault)
+Added client sending cards
+Added server sending cards. 2 hours

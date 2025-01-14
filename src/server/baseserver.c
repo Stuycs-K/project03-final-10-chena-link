@@ -8,8 +8,8 @@
 #include "../shared.h"
 #include "../util/file.h"
 
+#include "baseserver.h"
 #include "connectionhandler.h"
-#include "mainserver.h"
 
 /*
     Constructs a new Server.
@@ -24,7 +24,7 @@
 Server *server_new(int server_id) {
     Server *this = malloc(sizeof(Server));
 
-    this->status = SSTATUS_OPEN;
+    this->pid = 0;
 
     this->max_clients = 2;
     this->current_clients = 0;
@@ -258,6 +258,7 @@ void handle_connections(Server *this) {
         }
 
         if (client->recently_disconnected) {
+            client->is_free = CONNECTION_IS_FREE;
             client->recently_disconnected = 0;
         }
     }
@@ -420,6 +421,9 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
 */
 void server_send_events(Server *this) {
     FOREACH_CLIENT(this) {
+        if (client->recently_disconnected) {
+            continue;
+        }
         send_event_queue(client->send_queue, client->send_fd);
         clear_event_queue(client->send_queue);
     }

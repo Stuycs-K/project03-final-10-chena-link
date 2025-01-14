@@ -10,8 +10,18 @@ SRCS := $(shell find . -name "*.c")
 # Replace .c file paths by replacing .c with .o and ./src with ./obj
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 
-CFLAGS := -Wall
+INCLUDE_DIRS := /usr/include/SDL2
+LIBRARIES := SDL2
+
 LDLIBS := -lm
+LDLIBS += $(foreach library, $(LIBRARIES), -l$(library))
+
+CPPFLAGS += $(foreach includedir, $(INCLUDE_DIRS),-I$(includedir))
+
+CFLAGS := -Wall
+
+# Preprocessor
+
 
 EXE := $(BIN)/uno
 
@@ -28,7 +38,7 @@ server: $(EXE)
 	@./$(EXE) gserver
 
 $(EXE): $(OBJS) | $(BIN)
-	@gcc $(CFLAGS) $^ -o $@ $(LDLIBS)
+	@gcc $(CFLAGS) $(CPPFLAGS) $^ -o $@ $(LDLIBS)
 
 $(OBJ)/%.o: $(SRC)/%.c $(OBJ)
 	@gcc -c $< -o $@

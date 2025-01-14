@@ -184,7 +184,7 @@ END_CONSTRUCTOR()
 DECLARE_HANDLER(ReserveGServer, reserve_gserver) {
     VALUE(nargs->gserver_id);
 }
-END_CONSTRUCTOR()
+END_HANDLER()
 
 DECLARE_DESTRUCTOR(ReserveGServer, reserve_gserver)
 END_DESTRUCTOR()
@@ -214,6 +214,8 @@ END_CONSTRUCTOR()
 DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
+//=================================================
+
 DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
     nargs = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
@@ -236,20 +238,34 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
     free(nargs);
 }
 END_DESTRUCTOR()
-DECLARE_CONSTRUCTOR(CardCountArray,card_count_array){
-  nargs = malloc(sizeof(int)*2);
-  for(int i = 0; i < 2; i ++){
-    nargs[i] = 7;
-  }
+
+//=================================================
+DECLARE_CONSTRUCTOR(CardCountArray, card_count_array) {
+    nargs = malloc(sizeof(int) * 2);
+    for (int i = 0; i < 2; i++) {
+        nargs[i] = 7;
+    }
 }
 END_CONSTRUCTOR()
-DECLARE_HANDLER(CardCountArray,card_count_array){
-  for(int i = 0; i < 2; i++){
-    VALUE(nargs[i]);
-  }
+DECLARE_HANDLER(CardCountArray, card_count_array) {
+    for (int i = 0; i < 2; i++) {
+        VALUE(nargs[i]);
+    }
 }
 END_HANDLER()
-DECLARE_DESTRUCTOR(CardCountArray,card_count_array){
-  free(nargs);
+DECLARE_DESTRUCTOR(CardCountArray, card_count_array) {
+}
+END_DESTRUCTOR()
+
+DECLARE_CONSTRUCTOR(int, shmid) {
+    nargs = malloc(sizeof(int));
+    *nargs = 0;
+}
+END_CONSTRUCTOR()
+DECLARE_HANDLER(int, shmid) {
+    VALUE(*nargs);
+}
+END_HANDLER()
+DECLARE_DESTRUCTOR(int, shmid) {
 }
 END_DESTRUCTOR()
