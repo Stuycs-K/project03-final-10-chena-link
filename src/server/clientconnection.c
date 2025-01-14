@@ -22,8 +22,6 @@ Client *client_connection_new(int id) {
 }
 
 void disconnect_client(Client *this) {
-    this->is_free = CONNECTION_IS_FREE;
-
     close(this->send_fd);
     close(this->recv_fd);
 

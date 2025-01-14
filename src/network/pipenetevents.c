@@ -184,7 +184,7 @@ END_CONSTRUCTOR()
 DECLARE_HANDLER(ReserveGServer, reserve_gserver) {
     VALUE(nargs->gserver_id);
 }
-END_CONSTRUCTOR()
+END_HANDLER()
 
 DECLARE_DESTRUCTOR(ReserveGServer, reserve_gserver)
 END_DESTRUCTOR()
@@ -215,6 +215,8 @@ END_CONSTRUCTOR()
 DECLARE_DESTRUCTOR(GServerInfo, gserver_info)
 END_DESTRUCTOR()
 
+//=================================================
+
 DECLARE_CONSTRUCTOR(GServerInfoList, gserver_info_list) {
     nargs = malloc(sizeof(GServerInfo *) * MAX_CSERVER_GSERVERS);
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
@@ -237,3 +239,5 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
     free(nargs);
 }
 END_DESTRUCTOR()
+
+//=================================================

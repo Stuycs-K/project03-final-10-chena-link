@@ -258,6 +258,7 @@ void handle_connections(Server *this) {
         }
 
         if (client->recently_disconnected) {
+            client->is_free = CONNECTION_IS_FREE;
             client->recently_disconnected = 0;
         }
     }

@@ -31,7 +31,7 @@ void update_gserver_info(GServer *this) {
 }
 
 /*
-    If any clients recently joined, update our GServerInfo and send it
+    If any clients recently joined or left, update our GServerInfo and send it
     to the CServer so they can update their information about us and inform
     all clients.
 
@@ -44,6 +44,7 @@ void check_update_gserver_info(GServer *this) {
     Server *server = this->server;
 
     int did_client_list_change = 0;
+
     FOREACH_CLIENT(server) {
         if (client->recently_connected || client->recently_disconnected) {
             did_client_list_change = 1;

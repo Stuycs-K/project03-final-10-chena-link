@@ -44,13 +44,23 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
     }
 
     printf("======= Game Server List\n");
+
+    int reserved_server_count = 0;
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         GServerInfo *info = recv_gserver_list[i];
-        /*
-        if (info->status == 1) {
+        if (info->status != GSS_UNRESERVED) {
+            reserved_server_count++;
+        }
+    }
+    printf("Available game servers: %d\n", reserved_server_count);
+
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        GServerInfo *info = recv_gserver_list[i];
+
+        if (info->status == GSS_UNRESERVED) { // Don't display unreserved servers
             continue;
         }
-        */
+
         char status[100];
         switch (info->status) {
 
@@ -68,6 +78,7 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
 
         printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
     }
+    printf("========================\n");
 }
 
 void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent *event) {
@@ -160,6 +171,15 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
     default:
         break;
     }
+}
+
+void disconnect_from_gserver(BaseClient *client) {
+    if (client_state != IN_GSERVER) {
+        return;
+    }
+
+    client_disconnect_from_server(client);
+    client_state = IN_CSERVER;
 }
 
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
@@ -256,7 +276,13 @@ void client_main(void) {
                 }
             }
 
+            printf("we send\n");
             client_send_to_server(gclient);
+
+            if (input[0] == 'D') {
+                disconnect_from_gserver(gclient);
+                continue;
+            }
         }
 
         client_send_to_server(cclient);
