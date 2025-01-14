@@ -256,13 +256,14 @@ END_HANDLER()
 DECLARE_DESTRUCTOR(CardCountArray, card_count_array) {
 }
 END_DESTRUCTOR()
+
 DECLARE_CONSTRUCTOR(int, shmid) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
 }
 END_CONSTRUCTOR()
 DECLARE_HANDLER(int, shmid) {
-    VALUE(nargs);
+    VALUE(*nargs);
 }
 END_HANDLER()
 DECLARE_DESTRUCTOR(int, shmid) {

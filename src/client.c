@@ -179,16 +179,15 @@ void disconnect_from_gserver(BaseClient *client) {
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
     int *arg = args;
-    if (arg == NULL) {
-        printf("args is null\n");
-    }
+
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
     case CARD_COUNT:
         printf("client received: %d\n", arg[0]);
         break;
     case SHMID:
-        printf("client recieved shmid: %d\n", *arg);
+        int *shmid = args;
+        printf("client recieved shmid: %d\n", shmid[0]);
         break;
     default:
         break;

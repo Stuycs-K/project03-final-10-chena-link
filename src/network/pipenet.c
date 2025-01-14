@@ -31,7 +31,7 @@ void net_init() {
     BIND(GSERVER_INFO, gserver_info);
     BIND(GSERVER_LIST, gserver_info_list);
     BIND(RESERVE_GSERVER, reserve_gserver);
-    BIND(CARD_COUNT,card_count_array);
+    BIND(CARD_COUNT, card_count_array);
     BIND(SHMID, shmid);
 }
 
@@ -84,8 +84,7 @@ static NetBuffer *net_buffer_recv(void *buffer) {
 static void transmit_net_buffer(NetBuffer *net_buffer, int target_fd) {
     ssize_t bytes_written = write(target_fd, net_buffer->buffer, net_buffer->offset);
     if (bytes_written <= 0) {
-        printf("%d\n", target_fd);
-        perror("oops");
+        perror("transmit_net_buffer");
     }
 }
 
