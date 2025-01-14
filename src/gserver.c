@@ -128,6 +128,17 @@ GServer *gserver_new(int id) {
 }
 
 /*
+
+*/
+void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
+    GServerConfig *config = event->args;
+
+    int new_max_clients = config->max_clients;
+    char new_name[] = config->name;
+    int start_game = config->start_game;
+}
+
+/*
     Handles all client NetEvents (i.e. playing the game, starting the game)
 
     PARAMS:

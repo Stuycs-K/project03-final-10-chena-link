@@ -84,9 +84,9 @@ DECLARE_NET_ARGS(ReserveGServer, reserve_gserver)
 // Used for client modifying GServer properties
 typedef struct GServerConfig GServerConfig;
 struct GServerConfig {
-    int gserver_id;
-    char name[MAX_GSERVER_NAME_CHARACTERS];
-    int max_clients;
+    char name[MAX_GSERVER_NAME_CHARACTERS]; // The name of the GServer
+    int max_clients; // How many clients the GServer should hold
+    int start_game; // If 1, start the game
 };
 DECLARE_NET_ARGS(GServerConfig, gserver_config)
 

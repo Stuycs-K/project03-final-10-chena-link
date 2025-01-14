@@ -33,6 +33,7 @@ void net_init() {
     BIND(RESERVE_GSERVER, reserve_gserver);
     BIND(CARD_COUNT, card_count_array);
     BIND(SHMID, shmid);
+    BIND(GSERVER_CONFIG, gserver_config);
 }
 
 /*

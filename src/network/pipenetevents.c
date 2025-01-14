@@ -189,6 +189,26 @@ END_HANDLER()
 DECLARE_DESTRUCTOR(ReserveGServer, reserve_gserver)
 END_DESTRUCTOR()
 
+//====================================================
+DECLARE_CONSTRUCTOR(GServerConfig, gserver_config) {
+    nargs = malloc(sizeof(GServerConfig));
+    nargs->name[0] = 0; // Null out name
+    nargs->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
+    nargs->start_game = 0;
+}
+END_CONSTRUCTOR()
+
+DECLARE_HANDLER(GServerConfig, gserver_config) {
+    VALUE(nargs->name);
+    VALUE(nargs->max_clients);
+    VALUE(nargs->start_game);
+}
+END_HANDLER()
+
+DECLARE_DESTRUCTOR(GServerConfig, gserver_config)
+END_DESTRUCTOR()
+//===================================================
+
 DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs = malloc(sizeof(GServerInfo));
     nargs->id = -1;
