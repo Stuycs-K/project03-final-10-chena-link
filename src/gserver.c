@@ -136,16 +136,18 @@ GServer *gserver_new(int id) {
 */
 void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
-
+    printf("is this working\n");
     switch (event->protocol) {
-
+      case CARD_COUNT:
+        int * arg = args;
+        printf("%d\n",arg[0]);
     default:
         break;
     }
 }
 
 /*
-    The GServeer loop.
+    The GServer loop.
     1) Update GServerInfo.
     2) Processes client NetEvents.
     3) Update the game state and queues any NetEvents that needed to be sent back to clients.

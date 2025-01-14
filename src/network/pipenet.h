@@ -177,6 +177,7 @@ struct NetBuffer {
 typedef enum NetProtocol NetProtocol;
 enum NetProtocol {
     PERIODIC_HANDSHAKE,
+    CARD_COUNT,
     HANDSHAKE,
     CLIENT_LIST,
     GSERVER_INFO,
