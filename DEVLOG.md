@@ -29,14 +29,18 @@ This document must be updated daily by EACH group member.
 * Finish refactoring GServer, started yesterday. Also refactor the pipenet library so that there's less manual labor involved. 2 hours.
 * Begin writing CServer. 20 minutes.
 
-## 2024-01-11 - CServer
+### 2024-01-11 - CServer
 * Implement a networked client list so that clients can know which other clients are connected. 1 hour.
 * Cleanup client.c by offloading network functions into the baseclient module. 2 hours.
 * Implement server list display for the client. 1 hour.
 * Clients can reserve and join servers on the server list. 2 hours.
 
-## 2024-01-12 - Long overdue documentation
+### 2024-01-12 - Long overdue documentation
 * Document mainserver, cserver, gserver, baseclient, pipenet, and pipenetevents. 1.5 hours.
+
+### 2024-01-13 - Disconnects and documentation
+* Document CServer. Done in class.
+* More gracefully handle client disconnections. GServers are shut down properly when there's no players in them. 1 hour.
 
 ## Kevin Lin
 

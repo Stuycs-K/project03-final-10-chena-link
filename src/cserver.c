@@ -146,7 +146,7 @@ void cserver_send_server_list(CServer *this) {
 }
 
 /*
-    Receives and calls handlers for GServer NetEvents.
+    Calls handlers for GServer NetEvents.
     Current NetEvents: GSERVER_INFO (update_gserver_list)
 
     PARAMS:
@@ -180,6 +180,16 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
     }
 }
 
+/*
+    Polls and adds GServer NetEvents to their queues.
+    Afterwards, they're processed with cserver_handle_gserver_net_event.
+    This is very similar to the client polling done by the base Server.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_recv_gserver_events(CServer *this) {
     // Setup poll
     int pollcount = 0;
@@ -230,6 +240,17 @@ void cserver_recv_gserver_events(CServer *this) {
     }
 }
 
+/*
+    Calls handlers for client NetEvents.
+    Current NetEvents: RESERVE_GSERVER
+
+    PARAMS:
+        CServer *this : the CServer
+        int client_id : which client sent the event
+        NetEvent *event : the event
+
+    RETURNS: none
+*/
 void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
 
@@ -247,6 +268,17 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
     }
 }
 
+/*
+    Runs one tick of CServer logic.
+    1) Handle each client's NetEvents
+    2) Receive and handle each GServer's NetEvents.
+    3) Update clients on the GServers, if needed.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_loop(CServer *this) {
     Server *server = this->server;
 
@@ -263,6 +295,15 @@ void cserver_loop(CServer *this) {
     cserver_send_server_list(this);
 }
 
+/*
+    Essentially the main function of the CServer.
+    Runs the loop that loops all of the logic.
+
+    PARAMS:
+        CServer *this : the CServer
+
+    RETURNS: none
+*/
 void cserver_run(CServer *this) {
     Server *server = this->server;
 
