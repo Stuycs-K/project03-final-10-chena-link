@@ -24,7 +24,7 @@
 Server *server_new(int server_id) {
     Server *this = malloc(sizeof(Server));
 
-    this->status = SSTATUS_OPEN;
+    this->pid = 0;
 
     this->max_clients = 2;
     this->current_clients = 0;
@@ -421,6 +421,9 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
 */
 void server_send_events(Server *this) {
     FOREACH_CLIENT(this) {
+        if (client->recently_disconnected) {
+            continue;
+        }
         send_event_queue(client->send_queue, client->send_fd);
         clear_event_queue(client->send_queue);
     }

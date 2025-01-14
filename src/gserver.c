@@ -45,6 +45,15 @@ void check_update_gserver_info(GServer *this) {
 
     int did_client_list_change = 0;
 
+    if (server->current_clients >= 1 && this->status == GSS_RESERVED) {
+        this->status = GSS_WAITING_FOR_PLAYERS;
+    }
+
+    // No players connected, and we've started the server. Time to call it quits. The CServer will shut us down with SIGINT.
+    if (server->current_clients == 0 && this->status != GSS_UNRESERVED && this->status != GSS_RESERVED) {
+        this->status = GSS_SHUTTING_DOWN;
+    }
+
     FOREACH_CLIENT(server) {
         if (client->recently_connected || client->recently_disconnected) {
             did_client_list_change = 1;
@@ -174,7 +183,7 @@ void gserver_loop(GServer *this) {
 */
 void gserver_run(GServer *this) {
     Server *server = this->server;
-    this->status = GSS_WAITING_FOR_PLAYERS;
+    this->status = GSS_RESERVED;
 
     server_start_connection_handler(server);
 

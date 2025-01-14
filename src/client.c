@@ -64,10 +64,6 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
         char status[100];
         switch (info->status) {
 
-        case GSS_UNRESERVED:
-            strcpy(status, "UNRESERVED");
-            break;
-
         case GSS_WAITING_FOR_PLAYERS:
             strcpy(status, "WAITING FOR PLAYERS");
             break;
@@ -101,8 +97,6 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
         }
 
         GServerInfo *server_info = gservers[gserver_id];
-        printf("%s\n", server_info->wkp_name);
-
         connect_to_gserver(gclient, server_info);
         break;
     }
@@ -276,9 +270,9 @@ void client_main(void) {
                 }
             }
 
-            printf("we send\n");
             client_send_to_server(gclient);
 
+            // TEMP DISCONNECT INPUT
             if (input[0] == 'D') {
                 disconnect_from_gserver(gclient);
                 continue;

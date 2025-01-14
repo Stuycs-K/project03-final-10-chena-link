@@ -34,7 +34,7 @@ enum ServerStatus {
 */
 typedef struct Server Server;
 struct Server {
-    ServerStatus status; // See ServerStatus enum
+    pid_t pid; // The PID on which this server is running.
 
     int max_clients;     // The maximum number of clients that can connect to this server.
     int current_clients; // How many clients are currently connected.

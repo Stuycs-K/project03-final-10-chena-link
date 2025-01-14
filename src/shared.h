@@ -26,8 +26,10 @@
 
 typedef enum GServerStatus GServerStatus;
 enum GServerStatus {
-    GSS_UNRESERVED,
-    GSS_WAITING_FOR_PLAYERS, // Not reached max_clients
+    GSS_UNRESERVED = 0,
+    GSS_RESERVED,            // Someone reserved the GServer, but they haven't yet joined.
+    GSS_WAITING_FOR_PLAYERS, // The person who reserved the server joined, but we haven't reached max_clients
+    GSS_SHUTTING_DOWN,       // Everyone left the server.
     GSS_FULL,                // Server has reached max_clients
     GSS_STARTING,            // Host has started countdown
     GSS_GAME_IN_PROGRESS     // We're playing the game

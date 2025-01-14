@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -87,6 +88,8 @@ void reserve_gserver(CServer *this, int client_id) {
 
         // Tell the client which server they reserved so they can join!
         reserve_info->gserver_id = gserver->server->id;
+        gserver->server->pid = pid;
+
         server_send_event_to(this->server, client_id, reserve_event);
     }
 }
@@ -159,7 +162,15 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
     switch (event->protocol) {
 
     case GSERVER_INFO: {
-        GServerInfo *server_info = event->args;
+        GServerInfo *server_info = args;
+
+        // Everybody in this GServer left. Shut it down!
+        if (server_info->current_clients == 0 && server_info->status == GSS_SHUTTING_DOWN) {
+            kill(this->gserver_list[gserver_id]->server->pid, SIGINT);
+
+            server_info->status = GSS_UNRESERVED; // Locally set the GServerInfo to unreserved
+        }
+
         printf("SERVER LIST UPDATED\n");
         update_gserver_list(this, server_info);
     }
