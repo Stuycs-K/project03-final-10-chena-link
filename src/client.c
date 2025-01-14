@@ -269,9 +269,10 @@ void client_main(void) {
                     num_cards--;
                 }
             }
-            CardCountArray * cardcounts = nargs_card_count_array();
-            NetEvent * card_counts = net_event_new(CARD_COUNT,cardcounts);
-            client_send_event(gclient,card_counts);
+            CardCountArray *cardcounts = nargs_card_count_array();
+            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+            client_send_event(gclient, card_counts);
+
             client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT

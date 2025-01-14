@@ -253,7 +253,5 @@ DECLARE_HANDLER(CardCountArray, card_count_array) {
     }
 }
 END_HANDLER()
-DECLARE_DESTRUCTOR(CardCountArray, card_count_array) {
-    free(nargs);
-}
+DECLARE_DESTRUCTOR(CardCountArray, card_count_array)
 END_DESTRUCTOR()
