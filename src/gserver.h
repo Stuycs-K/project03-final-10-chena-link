@@ -18,7 +18,7 @@ struct GServer {
     GServerStatus status; // See GServerStatus
     int cserver_pipes[2]; // Pipes to and from the CServer
     int decks[2];
-    int SHMID;
+    int SERVERSHMID;
 
     Server *server; // Internal Server object
 };

@@ -172,7 +172,7 @@ void gserver_loop(GServer *this) {
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
             int *nargs = nargs_shmid();
-            *nargs = this->SHMID;
+            *nargs = this->SERVERSHMID;
             NetEvent *sendShmid = net_event_new(SHMID, nargs);
             server_send_event_to(this->server, client_id, sendShmid);
         }
@@ -202,10 +202,10 @@ void gserver_run(GServer *this) {
     Server *server = this->server;
     this->status = GSS_RESERVED;
     srand(getpid());
-    this->SHMID = rand();
+    this->SERVERSHMID = rand();
     int shmid;
     gameState *data;
-    shmid = shmget(this->SHMID, sizeof(gameState), IPC_CREAT | 0640);
+    shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0640);
     data = shmat(shmid, 0, 0);
     data->lastCard = generate_card();
     data->client_id = 0;
