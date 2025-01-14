@@ -6,6 +6,11 @@ struct card{
   int color;
   int num;
 };
+typedef struct gameState gameState;
+struct gameState{
+  int client_id;
+  card lastCard;
+};
 //Makes a new random card
 card generate_card();
 //Makes a deck of cards

@@ -3,13 +3,16 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/types.h>
 
 #include "gserver.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "shared.h"
-
+#include "game.h"
 /*
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
@@ -136,11 +139,15 @@ GServer *gserver_new(int id) {
 */
 void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
-    printf("is this working\n");
     switch (event->protocol) {
       case CARD_COUNT:
         int * arg = args;
-        printf("%d\n",arg[0]);
+        this->decks[0] = arg[0];
+        CardCountArray * cardcounts = nargs_card_count_array();
+        cardcounts[0]=arg[0];
+        NetEvent * newEvent = net_event_new(CARD_COUNT,cardcounts);
+        server_send_event_to_all(this->server,newEvent);
+        printf("%d\n",this->decks[0]);
     default:
         break;
     }
@@ -162,7 +169,15 @@ void gserver_loop(GServer *this) {
     Server *server = this->server;
 
     check_update_gserver_info(this);
-
+    FOREACH_CLIENT(server) {
+        if (client->recently_connected) {
+            int * nargs = nargs_shmid();
+            *nargs = this->SHMID;
+            NetEvent * sendShmid = net_event_new(SHMID,nargs);
+            server_send_event_to(this->server,client_id,sendShmid);
+        }
+    }
+    END_FOREACH_CLIENT()
     FOREACH_CLIENT(server) {
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {
@@ -186,7 +201,14 @@ void gserver_loop(GServer *this) {
 void gserver_run(GServer *this) {
     Server *server = this->server;
     this->status = GSS_RESERVED;
-
+    srand(getpid());
+    this->SHMID = rand();
+    int shmid;
+    gameState *data;
+    shmid = shmget(this->SHMID, sizeof(gameState), IPC_CREAT | 0640);
+    data = shmat(shmid, 0, 0);
+    data->lastCard = generate_card();
+    data->client_id = 0;
     server_start_connection_handler(server);
 
     while (1) {

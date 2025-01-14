@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <SDL2/SDL.h>
+// #include <SDL2/SDL.h>
 
 #include "client.h"
 #include "debug/debug.h"
@@ -16,12 +16,10 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /*
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    /*if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("Failed to initialize the SDL2 library\n");
         exit(EXIT_FAILURE);
-    }
-    */
+    }*/
 
     // SDL_Window *window = SDL_CreateWindow("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, 0);
 
