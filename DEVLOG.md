@@ -61,3 +61,8 @@ Added functions to send card count to server. Done in class
 
 ### 2024-01-10 - Client server interaction functions
 Added functions for client to send card count to server.
+
+### 2024-01-13 - Setting up shmid and gamedata send
+Added shmid to server(sending it causes client to segfault)
+Added client sending cards
+Added server sending cards. 2 hours
