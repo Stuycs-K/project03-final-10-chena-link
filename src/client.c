@@ -190,7 +190,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     case SHMID:
         int *shmid = args;
         printf("client recieved shmid: %d\n", *shmid);
-        //SERVERSHMID = *shmid;
+        SERVERSHMID = *shmid;
         break;
     default:
         break;
@@ -249,17 +249,16 @@ void client_main(void) {
                 NetEvent *event = gclient->recv_queue->events[i];
                 handle_gserver_net_event(gclient, event);
             }
-            /*
             if (shmid == 0){
               printf("stops here?\n");
               shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
               data = shmat(shmid, 0, 0);
-            }*/
+            }
 
             if (gclient->client_id < 0) {
                 continue;
             }
-            //printf("gamestate card:%d gamestate turn:%d\n",data->lastCard.num,data->client_id);
+            printf("gamestate card:%d gamestate turn:%d\n",data->lastCard.num,data->client_id);
             for (int i = 0; i < num_cards; i++) {
                 printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
             }
@@ -275,11 +274,11 @@ void client_main(void) {
                 sscanf(input + 1, "%d %d", &col, &num);
                 picked.color = col;
                 picked.num = num;
-                /*if (picked.num == data->num || picked.color == data->color) {
-                    *data = picked;
+                if (picked.num == data->lastCard.num || picked.color == data->lastCard.color && data->client_id == gclient->client_id) {
+                    data->card = picked;
                     play_card(deck, picked, num_cards);
                     num_cards--;
-                }*/
+                }
             }
             CardCountArray *cardcounts = nargs_card_count_array();
             cardcounts[0] = num_cards;
