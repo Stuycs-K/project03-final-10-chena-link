@@ -15,6 +15,8 @@ struct GServer {
     NetEventQueue *cserver_send_queue; // Communication to the CServer
     NetEventQueue *cserver_recv_queue; // Communication from the CServer
 
+    int host_client_id; // Who the host is (who we send GServerConfig to start the game)
+
     GServerStatus status; // See GServerStatus
     int cserver_pipes[2]; // Pipes to and from the CServer
     int decks[2];

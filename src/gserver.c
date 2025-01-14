@@ -52,7 +52,7 @@ void check_update_gserver_info(GServer *this) {
         this->status = GSS_WAITING_FOR_PLAYERS;
     }
 
-    // No players connected, and we've started the server. Time to call it quits. The CServer will shut us down with SIGINT.
+    // No players are connected right now, and we've started the server. Time to call it quits. The CServer will shut us down with SIGINT.
     if (server->current_clients == 0 && this->status != GSS_UNRESERVED && this->status != GSS_RESERVED) {
         this->status = GSS_SHUTTING_DOWN;
     }
@@ -107,6 +107,8 @@ GServer *gserver_new(int id) {
 
     this->status = GSS_UNRESERVED;
 
+    this->host_client_id = -1;
+
     this->server = server_new(id);
     this->server->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
 
@@ -132,10 +134,34 @@ GServer *gserver_new(int id) {
 */
 void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     GServerConfig *config = event->args;
+    GServerInfo *current = this->info_event->args;
 
-    int new_max_clients = config->max_clients;
-    char new_name[] = config->name;
-    int start_game = config->start_game;
+    if (config->max_clients != current->max_clients) {
+        server_set_max_clients(this->server, config->max_clients);
+    }
+
+    if (strcmp(config->name, current->name) != 0) {
+        strcpy(this->server->name, config->name);
+    }
+
+    // TODO
+    if (config->start_game) {
+        printf("starting the game!\n");
+        this->status = GSS_GAME_IN_PROGRESS;
+    }
+
+    update_gserver_info(this);
+}
+
+void send_gserver_config_to_host(GServer *this) {
+    GServerConfig *config = nargs_gserver_config();
+    config->max_clients = this->server->max_clients;
+    strcpy(config->name, this->server->name);
+    config->start_game = 0;
+
+    NetEvent *event = net_event_new(GSERVER_CONFIG, config);
+
+    server_send_event_to(this->server, this->host_client_id, event);
 }
 
 /*
@@ -159,6 +185,10 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
         printf("%d\n", this->decks[0]);
+
+        case GSERVER_CONFIG:
+            GServerConfig *config = args;
+            recv_gserver_config(this, client_id, event);
     default:
         break;
     }
@@ -186,9 +216,16 @@ void gserver_loop(GServer *this) {
             *nargs = this->SHMID;
             NetEvent *sendShmid = net_event_new(SHMID, nargs);
             server_send_event_to(this->server, client_id, sendShmid);
+
+            // Set the host to the first person who joined
+            if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
+                this->host_client_id = 0;
+                send_gserver_config_to_host(this);
+            }
         }
     }
     END_FOREACH_CLIENT()
+
     FOREACH_CLIENT(server) {
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {

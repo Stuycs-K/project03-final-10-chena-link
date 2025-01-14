@@ -27,6 +27,7 @@ enum ClientState {
 
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
+int connected_gserver_id = -1;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -34,6 +35,7 @@ void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
         printf("[CLIENT]: Failed to connect to GServer\n");
         return;
     }
+    connected_gserver_id = server_info->id;
     client_state = IN_GSERVER;
 }
 
@@ -178,17 +180,33 @@ void disconnect_from_gserver(BaseClient *client) {
 
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
-    int *arg = args;
+
 
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
     case CARD_COUNT:
+        int *arg = args;
         printf("client received: %d\n", arg[0]);
         break;
+
     case SHMID:
         int *shmid = args;
-        printf("client recieved shmid: %d\n", shmid[0]);
+        printf("client recieved shmid: %d\n", *shmid);
         break;
+
+        case GSERVER_CONFIG: // We're the host!
+            GServerConfig *config = args;
+            printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; n {s} to set server name; s to start the game");
+
+            char input[100];
+            fgets(input, sizeof(input), stdin);
+            switch (input[0]) {
+
+                default:
+                    printf("invalid input\n");
+                    break;
+            }
+
     default:
         break;
     }
@@ -279,6 +297,7 @@ void client_main(void) {
             // TEMP DISCONNECT INPUT
             if (input[0] == 'D') {
                 disconnect_from_gserver(gclient);
+                connected_gserver_id = -1;
                 continue;
             }
         }
