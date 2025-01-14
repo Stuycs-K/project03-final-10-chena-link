@@ -27,6 +27,8 @@ enum ClientState {
 
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
+int others[2];
+int SERVERSHMID = 0;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -187,7 +189,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
     case SHMID:
         int *shmid = args;
-        printf("client recieved shmid: %d\n", shmid[0]);
+        printf("client recieved shmid: %d\n", *shmid);
+        //SERVERSHMID = *shmid;
         break;
     default:
         break;
@@ -224,6 +227,8 @@ void client_main(void) {
     int num_cards = 7;
     generate_cards(deck, num_cards);
     char input[10];
+    gameState *data;
+    int shmid = 0;
 
     while (1) {
         // 1) Receive NetEvents from CServer
@@ -244,11 +249,17 @@ void client_main(void) {
                 NetEvent *event = gclient->recv_queue->events[i];
                 handle_gserver_net_event(gclient, event);
             }
+            /*
+            if (shmid == 0){
+              printf("stops here?\n");
+              shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
+              data = shmat(shmid, 0, 0);
+            }*/
 
             if (gclient->client_id < 0) {
                 continue;
             }
-
+            //printf("gamestate card:%d gamestate turn:%d\n",data->lastCard.num,data->client_id);
             for (int i = 0; i < num_cards; i++) {
                 printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
             }
