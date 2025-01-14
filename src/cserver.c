@@ -274,7 +274,6 @@ void cserver_handle_net_event(CServer *this, int client_id, NetEvent *event) {
 
     case RESERVE_GSERVER: {
         ReserveGServer *nargs = args;
-        printf("reserved\n");
         reserve_gserver(this, client_id);
         break;
     }

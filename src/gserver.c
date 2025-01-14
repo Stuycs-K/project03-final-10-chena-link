@@ -1,18 +1,18 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/wait.h>
-#include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
+#include "game.h"
 #include "gserver.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "shared.h"
-#include "game.h"
 /*
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
@@ -140,14 +140,14 @@ GServer *gserver_new(int id) {
 void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
     switch (event->protocol) {
-      case CARD_COUNT:
-        int * arg = args;
+    case CARD_COUNT:
+        int *arg = args;
         this->decks[0] = arg[0];
-        CardCountArray * cardcounts = nargs_card_count_array();
-        cardcounts[0]=arg[0];
-        NetEvent * newEvent = net_event_new(CARD_COUNT,cardcounts);
-        server_send_event_to_all(this->server,newEvent);
-        printf("%d\n",this->decks[0]);
+        CardCountArray *cardcounts = nargs_card_count_array();
+        cardcounts[0] = arg[0];
+        NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
+        server_send_event_to_all(this->server, newEvent);
+        printf("%d\n", this->decks[0]);
     default:
         break;
     }
@@ -171,10 +171,10 @@ void gserver_loop(GServer *this) {
     check_update_gserver_info(this);
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
-            int * nargs = nargs_shmid();
+            int *nargs = nargs_shmid();
             *nargs = this->SHMID;
-            NetEvent * sendShmid = net_event_new(SHMID,nargs);
-            server_send_event_to(this->server,client_id,sendShmid);
+            NetEvent *sendShmid = net_event_new(SHMID, nargs);
+            server_send_event_to(this->server, client_id, sendShmid);
         }
     }
     END_FOREACH_CLIENT()

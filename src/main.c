@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-//#include <SDL2/SDL.h>
+// #include <SDL2/SDL.h>
 
 #include "client.h"
 #include "debug/debug.h"

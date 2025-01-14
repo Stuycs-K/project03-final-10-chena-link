@@ -16,7 +16,7 @@
 
 #include "client/baseclient.h"
 
-//#define SHMID 123456789
+// #define SHMID 123456789
 #define DONT
 
 typedef enum ClientState ClientState;
@@ -179,17 +179,16 @@ void disconnect_from_gserver(BaseClient *client) {
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
     int *arg = args;
-    if(arg == NULL){
-        printf("args is null\n");
-    }
+
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
-        case CARD_COUNT:
-            printf("client received: %d\n",arg[0]);
-            break;
-        case SHMID:
-            printf("client recieved shmid: %d\n",*arg);
-            break;
+    case CARD_COUNT:
+        printf("client received: %d\n", arg[0]);
+        break;
+    case SHMID:
+        int *shmid = args;
+        printf("client recieved shmid: %d\n", shmid[0]);
+        break;
     default:
         break;
     }
@@ -271,10 +270,10 @@ void client_main(void) {
                     num_cards--;
                 }*/
             }
-            CardCountArray * cardcounts = nargs_card_count_array();
+            CardCountArray *cardcounts = nargs_card_count_array();
             cardcounts[0] = num_cards;
-            NetEvent * card_counts = net_event_new(CARD_COUNT,cardcounts);
-            client_send_event(gclient,card_counts);
+            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+            client_send_event(gclient, card_counts);
             client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT
