@@ -27,9 +27,14 @@ enum ClientState {
 
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
+<<<<<<< HEAD
 int connected_gserver_id = -1;
 int others[4];
 int SERVERSHMID;
+=======
+int others[2];
+int SERVERSHMID = 0;
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -201,8 +206,13 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case SHMID:
         int *shmid = args;
+<<<<<<< HEAD
         printf("client recieved shmid: %d\n", shmid[0]);
         SERVERSHMID = shmid[0];
+=======
+        printf("client recieved shmid: %d\n", *shmid);
+        SERVERSHMID = *shmid;
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
         break;
 
     case GSERVER_CONFIG: // We're the host!
@@ -274,14 +284,25 @@ void client_main(void) {
                 NetEvent *event = gclient->recv_queue->events[i];
                 handle_gserver_net_event(gclient, event);
             }
+            if (shmid == 0){
+              printf("stops here?\n");
+              shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
+              data = shmat(shmid, 0, 0);
+            }
 
             if (gclient->client_id < 0) {
                 continue;
             }
+<<<<<<< HEAD
 
             if (shmid == 0) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
+=======
+            printf("gamestate card:%d gamestate turn:%d\n",data->lastCard.num,data->client_id);
+            for (int i = 0; i < num_cards; i++) {
+                printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
             }
             // printf("gamestate card:%d gamestate turn:%d\n", data->lastCard.num, data->client_id);
 
@@ -314,7 +335,27 @@ void client_main(void) {
                 printf("ITS TIME TO SEND\n");
                 client_send_event(gclient, card_counts);
             }
+<<<<<<< HEAD
 
+=======
+            if (input[0] == 'p') {
+                card picked;
+                int col;
+                int num;
+                sscanf(input + 1, "%d %d", &col, &num);
+                picked.color = col;
+                picked.num = num;
+                if (picked.num == data->lastCard.num || picked.color == data->lastCard.color && data->client_id == gclient->client_id) {
+                    data->card = picked;
+                    play_card(deck, picked, num_cards);
+                    num_cards--;
+                }
+            }
+            CardCountArray *cardcounts = nargs_card_count_array();
+            cardcounts[0] = num_cards;
+            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+            client_send_event(gclient, card_counts);
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
             client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT

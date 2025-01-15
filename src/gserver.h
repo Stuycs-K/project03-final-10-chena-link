@@ -20,10 +20,15 @@ struct GServer {
 
     GServerStatus status; // See GServerStatus
     int cserver_pipes[2]; // Pipes to and from the CServer
+<<<<<<< HEAD
     int decks[4];
     int SERVERSHMID;
     gameState *data;
     int all_clients[2];
+=======
+    int decks[2];
+    int SERVERSHMID;
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
 
     Server *server; // Internal Server object
 };

@@ -195,10 +195,15 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             this->decks[3] = arg[0];
         }
         CardCountArray *cardcounts = nargs_card_count_array();
+<<<<<<< HEAD
         for (int i = 0; i < 4; i++) {
             cardcounts[i] = this->decks[i];
         }
 
+=======
+        cardcounts[0] = client_id;
+        cardcounts[1] = arg[0];
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
 
@@ -313,10 +318,18 @@ void gserver_run(GServer *this) {
     srand(getpid());
     this->SERVERSHMID = rand();
     int shmid;
+<<<<<<< HEAD
     shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0666);
     this->data = shmat(shmid, 0, 0);
     this->data->lastCard = generate_card();
     this->data->client_id = 0;
+=======
+    gameState *data;
+    shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0640);
+    data = shmat(shmid, 0, 0);
+    data->lastCard = generate_card();
+    data->client_id = 0;
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
     server_start_connection_handler(server);
 
     while (1) {
@@ -330,4 +343,8 @@ void gserver_run(GServer *this) {
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);
     }
+<<<<<<< HEAD
+=======
+    shmctl(shmid,IPC_RMID, 0);
+>>>>>>> 83ed6ad0a0661c8cdcae61051e5a8146038aad7a
 }
