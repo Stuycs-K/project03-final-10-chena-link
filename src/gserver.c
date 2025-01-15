@@ -124,6 +124,13 @@ GServer *gserver_new(int id) {
     server_info->id = id;
     strcpy(server_info->wkp_name, gserver_wkp_name_buffer);
 
+    for (int i = 0; i < 4; i++) {
+        this->decks[i] = -1;
+    }
+    for (int a = 0; a < 2; a++) {
+        this->all_clients[a] = -1;
+    }
+
     update_gserver_info(this);
 
     return this;
@@ -178,17 +185,31 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
     switch (event->protocol) {
     case CARD_COUNT:
+        printf("is this running\n");
         int *arg = args;
-        this->decks[0] = arg[0];
+        if (this->decks[0] == client_id) {
+            this->decks[1] = arg[0];
+        } else {
+            this->decks[3] = arg[0];
+        }
         CardCountArray *cardcounts = nargs_card_count_array();
-        cardcounts[0] = arg[0];
+        for (int i = 0; i < 4; i++) {
+            cardcounts[i] = this->decks[i];
+        }
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
-        printf("%d\n", this->decks[0]);
-
-        case GSERVER_CONFIG:
-            GServerConfig *config = args;
-            recv_gserver_config(this, client_id, event);
+        if (this->all_clients[0] == this->data->client_id) {
+            this->data->client_id = this->all_clients[1];
+        } else {
+            this->data->client_id = this->all_clients[0];
+        }
+        /*FOREACH_CLIENT(this->server){
+            if(this->data->client_id != client_id){
+                this->data->client_id = client_id;
+                break;
+            }
+        }
+        END_FOREACH_CLIENT()*/
     default:
         break;
     }
@@ -212,8 +233,18 @@ void gserver_loop(GServer *this) {
     check_update_gserver_info(this);
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
+            if (this->decks[0] == -1) {
+                this->decks[0] = client_id;
+            } else {
+                this->decks[2] = client_id;
+            }
+            if (this->all_clients[0] == -1) {
+                this->all_clients[0] = client_id;
+            } else {
+                this->all_clients[1] = client_id;
+            }
             int *nargs = nargs_shmid();
-            *nargs = this->SHMID;
+            *nargs = this->SERVERSHMID;
             NetEvent *sendShmid = net_event_new(SHMID, nargs);
             server_send_event_to(this->server, client_id, sendShmid);
 
@@ -250,13 +281,12 @@ void gserver_run(GServer *this) {
     Server *server = this->server;
     this->status = GSS_RESERVED;
     srand(getpid());
-    this->SHMID = rand();
+    this->SERVERSHMID = rand();
     int shmid;
-    gameState *data;
-    shmid = shmget(this->SHMID, sizeof(gameState), IPC_CREAT | 0640);
-    data = shmat(shmid, 0, 0);
-    data->lastCard = generate_card();
-    data->client_id = 0;
+    shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0666);
+    this->data = shmat(shmid, 0, 0);
+    this->data->lastCard = generate_card();
+    this->data->client_id = 0;
     server_start_connection_handler(server);
 
     while (1) {

@@ -261,14 +261,14 @@ END_DESTRUCTOR()
 
 //=================================================
 DECLARE_CONSTRUCTOR(CardCountArray, card_count_array) {
-    nargs = malloc(sizeof(int) * 2);
-    for (int i = 0; i < 2; i++) {
+    nargs = malloc(sizeof(int) * 4);
+    for (int i = 0; i < 4; i++) {
         nargs[i] = 7;
     }
 }
 END_CONSTRUCTOR()
 DECLARE_HANDLER(CardCountArray, card_count_array) {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 4; i++) {
         VALUE(nargs[i]);
     }
 }
