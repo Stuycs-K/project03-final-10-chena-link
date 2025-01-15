@@ -122,6 +122,10 @@ GServer *gserver_new(int id) {
     server_info->id = id;
     strcpy(server_info->wkp_name, gserver_wkp_name_buffer);
 
+    for(int i = 0; i < 4; i ++){
+        this->decks[i] = -1;
+    }
+
     update_gserver_info(this);
 
     return this;
@@ -142,12 +146,18 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     switch (event->protocol) {
     case CARD_COUNT:
         int *arg = args;
-        this->decks[0] = arg[0];
+        if(this->decks[0] == client_id){
+            this->decks[1] = arg[0];
+        }
+        else{
+            this->decks[3] = arg[0];
+        }
         CardCountArray *cardcounts = nargs_card_count_array();
-        cardcounts[0] = arg[0];
+        for(int i = 0; i < 4; i ++){
+            cardcounts[i] = this->decks[i];
+        }
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
-        printf("%d\n", this->decks[0]);
     default:
         break;
     }
@@ -171,6 +181,12 @@ void gserver_loop(GServer *this) {
     check_update_gserver_info(this);
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
+            if(this->decks[0] == -1){
+                this->decks[0] = client_id;
+            }
+            else{
+                this->decks[2] = client_id;
+            }
             int *nargs = nargs_shmid();
             *nargs = this->SERVERSHMID;
             NetEvent *sendShmid = net_event_new(SHMID, nargs);
@@ -205,14 +221,22 @@ void gserver_run(GServer *this) {
     this->SERVERSHMID = rand();
     int shmid;
     gameState *data;
-    shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0640);
+    shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0666);
     data = shmat(shmid, 0, 0);
     data->lastCard = generate_card();
-    data->client_id = 0;
+    data->client_id = -1;
     server_start_connection_handler(server);
 
     while (1) {
         handle_connections(server);
+
+        FOREACH_CLIENT(server){
+            if(data->client_id != client_id){
+                data->client_id = client_id;
+                break;
+            }
+        }
+        END_FOREACH_CLIENT()
 
         server_empty_recv_events(server);
         server_recv_events(server);
