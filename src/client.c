@@ -186,6 +186,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     // Run game logic + rendering based on NetEvents HERE
     switch (event->protocol) {
     case CARD_COUNT:
+        int *arg = args;
         printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
         break;
 
@@ -197,6 +198,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case GSERVER_CONFIG: // We're the host!
         GServerConfig *config = args;
+        /*
         printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; n {s} to set server name; s to start the game");
 
         char input[100];
@@ -207,6 +209,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
             printf("invalid input\n");
             break;
         }
+        */
+        break;
 
     default:
         break;
@@ -269,15 +273,18 @@ void client_main(void) {
             if (gclient->client_id < 0) {
                 continue;
             }
+
             if (shmid == 0) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
             }
-            printf("gamestate card:%d gamestate turn:%d\n", data->lastCard.num, data->client_id);
-            for (int i = 0; i < num_cards; i++) {
-                printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
-            }
+            // printf("gamestate card:%d gamestate turn:%d\n", data->lastCard.num, data->client_id);
+
             if (data->client_id == gclient->client_id) {
+                for (int i = 0; i < num_cards; i++) {
+                    printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
+                }
+
                 fgets(input, sizeof(input), stdin);
                 if (input[0] == 'l') {
                     deck[num_cards] = generate_card();
@@ -299,9 +306,11 @@ void client_main(void) {
                 CardCountArray *cardcounts = nargs_card_count_array();
                 cardcounts[0] = num_cards;
                 NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+                printf("ITS TIME TO SEND\n");
                 client_send_event(gclient, card_counts);
-                client_send_to_server(gclient);
             }
+
+            client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT
             if (input[0] == 'D') {

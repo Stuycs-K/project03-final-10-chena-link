@@ -183,9 +183,11 @@ void send_gserver_config_to_host(GServer *this) {
 */
 void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
+    Server *server = this->server;
+
     switch (event->protocol) {
     case CARD_COUNT:
-        printf("is this running\n");
+        printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
         if (this->decks[0] == client_id) {
             this->decks[1] = arg[0];
@@ -196,8 +198,17 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         for (int i = 0; i < 4; i++) {
             cardcounts[i] = this->decks[i];
         }
+
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
+        /*
+            FOREACH_CLIENT(server) {
+            NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
+            server_send_event_to(this->server, client_id, newEvent);
+        }
+        END_FOREACH_CLIENT()
+        */
+
         if (this->all_clients[0] == this->data->client_id) {
             this->data->client_id = this->all_clients[1];
         } else {

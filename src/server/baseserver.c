@@ -45,6 +45,8 @@ Server *server_new(int server_id) {
         this->clients[i] = client_connection_new(i);
     }
 
+    this->send_to_all_events = net_event_queue_new();
+
     return this;
 }
 
@@ -405,6 +407,9 @@ void server_send_event_to(Server *this, int client_id, NetEvent *event) {
     RETURNS: none
 */
 void server_send_event_to_all(Server *this, NetEvent *event) {
+    event->cleanup_behavior = NEVENT_PERSISTENT;
+    insert_event(this->send_to_all_events, event);
+
     FOREACH_CLIENT(this) {
         server_send_event_to(this, client_id, event);
     }
@@ -428,6 +433,11 @@ void server_send_events(Server *this) {
         clear_event_queue(client->send_queue);
     }
     END_FOREACH_CLIENT()
+
+    for (int i = 0; i < this->send_to_all_events->event_count; ++i) {
+        this->send_to_all_events->events[i]->cleanup_behavior = NEVENT_BASE;
+    }
+    clear_event_queue(this->send_to_all_events);
 }
 
 /*

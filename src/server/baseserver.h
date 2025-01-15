@@ -51,8 +51,9 @@ struct Server {
 
     pid_t connection_handler_pid;                 // The PID of the connection handler. Used solely to do magic (see handle_client_connection).
     NetEventQueue *connection_handler_recv_queue; // A queue for the connection handler so that it can inform the server about clients connecting.
+    int connection_handler_pipe[2];               // FDs to and from the connection handler.
 
-    int connection_handler_pipe[2]; // FDs to and from the connection handler.
+    NetEventQueue *send_to_all_events;
 };
 
 Server *server_new(int server_id);
