@@ -179,6 +179,7 @@ enum NetProtocol {
     PERIODIC_HANDSHAKE,
     CARD_COUNT,
     SHMID,
+    GAME_OVER,
     HANDSHAKE,
     CLIENT_LIST,
     GSERVER_INFO,

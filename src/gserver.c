@@ -199,8 +199,16 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             cardcounts[i] = this->decks[i];
         }
 
-        NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
-        server_send_event_to_all(this->server, newEvent);
+        if(arg[0] == 0){
+          int *nargs = nargs_gameover();
+          *nargs = client_id;
+          NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
+          server_send_event_to_all(this->server, winnerClient);
+        }
+        else{
+          NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
+          server_send_event_to_all(this->server, newEvent);
+        }
 
         if (this->all_clients[0] == this->data->client_id) {
             this->data->client_id = this->all_clients[1];

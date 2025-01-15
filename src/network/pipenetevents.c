@@ -260,6 +260,7 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
 END_DESTRUCTOR()
 
 //=================================================
+//SEND CARDCOUNT BETWEEN CLIENT AND SERVER
 DECLARE_CONSTRUCTOR(CardCountArray, card_count_array) {
     nargs = malloc(sizeof(int) * 4);
     for (int i = 0; i < 4; i++) {
@@ -277,6 +278,7 @@ DECLARE_DESTRUCTOR(CardCountArray, card_count_array) {
 }
 END_DESTRUCTOR()
 
+//SEND SHMID FOR GAMESTATE AT START OF GAME
 DECLARE_CONSTRUCTOR(int, shmid) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
@@ -287,5 +289,19 @@ DECLARE_HANDLER(int, shmid) {
 }
 END_HANDLER()
 DECLARE_DESTRUCTOR(int, shmid) {
+}
+END_DESTRUCTOR()
+
+//SEND WINNER
+DECLARE_CONSTRUCTOR(int, gameover) {
+    nargs = malloc(sizeof(int));
+    *nargs = 0;
+}
+END_CONSTRUCTOR()
+DECLARE_HANDLER(int, gameover) {
+    VALUE(*nargs);
+}
+END_HANDLER()
+DECLARE_DESTRUCTOR(int, gameover) {
 }
 END_DESTRUCTOR()

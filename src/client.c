@@ -205,6 +205,11 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         SERVERSHMID = shmid[0];
         break;
 
+    case GAME_OVER:
+        int *winner = args;
+        printf("client %d has won\n",winner[0]);
+        break;
+
     case GSERVER_CONFIG: // We're the host!
         GServerConfig *config = args;
         /*
@@ -283,13 +288,12 @@ void client_main(void) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
             }
-            // printf("gamestate card:%d gamestate turn:%d\n", data->lastCard.num, data->client_id);
 
             if (data->client_id == gclient->client_id) {
+              printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
                     printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
                 }
-
                 fgets(input, sizeof(input), stdin);
                 if (input[0] == 'l') {
                     deck[num_cards] = generate_card();
@@ -313,6 +317,7 @@ void client_main(void) {
                 NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
                 printf("ITS TIME TO SEND\n");
                 client_send_event(gclient, card_counts);
+
             }
 
             client_send_to_server(gclient);

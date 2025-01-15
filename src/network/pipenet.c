@@ -34,6 +34,7 @@ void net_init() {
     BIND(CARD_COUNT, card_count_array);
     BIND(SHMID, shmid);
     BIND(GSERVER_CONFIG, gserver_config);
+    BIND(GAME_OVER, gameover);
 }
 
 /*
