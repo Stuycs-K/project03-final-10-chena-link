@@ -201,13 +201,6 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
 
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
-        /*
-            FOREACH_CLIENT(server) {
-            NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
-            server_send_event_to(this->server, client_id, newEvent);
-        }
-        END_FOREACH_CLIENT()
-        */
 
         if (this->all_clients[0] == this->data->client_id) {
             this->data->client_id = this->all_clients[1];
@@ -226,6 +219,28 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     }
 }
 
+void get_host_client_id(GServer *this) {
+    Client **clients = this->server->clients;
+    // We have a host, and they are still connected.
+    if (this->host_client_id > -1 && !clients[this->host_client_id]->recently_disconnected) {
+        return;
+    }
+
+    Server *server = this->server;
+    FOREACH_CLIENT(server) {
+        // The first person who joins this fresh server is the host
+        if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
+            this->host_client_id = 0; // Guaranteed
+            break;
+        }
+
+        // Our host disconnected
+        if (client->recently_disconnected && this->host_client_id == client->id) {
+        }
+    }
+    END_FOREACH_CLIENT()
+}
+
 /*
     The GServer loop.
     1) Update GServerInfo.
@@ -241,7 +256,11 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
 void gserver_loop(GServer *this) {
     Server *server = this->server;
 
+    get_host_client_id(this);
     check_update_gserver_info(this);
+
+    if (this->status == GSS_WAITING_FOR_PLAYERS) {
+    }
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
             if (this->decks[0] == -1) {

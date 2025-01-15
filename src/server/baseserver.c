@@ -400,6 +400,10 @@ void server_send_event_to(Server *this, int client_id, NetEvent *event) {
 /*
     Queue a NetEvent to be sent to all currently connected clients.
 
+    This NetEvent is shared among all client queues, which will cause things to break when it's time to clear all client queues.
+    Thus, we have to make it persistent so it doesn't get freed and add it to a separate queue.
+    After sending and clearing clients' individual queues, we can go into the separate queue, set its cleanup behavior to normal, and finally free it.
+
     PARAMS:
         Server *this : the Server
         NetEvent *event : the NetEvent to send to all clients
@@ -417,7 +421,8 @@ void server_send_event_to_all(Server *this, NetEvent *event) {
 }
 
 /*
-    Sends and empties each client's send queue
+    Sends and empties each client's send queue.
+    Empties send_to_all_events queue as well.
 
     PARAMS:
         Server *this : the Server

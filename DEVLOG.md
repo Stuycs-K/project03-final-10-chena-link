@@ -43,6 +43,10 @@ This document must be updated daily by EACH group member.
 * More gracefully handle client disconnections. GServers are shut down properly when there's no players in them. 1 hour.
 * SDL2 installed and should be available. 15 minutes.
 
+### 2024-01-14 - Configuration and bug fixing
+* Begin implementing clients configuring GServers (max players, server name). Done in class.
+* Fix a nasty bug with server_send_to_all. 30 minutes.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions

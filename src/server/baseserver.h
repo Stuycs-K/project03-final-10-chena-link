@@ -23,12 +23,6 @@
 
 #define END_FOREACH_CLIENT() }
 
-typedef enum ServerStatus ServerStatus;
-enum ServerStatus {
-    SSTATUS_OPEN,
-    SSTATUS_CLOSED,
-};
-
 /*
     A base Server, which communicactes with clients. CServer and GServer both use this.
 */
@@ -53,7 +47,7 @@ struct Server {
     NetEventQueue *connection_handler_recv_queue; // A queue for the connection handler so that it can inform the server about clients connecting.
     int connection_handler_pipe[2];               // FDs to and from the connection handler.
 
-    NetEventQueue *send_to_all_events;
+    NetEventQueue *send_to_all_events; // A queue for holding NetEvents that have been sent to all clients. Needed to solve a stupid problem. See server_send_to_all
 };
 
 Server *server_new(int server_id);

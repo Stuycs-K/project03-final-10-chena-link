@@ -41,6 +41,15 @@ void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     client_state = IN_GSERVER;
 }
 
+void connect_to_cserver(BaseClient *cclient) {
+    int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
+    if (connected_to_cserver == -1) {
+        printf("[CLIENT]: Failed to establish connection with the central server\n");
+        exit(EXIT_FAILURE);
+    }
+    client_state = IN_CSERVER;
+}
+
 void print_gserver_list(GServerInfoList *recv_gserver_list) {
     // Don't print the server list if we're in a game server.
     if (client_state == IN_GSERVER) {
@@ -226,11 +235,7 @@ void client_main(void) {
 
     // First, try to connect to the central server
     BaseClient *cclient = client_new(username);
-    int connected_to_cserver = client_connect(cclient, CSERVER_WKP_NAME);
-    if (connected_to_cserver == -1) {
-        printf("[CLIENT]: Failed to establish connection with the central server\n");
-        exit(EXIT_FAILURE);
-    }
+    connect_to_cserver(cclient);
 
     BaseClient *gclient = client_new(username);
 
