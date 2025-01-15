@@ -71,7 +71,6 @@ void reserve_gserver(CServer *this, int client_id) {
     for (int i = 0; i < this->gserver_count; ++i) {
         if (server_info_list[i]->status == GSS_UNRESERVED) {
             gserver = this->gserver_list[i];
-            printf("found him%d\n", i);
             break;
         }
     }
@@ -87,8 +86,6 @@ void reserve_gserver(CServer *this, int client_id) {
     if (pid == 0) {
         gserver_run(gserver);
     } else {
-        this->server_list_updated = 1;
-
         // Tell the client which server they reserved so they can join!
         reserve_info->gserver_id = gserver->server->id;
         gserver->server->pid = pid;
