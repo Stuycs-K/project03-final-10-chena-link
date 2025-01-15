@@ -65,10 +65,13 @@ void reserve_gserver(CServer *this, int client_id) {
     ReserveGServer *reserve_info = nargs_reserve_gserver();
     NetEvent *reserve_event = net_event_new(RESERVE_GSERVER, reserve_info);
 
+    GServerInfo **server_info_list = this->server_list_event->args;
+
     // Get unreserved GServer
     for (int i = 0; i < this->gserver_count; ++i) {
-        if (this->gserver_list[i]->status == GSS_UNRESERVED) {
+        if (server_info_list[i]->status == GSS_UNRESERVED) {
             gserver = this->gserver_list[i];
+            printf("found him%d\n", i);
             break;
         }
     }
@@ -155,8 +158,10 @@ void cserver_send_server_list(CServer *this) {
     RETURNS: none
 */
 void kill_gserver(CServer *this, int gserver_id) {
-    kill(this->gserver_list[gserver_id]->server->pid, SIGINT);
-    this->gserver_list[gserver_id]->server->pid = -1;
+    GServer *gserver = this->gserver_list[gserver_id];
+    kill(gserver->server->pid, SIGINT);
+    gserver->server->pid = -1;
+    gserver->status = GSS_UNRESERVED;
 }
 
 /*

@@ -77,6 +77,10 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
         char status[100];
         switch (info->status) {
 
+            case GSS_RESERVED:
+                strcpy(status, "RESERVED");
+                break;
+
         case GSS_WAITING_FOR_PLAYERS:
             strcpy(status, "WAITING FOR PLAYERS");
             break;
@@ -103,6 +107,8 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
     case RESERVE_GSERVER: { // The CServer has given us the GServer to join
         ReserveGServer *nargs = args;
         int gserver_id = nargs->gserver_id;
+
+        printf("WE SHALL JOIN %d\n", gserver_id);
 
         if (gserver_id == -1) {
             printf("Crap! Can't join any servers\n");
@@ -147,7 +153,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         return;
     }
 
-    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
+    //printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
 
@@ -238,6 +244,8 @@ void client_main(void) {
     connect_to_cserver(cclient);
 
     BaseClient *gclient = client_new(username);
+
+    fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
 
     // Set up the networked server list
     gservers = nargs_gserver_info_list();
