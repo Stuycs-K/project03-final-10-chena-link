@@ -2,6 +2,10 @@
 
 #include "../shared.h"
 #include "clientlist.h"
+#include "../gserver.h"
+
+#ifndef PIPENETEVENTS_H
+#define PIPENETEVENTS_H
 
 /*
     Use this macro after every NetArgs typedef.
@@ -27,9 +31,6 @@
     net_args_type_name *(nargs_##internal_name)();                      \
     void *handler_##internal_name(NetBuffer *nb, void *args, int mode); \
     void destroy_##internal_name(void *args);
-
-#ifndef PIPENETEVENTS_H
-#define PIPENETEVENTS_H
 
 typedef enum HandshakeErrCode HandshakeErrCode;
 enum HandshakeErrCode {

@@ -261,6 +261,8 @@ void gserver_loop(GServer *this) {
 
     if (this->status == GSS_WAITING_FOR_PLAYERS) {
     }
+
+    // Newly connected clients
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
             if (this->decks[0] == -1) {
