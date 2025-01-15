@@ -125,6 +125,9 @@ GServer *gserver_new(int id) {
     for(int i = 0; i < 4; i ++){
         this->decks[i] = -1;
     }
+    for(int a = 0; a < 2; a ++){
+        this->all_clients[a] = -1;
+    }
 
     update_gserver_info(this);
 
@@ -145,6 +148,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     void *args = event->args;
     switch (event->protocol) {
     case CARD_COUNT:
+        printf("is this running\n");
         int *arg = args;
         if(this->decks[0] == client_id){
             this->decks[1] = arg[0];
@@ -158,6 +162,19 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         }
         NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
         server_send_event_to_all(this->server, newEvent);
+        if(this->all_clients[0] == this->data->client_id){
+            this->data->client_id = this->all_clients[1];
+        }
+        else{
+            this->data->client_id = this->all_clients[0];
+        }
+        /*FOREACH_CLIENT(this->server){
+            if(this->data->client_id != client_id){
+                this->data->client_id = client_id;
+                break;
+            }
+        }
+        END_FOREACH_CLIENT()*/
     default:
         break;
     }
@@ -186,6 +203,12 @@ void gserver_loop(GServer *this) {
             }
             else{
                 this->decks[2] = client_id;
+            }
+            if(this->all_clients[0] == -1){
+                this->all_clients[0] = client_id;
+            }
+            else{
+                this->all_clients[1] = client_id;
             }
             int *nargs = nargs_shmid();
             *nargs = this->SERVERSHMID;
@@ -220,23 +243,14 @@ void gserver_run(GServer *this) {
     srand(getpid());
     this->SERVERSHMID = rand();
     int shmid;
-    gameState *data;
     shmid = shmget(this->SERVERSHMID, sizeof(gameState), IPC_CREAT | 0666);
-    data = shmat(shmid, 0, 0);
-    data->lastCard = generate_card();
-    data->client_id = -1;
+    this->data = shmat(shmid, 0, 0);
+    this->data->lastCard = generate_card();
+    this->data->client_id = 0;
     server_start_connection_handler(server);
 
     while (1) {
         handle_connections(server);
-
-        FOREACH_CLIENT(server){
-            if(data->client_id != client_id){
-                data->client_id = client_id;
-                break;
-            }
-        }
-        END_FOREACH_CLIENT()
 
         server_empty_recv_events(server);
         server_recv_events(server);

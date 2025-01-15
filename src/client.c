@@ -261,29 +261,31 @@ void client_main(void) {
             for (int i = 0; i < num_cards; i++) {
                 printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
             }
-            fgets(input, sizeof(input), stdin);
-            if (input[0] == 'l' && data->client_id == gclient->client_id) {
-                deck[num_cards] = generate_card();
-                num_cards++;
-            }
-            if (input[0] == 'p' && data->client_id == gclient->client_id) {
-                card picked;
-                int col;
-                int num;
-                sscanf(input + 1, "%d %d", &col, &num);
-                picked.color = col;
-                picked.num = num;
-                if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
-                    data->lastCard = picked;
-                    play_card(deck, picked, num_cards);
-                    num_cards--;
+            if(data->client_id == gclient->client_id){
+                fgets(input, sizeof(input), stdin);
+                if (input[0] == 'l') {
+                    deck[num_cards] = generate_card();
+                    num_cards++;
                 }
+                if (input[0] == 'p') {
+                    card picked;
+                    int col;
+                    int num;
+                    sscanf(input + 1, "%d %d", &col, &num);
+                    picked.color = col;
+                    picked.num = num;
+                    if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
+                        data->lastCard = picked;
+                        play_card(deck, picked, num_cards);
+                        num_cards--;
+                    }
+                }
+                CardCountArray *cardcounts = nargs_card_count_array();
+                cardcounts[0] = num_cards;
+                NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+                client_send_event(gclient, card_counts);
+                client_send_to_server(gclient);
             }
-            CardCountArray *cardcounts = nargs_card_count_array();
-            cardcounts[0] = num_cards;
-            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
-            client_send_event(gclient, card_counts);
-            client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT
             if (input[0] == 'D') {
