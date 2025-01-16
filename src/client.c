@@ -5,6 +5,7 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <SDL2/SDL.h>
 
 #include "client.h"
 #include "game.h"
@@ -260,6 +261,11 @@ void client_main(void) {
     gameState *data;
     int shmid = 0;
 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_Window * window = SDL_CreateWindow("Game",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_UNDEFINED,800,800,SDL_WINDOW_SHOWN);
     while (1) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
