@@ -119,4 +119,5 @@ DECLARE_NET_ARGS(CardCountArray, card_count_array)
 
 DECLARE_NET_ARGS(int, shmid)
 
+DECLARE_NET_ARGS(int, gameover)
 #endif

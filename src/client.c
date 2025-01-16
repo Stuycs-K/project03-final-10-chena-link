@@ -1,3 +1,4 @@
+#include <SDL2/SDL.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -77,9 +78,9 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
         char status[100];
         switch (info->status) {
 
-            case GSS_RESERVED:
-                strcpy(status, "RESERVED");
-                break;
+        case GSS_RESERVED:
+            strcpy(status, "RESERVED");
+            break;
 
         case GSS_WAITING_FOR_PLAYERS:
             strcpy(status, "WAITING FOR PLAYERS");
@@ -153,7 +154,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         return;
     }
 
-    //printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
+    // printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
 
@@ -211,6 +212,11 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         SERVERSHMID = shmid[0];
         break;
 
+    case GAME_OVER:
+        int *winner = args;
+        printf("client %d has won\n", winner[0]);
+        break;
+
     case GSERVER_CONFIG: // We're the host!
         GServerConfig *config = args;
 
@@ -224,14 +230,14 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         fgets(input, sizeof(input), stdin);
         switch (input[0]) {
 
-            case 'c':
-                int max_clients;
-                sscanf(input + 1, "%d", &max_clients);
+        case 'c':
+            int max_clients;
+            sscanf(input + 1, "%d", &max_clients);
 
-                break;
+            break;
 
-            case 's':
-                break;
+        case 's':
+            break;
 
         default:
             printf("invalid input\n");
@@ -276,6 +282,11 @@ void client_main(void) {
     gameState *data;
     int shmid = 0;
 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_Window *window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_UNDEFINED, 800, 800, SDL_WINDOW_SHOWN);
     while (1) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
@@ -304,13 +315,12 @@ void client_main(void) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
             }
-            // printf("gamestate card:%d gamestate turn:%d\n", data->lastCard.num, data->client_id);
 
-            if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
+            if (data->client_id == gclient->client_id) {
+                printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
                     printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
                 }
-
                 fgets(input, sizeof(input), stdin);
                 if (input[0] == 'l') {
                     deck[num_cards] = generate_card();
@@ -332,7 +342,6 @@ void client_main(void) {
                 CardCountArray *cardcounts = nargs_card_count_array();
                 cardcounts[0] = num_cards;
                 NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
-                printf("ITS TIME TO SEND\n");
                 client_send_event(gclient, card_counts);
             }
 
