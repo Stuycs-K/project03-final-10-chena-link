@@ -178,8 +178,8 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
         strcpy(this->server->name, config->name);
     }
 
-    // We can only start the game when the server has more than 2 players connected
-    if (config->start_game && this->server->current_clients > 2) {
+    // We can only start the game when the server has more than 1 player connected
+    if (config->start_game && this->server->current_clients > 1) {
         this->status = GSS_GAME_IN_PROGRESS;
     } else {
         send_gserver_config_to_host(this); // Keep asking for more updates until they eventually start the game
@@ -260,16 +260,11 @@ void get_host_client_id(GServer *this) {
 
     Server *server = this->server;
     FOREACH_CLIENT(server) {
-        // The first person who joins this fresh server is the host
-        if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
-            this->host_client_id = 0; // Guaranteed
-            break;
-        }
-
         // Our host disconnected
         if (client->recently_disconnected && this->host_client_id == client->id) {
 
             if (this->server->current_clients == 0) { // No point. The server should be shutting down.
+                this->host_client_id = -1;
                 return;
             }
 
@@ -283,6 +278,12 @@ void get_host_client_id(GServer *this) {
             }
             END_FOREACH_CLIENT()
 
+            break;
+        }
+
+        // The first person who joins this fresh server is the host
+        if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients == 1 && this->host_client_id == -1 && client->recently_connected) {
+            this->host_client_id = client_id;
             break;
         }
     }

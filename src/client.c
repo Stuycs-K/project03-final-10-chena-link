@@ -238,7 +238,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
             break;
 
         case 's':
-            printf("start game\n");
             new_config->start_game = 1;
             break;
 
@@ -248,7 +247,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
             return;
 
         default:
-            printf("invalid input\n");
             break;
         }
 

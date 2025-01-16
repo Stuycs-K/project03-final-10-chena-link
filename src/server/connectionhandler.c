@@ -49,7 +49,6 @@ void connection_handler_init(Server *this) {
             int status = server_complete_handshake(handshake_event);
 
             if (status == -1) {
-                printf("ACK Fail\n");
                 exit(EXIT_FAILURE);
             }
 

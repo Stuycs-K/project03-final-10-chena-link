@@ -47,6 +47,10 @@ This document must be updated daily by EACH group member.
 * Begin implementing clients configuring GServers (max players, server name). Done in class.
 * Fix a nasty bug with server_send_to_all. 30 minutes.
 
+### 2025-01-15 - Configuration completed
+* General bug fixes with server sending duplicate events. Done in class.
+* Finish implementing GServerConfig. A host client can now edit GServer properties and start the game. Disconnecting transfers host permissions to the next client. 1 hour.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
@@ -71,7 +75,7 @@ Added shmid to server(sending it causes client to segfault)
 Added client sending cards
 Added server sending cards. 2 hours
 
-###2024-01-14 - Changing shared memory
+### 2024-01-14 - Changing shared memory
 Changed shared memory to have id and card
 SHMId gets sent at the start of connection
 Tried to fix bug for client turns. 3 hours

@@ -27,10 +27,8 @@ int main(int argc, char *argv[]) {
 
     char *mode = argv[1];
     if (!strcmp(mode, "client")) {
-        printf("client\n");
         client_main();
     } else if (!strcmp(mode, "gserver")) {
-        printf("server\n");
         server_main();
     } else if (!strcmp(mode, "cserver")) {
     }
