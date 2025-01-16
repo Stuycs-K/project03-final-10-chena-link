@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+// #include <SDL2/SDL.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -182,6 +182,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         break;
 
     default:
+        printf("nothing?\n");
         break;
     }
 }

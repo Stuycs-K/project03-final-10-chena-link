@@ -79,7 +79,7 @@ void server_set_max_clients(Server *this, int max_clients) {
     if (is_expanding) {
         this->clients = realloc(this->clients, sizeof(Client *) * max_clients);
 
-        for (int i = old_max_clients - 1; i < max_clients; ++i) {
+        for (int i = old_max_clients; i < max_clients; ++i) {
             this->clients[i] = client_connection_new(i);
         }
     } else {
@@ -156,7 +156,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 
     client->recently_connected = 1;
 
-    printf("CLIENT CONNECTED %d \n", client->recv_fd);
+    printf("SERVER %s: CLIENT CONNECTED %d \n", this->name, client_id);
 
     this->current_clients++;
 
