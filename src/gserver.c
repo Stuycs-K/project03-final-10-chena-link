@@ -136,30 +136,6 @@ GServer *gserver_new(int id) {
     return this;
 }
 
-/*
-
-*/
-void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
-    GServerConfig *config = event->args;
-    GServerInfo *current = this->info_event->args;
-
-    if (config->max_clients != current->max_clients) {
-        server_set_max_clients(this->server, config->max_clients);
-    }
-
-    if (strcmp(config->name, current->name) != 0) {
-        strcpy(this->server->name, config->name);
-    }
-
-    // TODO
-    if (config->start_game) {
-        printf("starting the game!\n");
-        this->status = GSS_GAME_IN_PROGRESS;
-    }
-
-    update_gserver_info(this);
-}
-
 void send_gserver_config_to_host(GServer *this) {
     GServerConfig *config = nargs_gserver_config();
     config->max_clients = this->server->max_clients;
@@ -169,6 +145,44 @@ void send_gserver_config_to_host(GServer *this) {
     NetEvent *event = net_event_new(GSERVER_CONFIG, config);
 
     server_send_event_to(this->server, this->host_client_id, event);
+}
+
+/*
+
+*/
+void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
+    GServerConfig *config = event->args;
+    GServerInfo *current = this->info_event->args;
+
+    if (config->max_clients != current->max_clients) {
+        int actual_client_count = config->max_clients;
+
+        // Clamp between 2 and 4
+        if (actual_client_count < this->server->current_clients) {
+            actual_client_count = this->server->current_clients;
+        } else if (actual_client_count > 4) {
+            actual_client_count = 4;
+        }
+
+        if (actual_client_count < 2) {
+            actual_client_count = 2;
+        }
+
+        server_set_max_clients(this->server, actual_client_count);
+    }
+
+    if (strcmp(config->name, current->name) != 0) {
+        strcpy(this->server->name, config->name);
+    }
+
+    // TODO
+    if (config->start_game) {
+        this->status = GSS_GAME_IN_PROGRESS;
+    } else {
+        send_gserver_config_to_host(this); // Keep asking for more updates
+    }
+
+    update_gserver_info(this);
 }
 
 /*
@@ -186,6 +200,11 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     Server *server = this->server;
 
     switch (event->protocol) {
+
+    case GSERVER_CONFIG:
+        recv_gserver_config(this, client_id, event);
+        break;
+
     case CARD_COUNT:
         printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
@@ -199,15 +218,14 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             cardcounts[i] = this->decks[i];
         }
 
-        if(arg[0] == 0){
-          int *nargs = nargs_gameover();
-          *nargs = client_id;
-          NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
-          server_send_event_to_all(this->server, winnerClient);
-        }
-        else{
-          NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
-          server_send_event_to_all(this->server, newEvent);
+        if (arg[0] == 0) {
+            int *nargs = nargs_gameover();
+            *nargs = client_id;
+            NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
+            server_send_event_to_all(this->server, winnerClient);
+        } else {
+            NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
+            server_send_event_to_all(this->server, newEvent);
         }
 
         if (this->all_clients[0] == this->data->client_id) {
@@ -222,6 +240,8 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             }
         }
         END_FOREACH_CLIENT()*/
+        break;
+
     default:
         break;
     }

@@ -18,7 +18,6 @@
 #include "client/baseclient.h"
 
 // #define SHMID 123456789
-#define DONT
 
 typedef enum ClientState ClientState;
 enum ClientState {
@@ -154,7 +153,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         return;
     }
 
-    // printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
+    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
     char input[256];
     fgets(input, sizeof(input), stdin);
 
@@ -225,7 +224,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
         NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
 
-        printf("%s YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n", new_config->name);
+        printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n");
 
         char input[100];
         fgets(input, sizeof(input), stdin);
@@ -234,10 +233,14 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         case 'c':
             int max_clients;
             sscanf(input + 1, "%d", &max_clients);
+            printf("%d\n", max_clients);
 
+            new_config->max_clients = max_clients;
             break;
 
         case 's':
+            printf("start game\n");
+            new_config->start_game = 1;
             break;
 
         default:
@@ -245,6 +248,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
             break;
         }
 
+        client_send_event(client, send_config_event);
         break;
 
     default:
@@ -320,7 +324,7 @@ void client_main(void) {
                 data = shmat(shmid, 0, 0);
             }
 
-            if (data->client_id == gclient->client_id) {
+            if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
                     printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
