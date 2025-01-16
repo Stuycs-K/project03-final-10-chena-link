@@ -1,8 +1,8 @@
 #include <sys/types.h>
 
+#include "game.h"
 #include "network/pipenet.h"
 #include "server/baseserver.h"
-#include "game.h"
 
 #ifndef GSERVER_H
 #define GSERVER_H
@@ -13,6 +13,7 @@
 typedef struct GServer GServer;
 struct GServer {
     NetEvent *info_event;              // Wraps GServerInfo, used to tell the CServer about any updates
+    int info_changed;                  // Flag used to mark that the GServerInfo changed and needs sending
     NetEventQueue *cserver_send_queue; // Communication to the CServer
     NetEventQueue *cserver_recv_queue; // Communication from the CServer
 

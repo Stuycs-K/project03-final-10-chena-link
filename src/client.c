@@ -233,9 +233,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         case 'c':
             int max_clients;
             sscanf(input + 1, "%d", &max_clients);
-            printf("%d\n", max_clients);
-
             new_config->max_clients = max_clients;
+
             break;
 
         case 's':

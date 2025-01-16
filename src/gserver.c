@@ -67,11 +67,13 @@ void check_update_gserver_info(GServer *this) {
     }
     END_FOREACH_CLIENT()
 
-    if (did_client_list_change) {
+    if (did_client_list_change || this->info_changed) { // Someone joined or we marked server info as changed, so send to the CServer
         attach_event(this->cserver_send_queue, this->info_event);
     } else {
         detach_event(this->cserver_send_queue, this->info_event);
     }
+
+    this->info_changed = 0;
 }
 
 /*
@@ -101,6 +103,7 @@ GServer *gserver_new(int id) {
 
     GServerInfo *server_info = nargs_gserver_info();
     this->info_event = net_event_new(GSERVER_INFO, server_info);
+    this->info_changed = 0;
 
     this->cserver_send_queue = net_event_queue_new();
     this->cserver_recv_queue = net_event_queue_new();
@@ -175,14 +178,15 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
         strcpy(this->server->name, config->name);
     }
 
-    // TODO
-    if (config->start_game) {
+    // We can only start the game when the server has more than 2 players connected
+    if (config->start_game && this->server->current_clients > 2) {
         this->status = GSS_GAME_IN_PROGRESS;
     } else {
-        send_gserver_config_to_host(this); // Keep asking for more updates
+        send_gserver_config_to_host(this); // Keep asking for more updates until they eventually start the game
     }
 
     update_gserver_info(this);
+    this->info_changed = 1;
 }
 
 /*
