@@ -34,7 +34,6 @@ void connection_handler_init(Server *this) {
 
     NetEventQueue *send_host_queue = net_event_queue_new();
 
-    int recv_from_host_server_fd = this->connection_handler_pipe[PIPE_READ];
     int send_to_host_server_fd = this->connection_handler_pipe[PIPE_WRITE];
 
     while (1) {

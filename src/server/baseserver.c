@@ -156,7 +156,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
 
     client->recently_connected = 1;
 
-    printf("SERVER %s: CLIENT CONNECTED %d \n", this->name, client_id);
+    printf("SERVER %s: CLIENT CONNECTED AS %d \n", this->name, client_id);
 
     this->current_clients++;
 
@@ -284,6 +284,8 @@ void handle_connections(Server *this) {
     while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
         recv_event_queue(queue, event_buffer);
 
+        printf("events rn %d\n", queue->event_count);
+
         for (int i = 0; i < queue->event_count; ++i) {
             NetEvent *event = queue->events[i];
             void *args = event->args;
@@ -357,8 +359,6 @@ void server_recv_events(Server *this) {
 
         NetEventQueue *queue = client->recv_queue;
         recv_event_queue(queue, event_buffer);
-
-        printf("ID: %d | Count: %d \n", client_id, queue->event_count);
 
         for (int i = 0; i < queue->event_count; ++i) {
             handle_core_server_net_event(this, client_id, queue->events[i]);
