@@ -208,8 +208,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case SHMID:
         int *shmid = args;
-        printf("client recieved shmid: %d\n", shmid[0]);
-        SERVERSHMID = shmid[0];
+        printf("client recieved shmid: %d\n", *shmid);
+        SERVERSHMID = *shmid;
         break;
 
     case GAME_OVER:
@@ -220,11 +220,12 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     case GSERVER_CONFIG: // We're the host!
         GServerConfig *config = args;
 
-        GServerConfig *new_config;
+        GServerConfig *new_config = nargs_gserver_config();
         memcpy(new_config, config, sizeof(GServerConfig));
+
         NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
 
-        printf("%s YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game", new_config->name);
+        printf("%s YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n", new_config->name);
 
         char input[100];
         fgets(input, sizeof(input), stdin);
@@ -264,7 +265,7 @@ void client_main(void) {
 
     BaseClient *gclient = client_new(username);
 
-    fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+    // fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
 
     // Set up the networked server list
     gservers = nargs_gserver_info_list();
@@ -282,11 +283,14 @@ void client_main(void) {
     gameState *data;
     int shmid = 0;
 
+    /*
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Error: %s\n", SDL_GetError());
-        return 1;
+        return;
     }
-    SDL_Window *window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_UNDEFINED, 800, 800, SDL_WINDOW_SHOWN);
+    */
+
+    // SDL_Window *window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_UNDEFINED, 800, 800, SDL_WINDOW_SHOWN);
     while (1) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
