@@ -268,6 +268,22 @@ void get_host_client_id(GServer *this) {
 
         // Our host disconnected
         if (client->recently_disconnected && this->host_client_id == client->id) {
+
+            if (this->server->current_clients == 0) { // No point. The server should be shutting down.
+                return;
+            }
+
+            FOREACH_CLIENT(server) {
+                // Get the first client and give them host permissions
+                if (!client->recently_disconnected) {
+                    this->host_client_id = client_id;
+                    send_gserver_config_to_host(this);
+                    break;
+                }
+            }
+            END_FOREACH_CLIENT()
+
+            break;
         }
     }
     END_FOREACH_CLIENT()

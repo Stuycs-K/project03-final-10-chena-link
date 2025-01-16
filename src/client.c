@@ -242,6 +242,11 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
             new_config->start_game = 1;
             break;
 
+        case 'd':
+            disconnect_from_gserver(client);
+            connected_gserver_id = -1;
+            return;
+
         default:
             printf("invalid input\n");
             break;
