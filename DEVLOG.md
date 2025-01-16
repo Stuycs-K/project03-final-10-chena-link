@@ -70,3 +70,8 @@ Added functions for client to send card count to server.
 Added shmid to server(sending it causes client to segfault)
 Added client sending cards
 Added server sending cards. 2 hours
+
+###2024-01-14 - Changing shared memory
+Changed shared memory to have id and card
+SHMId gets sent at the start of connection
+Tried to fix bug for client turns. 3 hours
