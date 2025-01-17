@@ -22,8 +22,10 @@ CServer *cserver_new(int id) {
     this->server_list_updated = 0;
 
     this->gserver_count = MAX_CSERVER_GSERVERS;
+
     this->gserver_list = malloc(sizeof(GServer *) * this->gserver_count);
     this->server = server_new(id);
+    server_set_max_clients(this->server, MAX_CSERVER_CLIENTS);
 
     strcpy(this->server->name, "CentralServer");
     strcpy(this->server->wkp_name, CSERVER_WKP_NAME); // WKP is "CSERVER"
