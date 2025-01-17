@@ -168,6 +168,7 @@ void client_disconnect_from_server(BaseClient *this) {
     }
 
     free_client_list(this->client_info_list); // Forget client list
+    this->client_info_list = NULL;
 
     close(this->to_server_fd);
     close(this->from_server_fd);
@@ -191,6 +192,7 @@ void client_disconnect_from_server(BaseClient *this) {
 */
 void free_client(BaseClient *this) {
     free_client_list(this->client_info_list);
+    this->client_info_list = NULL;
 
     close(this->to_server_fd);
     close(this->from_server_fd);
