@@ -11,18 +11,6 @@ char wkp_name[GSERVER_WKP_NAME_LEN];
 int previous_client_to_server_fd = -1;
 int previous_server_to_client_fd = -1;
 
-/*
-    Signal handler that removes the WKP.
-*/
-static void handle_sigint(int signo) {
-    if (signo != SIGINT) {
-        return;
-    }
-
-    remove(wkp_name);
-    exit(EXIT_SUCCESS);
-}
-
 void cleanup_old_fds() {
     if (previous_client_to_server_fd > -1) {
         close(previous_client_to_server_fd);
@@ -33,6 +21,20 @@ void cleanup_old_fds() {
         close(previous_server_to_client_fd);
         previous_server_to_client_fd = -1;
     }
+}
+
+/*
+    Signal handler that removes the WKP.
+*/
+static void handle_sigint(int signo) {
+    if (signo != SIGINT) {
+        return;
+    }
+
+    cleanup_old_fds();
+    remove(wkp_name);
+    
+    exit(EXIT_SUCCESS);
 }
 
 /*

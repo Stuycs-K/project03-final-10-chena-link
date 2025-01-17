@@ -65,6 +65,9 @@ int client_connect(BaseClient *this, char *wkp) {
 
         return -1;
     }
+    printf("                      HANDSHAKE successful to %s\n", wkp);
+    printf("                      HANDSHAKE c->s %d\n", handshake->client_to_server_fd);
+    printf("                      HANDSHAKE s->c %d\n", handshake->server_to_client_fd);
 
     this->to_server_fd = handshake->client_to_server_fd;
     this->from_server_fd = handshake->server_to_client_fd;
