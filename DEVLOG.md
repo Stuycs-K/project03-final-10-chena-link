@@ -79,3 +79,7 @@ Added server sending cards. 2 hours
 Changed shared memory to have id and card
 SHMId gets sent at the start of connection
 Tried to fix bug for client turns. 3 hours
+
+### 2024-01-16 - Added some basic functions for SDL
+Tried getting approval for sdl on lab machines
+Wrote some basic function for SDL
