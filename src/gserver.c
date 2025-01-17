@@ -163,12 +163,12 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
         // Clamp between 2 and 4
         if (actual_client_count < this->server->current_clients) {
             actual_client_count = this->server->current_clients;
-        } else if (actual_client_count > 4) {
-            actual_client_count = 4;
+        } else if (actual_client_count > MAX_GSERVER_CLIENTS) {
+            actual_client_count = MAX_GSERVER_CLIENTS;
         }
 
-        if (actual_client_count < 2) {
-            actual_client_count = 2;
+        if (actual_client_count < MIN_GSERVER_CLIENTS_FOR_GAME_START) {
+            actual_client_count = MIN_GSERVER_CLIENTS_FOR_GAME_START;
         }
 
         server_set_max_clients(this->server, actual_client_count);
@@ -179,7 +179,7 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     }
 
     // We can only start the game when the server has more than 1 player connected
-    if (config->start_game && this->server->current_clients > 1) {
+    if (config->start_game && this->server->current_clients >= MIN_GSERVER_CLIENTS_FOR_GAME_START) {
         this->status = GSS_GAME_IN_PROGRESS;
     } else {
         send_gserver_config_to_host(this); // Keep asking for more updates until they eventually start the game

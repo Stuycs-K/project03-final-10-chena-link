@@ -260,6 +260,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
+/*
 void SDLWindow(){
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
       printf("SDL_Error: %s\n", SDL_GetError());
@@ -290,6 +291,7 @@ void SDLWindow(){
     }
   }
 }
+*/
 
 void client_main(void) {
     client_state = IN_CSERVER;
