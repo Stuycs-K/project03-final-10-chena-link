@@ -51,6 +51,11 @@ This document must be updated daily by EACH group member.
 * General bug fixes with server sending duplicate events. Done in class.
 * Finish implementing GServerConfig. A host client can now edit GServer properties and start the game. Disconnecting transfers host permissions to the next client. 1 hour.
 
+### 2025-01-16 - Even more bug fixes
+* Try to track down a mysterious joining bug. Done in class.
+* Document Client in clientconnection.c. 5 minutes.
+* Fix a double free bug with the client. 10 minutes.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
