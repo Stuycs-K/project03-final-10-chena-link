@@ -84,6 +84,10 @@ void print_gserver_list(GServerInfoList *recv_gserver_list) {
             strcpy(status, "WAITING FOR PLAYERS");
             break;
 
+        case GSS_GAME_IN_PROGRESS:
+            strcpy(status, "GAME IN PROGRESS");
+            break;
+
         default:
             break;
         }
@@ -106,8 +110,6 @@ void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent
     case RESERVE_GSERVER: { // The CServer has given us the GServer to join
         ReserveGServer *nargs = args;
         int gserver_id = nargs->gserver_id;
-
-        printf("WE SHALL JOIN %d\n", gserver_id);
 
         if (gserver_id == -1) {
             printf("Crap! Can't join any servers\n");

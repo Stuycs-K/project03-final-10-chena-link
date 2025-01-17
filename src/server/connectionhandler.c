@@ -8,6 +8,8 @@
 #include "connectionhandler.h"
 
 char wkp_name[GSERVER_WKP_NAME_LEN];
+int previous_client_to_server_fd = -1;
+int previous_server_to_client_fd = -1;
 
 /*
     Signal handler that removes the WKP.
@@ -19,6 +21,18 @@ static void handle_sigint(int signo) {
 
     remove(wkp_name);
     exit(EXIT_SUCCESS);
+}
+
+void cleanup_old_fds() {
+    if (previous_client_to_server_fd > -1) {
+        close(previous_client_to_server_fd);
+        previous_client_to_server_fd = -1;
+    }
+
+    if (previous_server_to_client_fd > -1) {
+        close(previous_server_to_client_fd);
+        previous_server_to_client_fd = -1;
+    }
 }
 
 /*
@@ -34,7 +48,6 @@ void connection_handler_init(Server *this) {
 
     NetEventQueue *send_host_queue = net_event_queue_new();
 
-    int recv_from_host_server_fd = this->connection_handler_pipe[PIPE_READ];
     int send_to_host_server_fd = this->connection_handler_pipe[PIPE_WRITE];
 
     while (1) {
@@ -57,8 +70,9 @@ void connection_handler_init(Server *this) {
 
             exit(EXIT_SUCCESS);
         } else {
-            // close(handshake->client_to_server_fd);
-            // close(handshake->server_to_client_fd);
+            cleanup_old_fds();
+            previous_client_to_server_fd = handshake->client_to_server_fd;
+            previous_server_to_client_fd = handshake->server_to_client_fd;
 
             free_handshake_event(handshake_event);
         }
