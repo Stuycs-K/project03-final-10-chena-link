@@ -127,10 +127,10 @@ GServer *gserver_new(int id) {
     server_info->id = id;
     strcpy(server_info->wkp_name, gserver_wkp_name_buffer);
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 8; i++) {
         this->decks[i] = -1;
     }
-    for (int a = 0; a < 2; a++) {
+    for (int a = 0; a < 4; a++) {
         this->all_clients[a] = -1;
     }
 
@@ -212,13 +212,13 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     case CARD_COUNT:
         printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
-        if (this->decks[0] == client_id) {
-            this->decks[1] = arg[0];
-        } else {
-            this->decks[3] = arg[0];
+        for(int i = 0; i < 4; i ++){
+          if(this->all_clients[i] == client_id){
+            this->decks[i*2 + 1] = arg[0];
+          }
         }
         CardCountArray *cardcounts = nargs_card_count_array();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 8; i++) {
             cardcounts[i] = this->decks[i];
         }
 
@@ -231,11 +231,15 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
             server_send_event_to_all(this->server, newEvent);
         }
-
-        if (this->all_clients[0] == this->data->client_id) {
-            this->data->client_id = this->all_clients[1];
-        } else {
-            this->data->client_id = this->all_clients[0];
+        for(int i = 0; i < 4; i ++){
+          if(this->all_clients[i] == client_id){
+            if(i == 3){
+              this->data->client_id = this->all_clients[0];
+            }
+            else{
+              this->data->client_id = this->all_clients[i+1];  
+            }
+          }
         }
         /*FOREACH_CLIENT(this->server){
             if(this->data->client_id != client_id){
@@ -314,15 +318,12 @@ void gserver_loop(GServer *this) {
     // Newly connected clients
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
-            if (this->decks[0] == -1) {
-                this->decks[0] = client_id;
-            } else {
-                this->decks[2] = client_id;
-            }
-            if (this->all_clients[0] == -1) {
-                this->all_clients[0] = client_id;
-            } else {
-                this->all_clients[1] = client_id;
+            for(int i = 0; i < 4; i ++){
+              if(this->all_clients[i] == -1){
+                this->all_clients[i] = client_id;
+                this->decks[i*2] = client_id;
+                break;
+              }
             }
             int *nargs = nargs_shmid();
             *nargs = this->SERVERSHMID;

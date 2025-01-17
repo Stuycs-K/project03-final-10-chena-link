@@ -262,14 +262,14 @@ END_DESTRUCTOR()
 //=================================================
 //SEND CARDCOUNT BETWEEN CLIENT AND SERVER
 DECLARE_CONSTRUCTOR(CardCountArray, card_count_array) {
-    nargs = malloc(sizeof(int) * 4);
-    for (int i = 0; i < 4; i++) {
+    nargs = malloc(sizeof(int) * 8);
+    for (int i = 0; i < 8; i++) {
         nargs[i] = 7;
     }
 }
 END_CONSTRUCTOR()
 DECLARE_HANDLER(CardCountArray, card_count_array) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 8; i++) {
         VALUE(nargs[i]);
     }
 }
