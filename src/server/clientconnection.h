@@ -13,8 +13,8 @@ struct Client {
     int send_fd; // The FD to which we'll send data
     int recv_fd; // THe FD from which we'll receive data
 
-    NetEventQueue *send_queue;
-    NetEventQueue *recv_queue;
+    NetEventQueue *send_queue; // NetEventQueue for sending
+    NetEventQueue *recv_queue; // NetEventQueue for receiving
 };
 
 Client *client_connection_new(int id);

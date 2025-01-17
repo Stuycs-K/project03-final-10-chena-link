@@ -6,6 +6,14 @@
 #include "../shared.h"
 #include "clientconnection.h"
 
+/*
+    Create a new Client object.
+
+    PARAMS:
+        int id : which client this slot should indicate
+
+    RETURNS: the new Client
+*/
 Client *client_connection_new(int id) {
     Client *this = malloc(sizeof(Client));
 
@@ -21,6 +29,15 @@ Client *client_connection_new(int id) {
     return this;
 }
 
+/*
+    Closes the connection's file descriptors and clears event queues.
+    Note that this does not set is_free to true.
+
+    PARAMS:
+        Client *this : the connection to close
+
+    RETURNS: none
+*/
 void disconnect_client(Client *this) {
     close(this->send_fd);
     close(this->recv_fd);
@@ -32,6 +49,14 @@ void disconnect_client(Client *this) {
     clear_event_queue(this->recv_queue);
 }
 
+/*
+    Frees the connection from memory
+
+    PARAMS:
+        Client *this : the connection to free
+
+    RETURNS: none
+*/
 void free_client_connection(Client *this) {
     disconnect_client(this);
 
