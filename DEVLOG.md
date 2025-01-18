@@ -88,3 +88,7 @@ Tried to fix bug for client turns. 3 hours
 ### 2024-01-16 - Added some basic functions for SDL
 Tried getting approval for sdl on lab machines
 Wrote some basic function for SDL
+
+### 2024-01-16 - Added 4 players
+Server can now handle up to 4 players, should work fine even if server isn't full
+Moved SDL functions to different file
