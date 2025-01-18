@@ -56,6 +56,11 @@ This document must be updated daily by EACH group member.
 * Document Client in clientconnection.c. 5 minutes.
 * Fix a double free bug with the client. 10 minutes.
 
+### 2025-01-17: README
+* Update macros for globals in shared.h to remove useless ones. Done in class.
+* Finish documentation for everything I wrote that isn't in client.c. 10 minutes.
+* Update project description and instructions in README. 15 minutes.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
