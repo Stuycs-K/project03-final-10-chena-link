@@ -19,9 +19,6 @@
 #define MAX_CSERVER_GSERVERS 12
 #define MAX_CSERVER_CLIENTS 64
 
-#define CONNECTION_IS_FREE 1
-#define CONNECTION_IS_USED 0
-
 // 1/10th second
 #define TICK_TIME_MICROSECONDS 100000
 
@@ -33,7 +30,6 @@ enum GServerStatus {
     GSS_RESERVED,            // Someone reserved the GServer, but they haven't yet joined.
     GSS_WAITING_FOR_PLAYERS, // The person who reserved the server joined, but we haven't reached max_clients
     GSS_SHUTTING_DOWN,       // Everyone left the server.
-    GSS_FULL,                // Server has reached max_clients
     GSS_STARTING,            // Host has started countdown
     GSS_GAME_IN_PROGRESS     // We're playing the game
 };

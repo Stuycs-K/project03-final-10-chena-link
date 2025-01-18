@@ -4,6 +4,14 @@
 
 #include "clientlist.h"
 
+/*
+    Create a new ClientListNode object
+
+    PARAMS:
+        int id : which client
+
+    RETURNS: the new ClientListNode
+*/
 ClientInfoNode *client_info_new(int id) {
     ClientInfoNode *this = malloc(sizeof(ClientInfoNode));
     this->id = id;
@@ -12,6 +20,15 @@ ClientInfoNode *client_info_new(int id) {
     return this;
 }
 
+/*
+    Gets the node with the given client ID
+
+    PARAMS:
+        ClientInfoNode *this : the linked list
+        int id : which client
+
+    RETURNS: the ClientListNode, if found, otherwise NULL
+*/
 ClientInfoNode *get_client_info_for_id(ClientInfoNode *this, int id) {
     while (this != NULL) {
         if (this->id == id) {
@@ -22,12 +39,30 @@ ClientInfoNode *get_client_info_for_id(ClientInfoNode *this, int id) {
     return NULL;
 }
 
+/*
+    Inserts a ClientListNode to the front of the list
+
+    PARAMS:
+        ClientInfoNode *this : the linked list
+        int id : the new ClientListNode's ID
+
+    RETURNS: the head of the new linked list
+*/
 ClientInfoNode *insert_client_list(ClientInfoNode *this, int id) {
     ClientInfoNode *new_node = client_info_new(id);
     new_node->next = this;
     return new_node;
 }
 
+/*
+    Removes a ClientListNode from the list given its ID
+
+    PARAMS:
+        ClientInfoNode *this : the linked list
+        int id : the client ID to remove
+
+    RETURNS: the head of the new linked list
+*/
 ClientInfoNode *remove_client_list_by_id(ClientInfoNode *this, int id) {
     ClientInfoNode *current = this;
     ClientInfoNode *previous = NULL;
@@ -61,6 +96,14 @@ ClientInfoNode *remove_client_list_by_id(ClientInfoNode *this, int id) {
     return this;
 }
 
+/*
+    Returns a copy of the client linked list
+
+    PARAMS:
+        ClientInfoNode *this : the linked list to copy
+
+    RETURNS: the head of the copied linked list
+*/
 ClientInfoNode *copy_client_list(ClientInfoNode *this) {
     if (this == NULL) {
         return NULL;
@@ -88,6 +131,14 @@ ClientInfoNode *copy_client_list(ClientInfoNode *this) {
     return new_head;
 }
 
+/*
+    Returns the number of nodes in the linked list
+
+    PARAMS:
+        ClientInfoNode *this : the linked list
+
+    RETURNS: the linked list size
+*/
 int get_client_list_size(ClientInfoNode *this) {
     int size = 0;
     while (this != NULL) {
@@ -97,6 +148,14 @@ int get_client_list_size(ClientInfoNode *this) {
     return size;
 }
 
+/*
+    Prints the linked list to the terminal. Will be unused soon.
+
+    PARAMS:
+        ClientInfoNode *this : the linked list
+
+    RETURNS: none
+*/
 void print_client_list(ClientInfoNode *this) {
     printf("|| CLIENT LIST ||\n");
     printf("Size: %d\n", get_client_list_size(this));

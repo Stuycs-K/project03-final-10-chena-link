@@ -142,7 +142,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     int client_id = get_free_client_id(this);
     Client *client = this->clients[client_id];
 
-    client->is_free = CONNECTION_IS_USED;
+    client->is_free = 0;
 
     // THE FDs IN THE HANDSHAKE ARE NOT THE MAIN SERVER'S FDS! THIS IS A REALLY TERRIBLE SOLUTION
     // The connection handler (separate process) opens the pipes, so the FDs aren't shared with the main server.
@@ -260,7 +260,7 @@ void handle_connections(Server *this) {
         }
 
         if (client->recently_disconnected) {
-            client->is_free = CONNECTION_IS_FREE;
+            client->is_free = 1;
             client->recently_disconnected = 0;
         }
     }
