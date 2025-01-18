@@ -231,15 +231,18 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
             server_send_event_to_all(this->server, newEvent);
         }
-        for(int i = 0; i < 4; i ++){
-          if(this->all_clients[i] == client_id){
-            if(i == 3){
-              this->data->client_id = this->all_clients[0];
+
+        for (int i = 0; i < 4; i++) {
+            if (this->all_clients[i] == client_id) {
+                int next = (i + 1) % 4;
+                while (this->all_clients[next] == -1 && next != i) {
+                    next = (next + 1) % 4;
+                }
+                if (this->all_clients[next] != -1) {
+                    this->data->client_id = this->all_clients[next];
+                }
+                break;
             }
-            else{
-              this->data->client_id = this->all_clients[i+1];  
-            }
-          }
         }
         /*FOREACH_CLIENT(this->server){
             if(this->data->client_id != client_id){
