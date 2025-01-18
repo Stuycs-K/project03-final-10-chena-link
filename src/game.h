@@ -1,10 +1,13 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <SDL2/SDL.h>
+
 typedef struct card card;
 struct card{
   int color;
   int num;
+  SDL_Rect rect;
 };
 typedef struct gameState gameState;
 struct gameState{

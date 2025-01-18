@@ -13,6 +13,7 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 #include "util/file.h"
+#include "sdl/SDL.h"
 
 #include "client/baseclient.h"
 
@@ -27,8 +28,12 @@ enum ClientState {
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
 int connected_gserver_id = -1;
-int others[4];
 int SERVERSHMID;
+int width = 800;
+int height = 800;
+SDL_Window *window;
+SDL_Renderer *renderer;
+SDL_Event e;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -283,12 +288,16 @@ void client_main(void) {
     srand(getpid());
 
     card deck[100];
-    int others = 0;
     int num_cards = 7;
     generate_cards(deck, num_cards);
     char input[10];
     gameState *data;
     int shmid = 0;
+
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+      printf("SDL_Error: %s\n", SDL_GetError());
+      return;
+    }
 
     while (1) {
         // 1) Receive NetEvents from CServer
@@ -304,6 +313,15 @@ void client_main(void) {
 
         // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
+            if(SDL_PollEvent(&e) > 0){
+                switch(e.type){
+                    case SDL_QUIT:
+                        SDL_DestroyRenderer(renderer);
+                        SDL_DestroyWindow(window);
+                        SDL_Quit();
+                        break;
+                }
+            }
             client_recv_from_server(gclient);
             for (int i = 0; i < gclient->recv_queue->event_count; ++i) {
                 NetEvent *event = gclient->recv_queue->events[i];
@@ -317,8 +335,16 @@ void client_main(void) {
             if (shmid == 0) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
+                window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+                renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+                if (!renderer) {
+                    printf("SDL_Error: %s\n", SDL_GetError());
+                    SDL_DestroyWindow(window);
+                    SDL_Quit();
+                    return;
+                }
             }
-
+            render(renderer,deck,num_cards);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
