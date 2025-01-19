@@ -21,7 +21,7 @@ Client *client_connection_new(int id) {
     this->send_fd = -1;
     this->recv_fd = -1;
     this->recently_connected = 0;
-    this->is_free = CONNECTION_IS_FREE;
+    this->is_free = 1;
 
     this->send_queue = net_event_queue_new();
     this->recv_queue = net_event_queue_new();

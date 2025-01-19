@@ -1,3 +1,5 @@
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -5,17 +7,15 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 
 #include "client.h"
 #include "game.h"
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
+#include "sdl/SDL.h"
 #include "shared.h"
 #include "util/file.h"
-#include "sdl/SDL.h"
 
 #include "client/baseclient.h"
 
@@ -36,6 +36,7 @@ int height = 800;
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Event e;
+<<<<<<< HEAD
 SDL_Texture * textures[10];
 int num_cards = 7;
 gameState *data;
@@ -202,7 +203,11 @@ void disconnect_from_gserver(BaseClient *client) {
         return;
     }
 
-    client_disconnect_from_server(client);
+    if (client_is_connected(client)) {
+        client_disconnect_from_server(client);
+    }
+
+    connected_gserver_id = -1;
     client_state = IN_CSERVER;
 }
 
@@ -228,6 +233,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
+        return;
+
         GServerConfig *config = args;
 
         GServerConfig *new_config = nargs_gserver_config();
@@ -254,7 +261,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
         case 'd':
             disconnect_from_gserver(client);
-            connected_gserver_id = -1;
             return;
 
         default:
@@ -343,6 +349,11 @@ void client_main(void) {
         // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
             client_recv_from_server(gclient);
+            if (!client_is_connected(gclient)) {
+                disconnect_from_gserver(gclient);
+                continue;
+            }
+
             for (int i = 0; i < gclient->recv_queue->event_count; ++i) {
                 NetEvent *event = gclient->recv_queue->events[i];
                 handle_gserver_net_event(gclient, event);
@@ -358,9 +369,9 @@ void client_main(void) {
                 generate_cards(deck, num_cards, width, height);
                 window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
                 renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-                SDLInitText(textures,renderer);
+                SDLInitText(textures, renderer);
             }
-            render(renderer,textures,deck,num_cards);
+            render(renderer, textures, deck, num_cards);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
@@ -397,7 +408,6 @@ void client_main(void) {
             // TEMP DISCONNECT INPUT
             /*if (input[0] == 'D') {
                 disconnect_from_gserver(gclient);
-                connected_gserver_id = -1;
                 continue;
             }*/
         }

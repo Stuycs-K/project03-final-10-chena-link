@@ -13,6 +13,9 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "shared.h"
+
+pid_t connection_handler_pid; // For our signal handler. This is, once again, a stupid solution to a stupid problem.
+
 /*
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
@@ -163,12 +166,12 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
         // Clamp between 2 and 4
         if (actual_client_count < this->server->current_clients) {
             actual_client_count = this->server->current_clients;
-        } else if (actual_client_count > 4) {
-            actual_client_count = 4;
+        } else if (actual_client_count > MAX_GSERVER_CLIENTS) {
+            actual_client_count = MAX_GSERVER_CLIENTS;
         }
 
-        if (actual_client_count < 2) {
-            actual_client_count = 2;
+        if (actual_client_count < MIN_GSERVER_CLIENTS_FOR_GAME_START) {
+            actual_client_count = MIN_GSERVER_CLIENTS_FOR_GAME_START;
         }
 
         server_set_max_clients(this->server, actual_client_count);
@@ -179,7 +182,7 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     }
 
     // We can only start the game when the server has more than 1 player connected
-    if (config->start_game && this->server->current_clients > 1) {
+    if (config->start_game && this->server->current_clients >= MIN_GSERVER_CLIENTS_FOR_GAME_START) {
         this->status = GSS_GAME_IN_PROGRESS;
     } else {
         send_gserver_config_to_host(this); // Keep asking for more updates until they eventually start the game
@@ -297,6 +300,20 @@ void get_host_client_id(GServer *this) {
     END_FOREACH_CLIENT()
 }
 
+void gserver_shutdown(GServer *this) {
+    GServerInfo *current_info = this->info_event->args;
+    current_info->status = GSS_SHUTTING_DOWN;
+    current_info->current_clients = 0;
+
+    FOREACH_CLIENT((this->server)) {
+        disconnect_client(client);
+    }
+    END_FOREACH_CLIENT()
+
+    attach_event(this->cserver_send_queue, this->info_event);
+    send_to_cserver(this);
+}
+
 /*
     The GServer loop.
     1) Update GServerInfo.
@@ -354,6 +371,15 @@ void gserver_loop(GServer *this) {
     send_to_cserver(this);
 }
 
+static void handle_sigint(int signo) {
+    if (signo != SIGINT) {
+        return;
+    }
+
+    kill(connection_handler_pid, SIGINT);
+    exit(EXIT_SUCCESS);
+}
+
 /*
     Starts the GServer. It will accept clients and be able to send / receive events.
 
@@ -363,6 +389,8 @@ void gserver_loop(GServer *this) {
     RETURNS: none
 */
 void gserver_run(GServer *this) {
+    signal(SIGINT, handle_sigint);
+
     Server *server = this->server;
     this->status = GSS_RESERVED;
     srand(getpid());
@@ -372,7 +400,11 @@ void gserver_run(GServer *this) {
     this->data = shmat(shmid, 0, 0);
     this->data->lastCard = generate_card();
     this->data->client_id = 0;
+
     server_start_connection_handler(server);
+    connection_handler_pid = server->connection_handler_pid;
+
+    int counter = 0;
 
     while (1) {
         handle_connections(server);
@@ -381,6 +413,14 @@ void gserver_run(GServer *this) {
         server_recv_events(server);
 
         gserver_loop(this);
+
+        /* SERVER SHUTDOWN TEST
+        counter++;
+        printf("%d\n", counter);
+        if (counter == 30) { //
+            gserver_shutdown(this);
+        }
+        */
 
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);

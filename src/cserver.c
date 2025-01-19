@@ -161,6 +161,23 @@ void kill_gserver(CServer *this, int gserver_id) {
     kill(gserver->server->pid, SIGINT);
     gserver->server->pid = -1;
     gserver->status = GSS_UNRESERVED;
+
+    remove(gserver->server->wkp_name);
+
+    // JUST IN CASE
+    NetEvent *server_list_event = this->server_list_event;
+    GServerInfoList *server_list = server_list_event->args;
+    GServerInfo *local_server_info = server_list[gserver_id];
+    local_server_info->status = GSS_UNRESERVED;
+    local_server_info->current_clients = 0;
+
+    this->server_list_updated = 1;
+
+    close(gserver->cserver_pipes[PIPE_READ]);
+    close(gserver->cserver_pipes[PIPE_WRITE]);
+
+    gserver->cserver_pipes[PIPE_READ] = -1;
+    gserver->cserver_pipes[PIPE_WRITE] = -1;
 }
 
 /*
@@ -186,6 +203,7 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
         if (server_info->current_clients == 0 && server_info->status == GSS_SHUTTING_DOWN) {
             kill_gserver(this, gserver_id);
             server_info->status = GSS_UNRESERVED; // Locally set the GServerInfo to unreserved
+            server_info->current_clients = 0;
         }
 
         printf("SERVER LIST UPDATED\n");
@@ -227,16 +245,16 @@ void cserver_recv_gserver_events(CServer *this) {
         return;
     }
 
-    for (int i = 0; i < this->gserver_count; ++i) {
-        GServer *gserver = this->gserver_list[i];
+    for (int gserver_id = 0; gserver_id < this->gserver_count; ++gserver_id) {
+        GServer *gserver = this->gserver_list[gserver_id];
         if (gserver->server->pid == -1) {
             continue;
         }
 
-        struct pollfd poll_request = pollfds[i];
+        struct pollfd poll_request = pollfds[gserver_id];
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
-            kill_gserver(this, i);
+            kill_gserver(this, gserver_id);
             continue;
         }
 
@@ -250,7 +268,7 @@ void cserver_recv_gserver_events(CServer *this) {
         recv_event_queue(queue, event_buffer);
 
         for (int i = 0; i < queue->event_count; ++i) {
-            cserver_handle_gserver_net_event(this, i, queue->events[i]);
+            cserver_handle_gserver_net_event(this, gserver_id, queue->events[i]);
         }
     }
 

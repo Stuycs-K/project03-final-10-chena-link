@@ -1,3 +1,4 @@
+#include <poll.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -75,6 +76,35 @@ int client_connect(BaseClient *this, char *wkp) {
 }
 
 /*
+    Disconnects from the server this is currently connected to.
+    Clears event queues and invalidates FDs.
+
+    PARAMS:
+        BaseClient * this : the BaseClient
+
+    RETURNS: none
+*/
+void client_disconnect_from_server(BaseClient *this) {
+    if (!client_is_connected(this)) {
+        return;
+    }
+
+    free_client_list(this->client_info_list); // Forget client list
+    this->client_info_list = NULL;
+
+    close(this->to_server_fd);
+    close(this->from_server_fd);
+
+    this->to_server_fd = -1;
+    this->from_server_fd = -1;
+
+    this->client_id = -1;
+
+    clear_event_queue(this->recv_queue);
+    clear_event_queue(this->send_queue);
+}
+
+/*
     Updates the client's client_id and information about other clients connected.
 
     PARAMS:
@@ -104,6 +134,23 @@ void on_recv_client_list(BaseClient *this, ClientList *nargs) {
 */
 void client_recv_from_server(BaseClient *this) {
     clear_event_queue(this->recv_queue);
+
+    struct pollfd check;
+    check.events = POLLIN;
+    check.fd = this->from_server_fd;
+
+    int ret = poll(&check, 1, 0);
+
+    // The server shut down
+    if (check.revents & POLLERR || check.revents & POLLHUP || check.revents & POLLNVAL) {
+        printf("SERVER SHUT DOWN\n");
+        client_disconnect_from_server(this);
+        return;
+    }
+
+    if (ret <= 0) { // Nothing from server
+        return;
+    }
 
     void *recv_buffer;
     while (recv_buffer = read_into_buffer(this->from_server_fd)) {
@@ -150,35 +197,6 @@ void client_send_event(BaseClient *this, NetEvent *event) {
 */
 void client_send_to_server(BaseClient *this) {
     send_event_queue(this->send_queue, this->to_server_fd);
-    clear_event_queue(this->send_queue);
-}
-
-/*
-    Disconnects from the server this is currently connected to.
-    Clears event queues and invalidates FDs.
-
-    PARAMS:
-        BaseClient * this : the BaseClient
-
-    RETURNS: none
-*/
-void client_disconnect_from_server(BaseClient *this) {
-    if (!client_is_connected(this)) {
-        return;
-    }
-
-    free_client_list(this->client_info_list); // Forget client list
-    this->client_info_list = NULL;
-
-    close(this->to_server_fd);
-    close(this->from_server_fd);
-
-    this->to_server_fd = -1;
-    this->from_server_fd = -1;
-
-    this->client_id = -1;
-
-    clear_event_queue(this->recv_queue);
     clear_event_queue(this->send_queue);
 }
 

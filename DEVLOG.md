@@ -56,6 +56,15 @@ This document must be updated daily by EACH group member.
 * Document Client in clientconnection.c. 5 minutes.
 * Fix a double free bug with the client. 10 minutes.
 
+### 2025-01-17: README
+* Update macros for globals in shared.h to remove useless ones. Done in class.
+* Finish documentation for everything I wrote that isn't in client.c. 10 minutes.
+* Update project description and instructions in README. 15 minutes.
+
+### 2025-01-18: Big evil bug downed and shutdowns
+* Fix the mysterious joining bug from 01-16. 30 minutes.
+* Streamline cleaning up servers and implement server shutdowns. 1.5 hours.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
@@ -91,4 +100,8 @@ Wrote some basic function for SDL
 
 ### 2024-01-17 - Added 4 players
 Server can now handle up to 4 players, should work fine even if server isn't full
-Moved SDL functions to different file. DOne in class.
+Moved SDL functions to different file. Done in class.
+
+### 2024-01-18 - Added SDL for cards
+Loads card colors and numbers onto screen.
+Client doesn't quit despite receiving sigint. 3 hours

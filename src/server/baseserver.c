@@ -142,7 +142,7 @@ void handle_client_connection(Server *this, NetEvent *handshake_event) {
     int client_id = get_free_client_id(this);
     Client *client = this->clients[client_id];
 
-    client->is_free = CONNECTION_IS_USED;
+    client->is_free = 0;
 
     // THE FDs IN THE HANDSHAKE ARE NOT THE MAIN SERVER'S FDS! THIS IS A REALLY TERRIBLE SOLUTION
     // The connection handler (separate process) opens the pipes, so the FDs aren't shared with the main server.
@@ -260,7 +260,7 @@ void handle_connections(Server *this) {
         }
 
         if (client->recently_disconnected) {
-            client->is_free = CONNECTION_IS_FREE;
+            client->is_free = 1;
             client->recently_disconnected = 0;
         }
     }
@@ -283,8 +283,6 @@ void handle_connections(Server *this) {
     char *event_buffer;
     while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
         recv_event_queue(queue, event_buffer);
-
-        printf("events rn %d\n", queue->event_count);
 
         for (int i = 0; i < queue->event_count; ++i) {
             NetEvent *event = queue->events[i];
@@ -459,25 +457,5 @@ void server_start_connection_handler(Server *this) {
         connection_handler_init(this);
     } else {
         this->connection_handler_pid = pid;
-    }
-}
-
-void server_shutdown(Server *this) {
-}
-
-/*
-    UNUSED
-*/
-void server_run(Server *this) {
-    server_start_connection_handler(this);
-
-    while (1) {
-        handle_connections(this);
-
-        server_recv_events(this);
-        server_empty_recv_events(this);
-
-        server_send_events(this);
-        usleep(TICK_TIME_MICROSECONDS);
     }
 }
