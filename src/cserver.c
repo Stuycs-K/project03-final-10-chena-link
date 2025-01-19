@@ -162,7 +162,6 @@ void kill_gserver(CServer *this, int gserver_id) {
     gserver->server->pid = -1;
     gserver->status = GSS_UNRESERVED;
 
-    printf("WE ARE KILLING %d\n", gserver_id);
     remove(gserver->server->wkp_name); // OH GOD
 
     // JUST IN CASE

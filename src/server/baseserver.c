@@ -280,21 +280,9 @@ void handle_connections(Server *this) {
         return;
     }
 
-    if (check.revents & POLLERR) {
-        printf("error\n");
-    }
-    if (check.revents & POLLHUP) {
-        printf("hup\n");
-    }
-    if (check.revents & POLLNVAL) {
-        printf("nval\n");
-    }
-
     char *event_buffer;
     while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
         recv_event_queue(queue, event_buffer);
-
-        // printf("events rn %d\n", queue->event_count);
 
         for (int i = 0; i < queue->event_count; ++i) {
             NetEvent *event = queue->events[i];
@@ -473,21 +461,10 @@ void server_start_connection_handler(Server *this) {
 }
 
 void server_shutdown(Server *this) {
-}
-
-/*
-    UNUSED
-*/
-void server_run(Server *this) {
-    server_start_connection_handler(this);
-
-    while (1) {
-        handle_connections(this);
-
-        server_recv_events(this);
-        server_empty_recv_events(this);
-
-        server_send_events(this);
-        usleep(TICK_TIME_MICROSECONDS);
+    FOREACH_CLIENT(this) {
+        handle_client_disconnect(this, client_id);
     }
+    END_FOREACH_CLIENT()
+
+    kill(getpid(), SIGINT);
 }

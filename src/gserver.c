@@ -371,6 +371,8 @@ void gserver_run(GServer *this) {
     this->data->client_id = 0;
     server_start_connection_handler(server);
 
+    int counter = 0;
+
     while (1) {
         handle_connections(server);
 
@@ -381,5 +383,12 @@ void gserver_run(GServer *this) {
 
         server_send_events(server);
         usleep(TICK_TIME_MICROSECONDS);
+
+        counter++;
+        printf("%d\n", counter);
+        if (counter == 50) { // 5 second lifetime
+            server_shutdown(server);
+            break;
+        }
     }
 }

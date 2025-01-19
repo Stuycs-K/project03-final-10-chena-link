@@ -72,4 +72,6 @@ void server_send_event_to(Server *this, int client_id, NetEvent *event);
 
 void server_send_event_to_all(Server *this, NetEvent *event);
 
+void server_shutdown(Server *this);
+
 #endif
