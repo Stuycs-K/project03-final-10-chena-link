@@ -37,6 +37,8 @@ SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Event e;
 SDL_Texture * textures[10];
+int num_cards = 7;
+gameState *data;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -267,6 +269,34 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
+static void sighandler(int signo){
+    if(signo == SIGINT){
+        printf("SIGINT received\n");
+        TTF_Quit();
+        SDL_Quit();
+        exit(0);
+    }
+}
+
+int actions(card * deck){
+    int action = EventPoll(e,deck,num_cards);
+    if(action == -2){
+        deck[num_cards] = add_card(num_cards,width,height);
+        num_cards++;
+        return 2;
+    }
+    card picked = deck[action];
+    if(action != -1){
+        if (picked.num == data->lastCard.num || picked.color == data->lastCard.color){
+            data->lastCard = picked;
+            play_card(deck, picked, num_cards);
+            num_cards--;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void client_main(void) {
     client_state = IN_CSERVER;
     char *username = get_username();
@@ -291,12 +321,12 @@ void client_main(void) {
     srand(getpid());
 
     card deck[100];
-    int num_cards = 7;
-    char input[10];
-    gameState *data;
     int shmid = 0;
 
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDLInit();
+
+    signal(SIGINT,sighandler);
 
     while (1) {
         // 1) Receive NetEvents from CServer
@@ -336,8 +366,10 @@ void client_main(void) {
                 for (int i = 0; i < num_cards; i++) {
                     printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
                 }
-                fgets(input, sizeof(input), stdin);
-                if (input[0] == 'l') {
+                e = {0};
+                while(actions(deck) == 0){
+                }
+                /*if (input[0] == 'l') {
                     deck[num_cards] = generate_card();
                     num_cards++;
                 }
@@ -353,7 +385,7 @@ void client_main(void) {
                         play_card(deck, picked, num_cards);
                         num_cards--;
                     }
-                }
+                }*/
                 CardCountArray *cardcounts = nargs_card_count_array();
                 cardcounts[0] = num_cards;
                 NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
@@ -363,11 +395,11 @@ void client_main(void) {
             client_send_to_server(gclient);
 
             // TEMP DISCONNECT INPUT
-            if (input[0] == 'D') {
+            /*if (input[0] == 'D') {
                 disconnect_from_gserver(gclient);
                 connected_gserver_id = -1;
                 continue;
-            }
+            }*/
         }
 
         client_send_to_server(cclient);

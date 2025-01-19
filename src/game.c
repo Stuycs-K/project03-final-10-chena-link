@@ -25,6 +25,15 @@ void generate_cards(card * cards, int num, int width, int height){
   }
 }
 
+card add_card(int num, int width, int height){
+  card Card = generate_card();
+  Card.rect.x = width/15*num;
+  Card.rect.y = 0;
+  Card.rect.w = width/15;
+  Card.rect.h = width/8;
+  return Card;
+}
+
 //Plays a card
 //Probably going to look for a card in the array until the information matches
 void play_card(card * cards, card played, int num_card){

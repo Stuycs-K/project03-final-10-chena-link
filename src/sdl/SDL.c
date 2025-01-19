@@ -25,8 +25,13 @@ void render(SDL_Renderer * renderer, SDL_Texture** textures, card * deck,int num
         SDL_Rect textRect = deck[i].rect;
         textRect.x += textRect.w/2;
         textRect.y += textRect.h/2;
+        textRect.w = deck[i].rect.w/4;
+        textRect.h = deck[i].rect.h/4;
         SDL_RenderCopy(renderer, textures[deck[i].num], NULL, &textRect);
     }
+    SDL_Rect draw = {400,400,40,60};
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, &draw);
     SDL_RenderPresent(renderer);
 }
 void SDLInit(){
@@ -59,4 +64,26 @@ void SDLInitText(SDL_Texture ** textures, SDL_Renderer * renderer){
         textures[i] = SDL_CreateTextureFromSurface(renderer,surface);
         SDL_FreeSurface(surface);
     }
+}
+int EventPoll(SDL_Event event, card * deck, int num){
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_MOUSEBUTTONUP:
+                printf("Mouse button %d released at (%d, %d)\n",event.button.button,event.button.x,event.button.y);
+                if(event.button.x > 400 && event.button.x < 400+40 && event.button.y > 400 && event.button.y < 400+40){
+                    return -2;
+                }
+                for(int i = 0; i < num; i ++){
+                    if(event.button.x > deck[i].rect.x && event.button.x < deck[i].rect.x+deck[i].rect.w && event.button.y > deck[i].rect.y && event.button.y < deck[i].rect.y + deck[i].rect.h){
+                        printf("%d\n",i);
+                        return i;
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+    return -1;
 }
