@@ -8,7 +8,6 @@
 
 //Generates 1 card
 card generate_card(){
-  //Write new len of array back to server
   card drawn;
   drawn.color = rand()%4;
   drawn.num = rand()%10;
@@ -16,9 +15,13 @@ card generate_card(){
 }
 
 //Generates num cards
-void generate_cards(card * cards, int num){
+void generate_cards(card * cards, int num, int width, int height){
   for(int i = 0; i < num; i ++){
     cards[i] = generate_card();
+    cards[i].rect.x = width/15 * i;
+    cards[i].rect.y = 0;
+    cards[i].rect.w = width/15;
+    cards[i].rect.h = width/8;
   }
 }
 

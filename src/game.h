@@ -17,7 +17,7 @@ struct gameState{
 //Makes a new random card
 card generate_card();
 //Makes a deck of cards
-void generate_cards(card * cards, int num);
+void generate_cards(card * cards, int num, int width, int height);
 //Removes a card and writes it to shared memory
 void play_card(card * cards, card played, int num_card);
 
