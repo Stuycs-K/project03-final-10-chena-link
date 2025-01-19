@@ -13,6 +13,7 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "shared.h"
+
 /*
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
