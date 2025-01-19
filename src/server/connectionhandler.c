@@ -33,7 +33,7 @@ static void handle_sigint(int signo) {
 
     cleanup_old_fds();
     remove(wkp_name);
-    
+
     exit(EXIT_SUCCESS);
 }
 
@@ -55,6 +55,7 @@ void connection_handler_init(Server *this) {
     while (1) {
         NetEvent *handshake_event = server_setup(wkp_name);
         Handshake *handshake = handshake_event->args;
+        printf("i have initialized a connection for server %s\n", this->name);
 
         server_get_send_fd(handshake_event);
 

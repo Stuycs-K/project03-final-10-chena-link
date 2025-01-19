@@ -290,8 +290,6 @@ void handle_connections(Server *this) {
         printf("nval\n");
     }
 
-    printf("someone connected!\n");
-
     char *event_buffer;
     while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
         recv_event_queue(queue, event_buffer);
