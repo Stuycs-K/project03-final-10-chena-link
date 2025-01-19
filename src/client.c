@@ -1,4 +1,5 @@
-// #include <SDL2/SDL.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -12,6 +13,7 @@
 #include "network/pipehandshake.h"
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
+#include "sdl/SDL.h"
 #include "shared.h"
 #include "util/file.h"
 
@@ -28,8 +30,13 @@ enum ClientState {
 ClientState client_state;
 GServerInfoList *gservers; // Global server list
 int connected_gserver_id = -1;
-int others[4];
 int SERVERSHMID;
+int width = 800;
+int height = 800;
+SDL_Window *window;
+SDL_Renderer *renderer;
+SDL_Event e;
+SDL_Texture *textures[10];
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -265,39 +272,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
-/*
-void SDLWindow(){
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      printf("SDL_Error: %s\n", SDL_GetError());
-      return;
-  }
-  int width = 800;
-  int height = 800;
-  SDL_Window *window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
-  SDL_Surface *surface = SDL_getWindowSurface(window);
-  SDL_UpdateWindowSurface(window);
-
-  int keep_window_open = 1;
-  SDL_Rect rect;
-  rect.x = width/2;
-  rect.y = height/2;
-  rect.width = width/4;
-  rect.height = height/4;
-
-  while(keep_window_open){
-    SDL_Event e;
-    while(SDL_PollEvent(&e) > 0){
-      switch(e.type){
-        case SDL_QUIT:
-          keep_window_open = 0;
-          break;
-      }
-      SDL_UpdateWindowSurface(window);
-    }
-  }
-}
-*/
-
 void client_main(void) {
     client_state = IN_CSERVER;
     char *username = get_username();
@@ -322,12 +296,12 @@ void client_main(void) {
     srand(getpid());
 
     card deck[100];
-    int others = 0;
     int num_cards = 7;
-    generate_cards(deck, num_cards);
     char input[10];
     gameState *data;
     int shmid = 0;
+
+    SDLInit();
 
     while (1) {
         // 1) Receive NetEvents from CServer
@@ -361,8 +335,12 @@ void client_main(void) {
             if (shmid == 0) {
                 shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                 data = shmat(shmid, 0, 0);
+                generate_cards(deck, num_cards, width, height);
+                window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+                renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+                SDLInitText(textures, renderer);
             }
-
+            render(renderer, textures, deck, num_cards);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
