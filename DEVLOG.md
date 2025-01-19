@@ -91,4 +91,8 @@ Wrote some basic function for SDL
 
 ### 2024-01-17 - Added 4 players
 Server can now handle up to 4 players, should work fine even if server isn't full
-Moved SDL functions to different file. DOne in class.
+Moved SDL functions to different file. Done in class.
+
+### 2024-01-18 - Added SDL for cards
+Loads card colors and numbers onto screen.
+Client doesn't quit despite receiving sigint. 3 hours
