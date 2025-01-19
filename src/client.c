@@ -193,7 +193,11 @@ void disconnect_from_gserver(BaseClient *client) {
         return;
     }
 
-    client_disconnect_from_server(client);
+    if (client_is_connected(client)) {
+        client_disconnect_from_server(client);
+    }
+
+    connected_gserver_id = -1;
     client_state = IN_CSERVER;
 }
 
@@ -219,6 +223,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
+        return;
+
         GServerConfig *config = args;
 
         GServerConfig *new_config = nargs_gserver_config();
@@ -245,7 +251,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
         case 'd':
             disconnect_from_gserver(client);
-            connected_gserver_id = -1;
             return;
 
         default:
@@ -339,6 +344,11 @@ void client_main(void) {
         // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
             client_recv_from_server(gclient);
+            if (!client_is_connected(gclient)) {
+                disconnect_from_gserver(gclient);
+                continue;
+            }
+
             for (int i = 0; i < gclient->recv_queue->event_count; ++i) {
                 NetEvent *event = gclient->recv_queue->events[i];
                 handle_gserver_net_event(gclient, event);
@@ -387,7 +397,6 @@ void client_main(void) {
             // TEMP DISCONNECT INPUT
             if (input[0] == 'D') {
                 disconnect_from_gserver(gclient);
-                connected_gserver_id = -1;
                 continue;
             }
         }

@@ -162,7 +162,7 @@ void kill_gserver(CServer *this, int gserver_id) {
     gserver->server->pid = -1;
     gserver->status = GSS_UNRESERVED;
 
-    remove(gserver->server->wkp_name); // OH GOD
+    remove(gserver->server->wkp_name);
 
     // JUST IN CASE
     NetEvent *server_list_event = this->server_list_event;

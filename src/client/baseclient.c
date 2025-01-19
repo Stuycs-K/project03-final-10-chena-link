@@ -140,14 +140,15 @@ void client_recv_from_server(BaseClient *this) {
     check.fd = this->from_server_fd;
 
     int ret = poll(&check, 1, 0);
-    if (ret <= 0) { // Nothing from server
-        return;
-    }
 
     // The server shut down
     if (check.revents & POLLERR || check.revents & POLLHUP || check.revents & POLLNVAL) {
-        client_disconnect_from_server(this);
         printf("SERVER SHUT DOWN\n");
+        client_disconnect_from_server(this);
+        return;
+    }
+
+    if (ret <= 0) { // Nothing from server
         return;
     }
 

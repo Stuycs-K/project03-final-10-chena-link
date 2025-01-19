@@ -14,6 +14,8 @@
 #include "network/pipenetevents.h"
 #include "shared.h"
 
+pid_t connection_handler_pid; // For our signal handler. This is, once again, a stupid solution to a stupid problem.
+
 /*
     Updates the networked interface of the GServer to transmit to the CServer.
     Called whenever a player connects or disconnects.
@@ -291,6 +293,20 @@ void get_host_client_id(GServer *this) {
     END_FOREACH_CLIENT()
 }
 
+void gserver_shutdown(GServer *this) {
+    GServerInfo *current_info = this->info_event->args;
+    current_info->status = GSS_SHUTTING_DOWN;
+    current_info->current_clients = 0;
+
+    FOREACH_CLIENT((this->server)) {
+        disconnect_client(client);
+    }
+    END_FOREACH_CLIENT()
+
+    attach_event(this->cserver_send_queue, this->info_event);
+    send_to_cserver(this);
+}
+
 /*
     The GServer loop.
     1) Update GServerInfo.
@@ -351,6 +367,15 @@ void gserver_loop(GServer *this) {
     send_to_cserver(this);
 }
 
+static void handle_sigint(int signo) {
+    if (signo != SIGINT) {
+        return;
+    }
+
+    kill(connection_handler_pid, SIGINT);
+    exit(EXIT_SUCCESS);
+}
+
 /*
     Starts the GServer. It will accept clients and be able to send / receive events.
 
@@ -360,6 +385,8 @@ void gserver_loop(GServer *this) {
     RETURNS: none
 */
 void gserver_run(GServer *this) {
+    signal(SIGINT, handle_sigint);
+
     Server *server = this->server;
     this->status = GSS_RESERVED;
     srand(getpid());
@@ -369,7 +396,9 @@ void gserver_run(GServer *this) {
     this->data = shmat(shmid, 0, 0);
     this->data->lastCard = generate_card();
     this->data->client_id = 0;
+
     server_start_connection_handler(server);
+    connection_handler_pid = server->connection_handler_pid;
 
     int counter = 0;
 
@@ -381,14 +410,15 @@ void gserver_run(GServer *this) {
 
         gserver_loop(this);
 
-        server_send_events(server);
-        usleep(TICK_TIME_MICROSECONDS);
-
+        /* SERVER SHUTDOWN TEST
         counter++;
         printf("%d\n", counter);
-        if (counter == 50) { // 5 second lifetime
-            server_shutdown(server);
-            break;
+        if (counter == 30) { //
+            gserver_shutdown(this);
         }
+        */
+
+        server_send_events(server);
+        usleep(TICK_TIME_MICROSECONDS);
     }
 }

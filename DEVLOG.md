@@ -61,6 +61,10 @@ This document must be updated daily by EACH group member.
 * Finish documentation for everything I wrote that isn't in client.c. 10 minutes.
 * Update project description and instructions in README. 15 minutes.
 
+### 2025-01-18: Big evil bug downed and shutdowns
+* Fix the mysterious joining bug from 01-16. 30 minutes.
+* Streamline cleaning up servers and implement server shutdowns. 1.5 hours.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions

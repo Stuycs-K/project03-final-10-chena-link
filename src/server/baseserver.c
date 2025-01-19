@@ -459,12 +459,3 @@ void server_start_connection_handler(Server *this) {
         this->connection_handler_pid = pid;
     }
 }
-
-void server_shutdown(Server *this) {
-    FOREACH_CLIENT(this) {
-        handle_client_disconnect(this, client_id);
-    }
-    END_FOREACH_CLIENT()
-
-    kill(getpid(), SIGINT);
-}
