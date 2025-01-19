@@ -280,11 +280,23 @@ void handle_connections(Server *this) {
         return;
     }
 
+    if (check.revents & POLLERR) {
+        printf("error\n");
+    }
+    if (check.revents & POLLHUP) {
+        printf("hup\n");
+    }
+    if (check.revents & POLLNVAL) {
+        printf("nval\n");
+    }
+
+    printf("someone connected!\n");
+
     char *event_buffer;
     while (event_buffer = read_into_buffer(connection_handler_read_fd)) {
         recv_event_queue(queue, event_buffer);
 
-        printf("events rn %d\n", queue->event_count);
+        // printf("events rn %d\n", queue->event_count);
 
         for (int i = 0; i < queue->event_count; ++i) {
             NetEvent *event = queue->events[i];

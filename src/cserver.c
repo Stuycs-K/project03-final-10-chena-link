@@ -161,6 +161,18 @@ void kill_gserver(CServer *this, int gserver_id) {
     kill(gserver->server->pid, SIGINT);
     gserver->server->pid = -1;
     gserver->status = GSS_UNRESERVED;
+
+    close(gserver->cserver_pipes[PIPE_READ]);
+    close(gserver->cserver_pipes[PIPE_WRITE]);
+
+    gserver->cserver_pipes[PIPE_READ] = -1;
+    gserver->cserver_pipes[PIPE_WRITE] = -1;
+
+    /*
+    clear_event_queue(gserver->cserver_recv_queue);
+    printf("hello hello %d\n", gserver->cserver_pipes[PIPE_READ]);
+    clear_event_queue(gserver->cserver_send_queue);
+    */
 }
 
 /*
@@ -186,6 +198,7 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
         if (server_info->current_clients == 0 && server_info->status == GSS_SHUTTING_DOWN) {
             kill_gserver(this, gserver_id);
             server_info->status = GSS_UNRESERVED; // Locally set the GServerInfo to unreserved
+            server_info->current_clients = 0;
         }
 
         printf("SERVER LIST UPDATED\n");
