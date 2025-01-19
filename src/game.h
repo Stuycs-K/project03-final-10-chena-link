@@ -8,6 +8,7 @@ struct card{
   int color;
   int num;
   SDL_Rect rect;
+  SDL_Rect textRect;
 };
 typedef struct gameState gameState;
 struct gameState{
@@ -21,6 +22,6 @@ void generate_cards(card * cards, int num, int width, int height);
 //Removes a card and writes it to shared memory
 void play_card(card * cards, card played, int num_card);
 //Adds a card and sets width and height
-card add_card(int num, int width, int height);
+card add_card(card * deck,int num, int width, int height);
 
 #endif

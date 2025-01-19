@@ -36,10 +36,10 @@ int height = 800;
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Event e;
-<<<<<<< HEAD
 SDL_Texture * textures[10];
 int num_cards = 7;
 gameState *data;
+int others[8];
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -218,12 +218,15 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     switch (event->protocol) {
     case CARD_COUNT:
         int *arg = args;
-        printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
+        for(int i = 0; i < 8; i ++){
+            others[i] = arg[i];
+        }
+        //printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
         break;
 
     case SHMID:
         int *shmid = args;
-        printf("client recieved shmid: %d\n", *shmid);
+        //printf("client recieved shmid: %d\n", *shmid);
         SERVERSHMID = *shmid;
         break;
 
@@ -233,7 +236,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
-        return;
 
         GServerConfig *config = args;
 
@@ -284,12 +286,16 @@ static void sighandler(int signo){
     }
 }
 
-int actions(card * deck){
+int actions(card * deck,BaseClient *gclient){
     int action = EventPoll(e,deck,num_cards);
     if(action == -2){
-        deck[num_cards] = add_card(num_cards,width,height);
+        deck[num_cards] = add_card(deck,num_cards,width,height);
         num_cards++;
         return 2;
+    }
+    if(action == -3){
+        disconnect_from_gserver(gclient);
+        return 3;
     }
     card picked = deck[action];
     if(action != -1){
@@ -371,14 +377,15 @@ void client_main(void) {
                 renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
                 SDLInitText(textures, renderer);
             }
-            render(renderer, textures, deck, num_cards);
+            modCoords(deck,num_cards);
+            render(renderer, textures, deck, num_cards,data->lastCard);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {
                     printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
                 }
-                e = {0};
-                while(actions(deck) == 0){
+                e = (SDL_Event){0};
+                while(actions(deck,gclient) == 0){
                 }
                 /*if (input[0] == 'l') {
                     deck[num_cards] = generate_card();

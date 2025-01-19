@@ -19,18 +19,28 @@ void generate_cards(card * cards, int num, int width, int height){
   for(int i = 0; i < num; i ++){
     cards[i] = generate_card();
     cards[i].rect.x = width/15 * i;
-    cards[i].rect.y = 0;
     cards[i].rect.w = width/15;
-    cards[i].rect.h = width/8;
+    cards[i].rect.h = height/8;
+    cards[i].rect.y = height-cards[i].rect.h;
+    cards[i].textRect = cards[i].rect;
+    cards[i].textRect.x += cards[i].textRect.w/2 - cards[i].rect.w/8;
+    cards[i].textRect.y += cards[i].textRect.h/2 - cards[i].rect.h/8;
+    cards[i].textRect.w = cards[i].rect.w/4;
+    cards[i].textRect.h = cards[i].rect.h/4;
   }
 }
 
-card add_card(int num, int width, int height){
+card add_card(card * deck,int num, int width, int height){
   card Card = generate_card();
-  Card.rect.x = width/15*num;
-  Card.rect.y = 0;
-  Card.rect.w = width/15;
-  Card.rect.h = width/8;
+  Card.rect.x = deck[num-1].rect.x + deck[num-1].rect.w;
+  Card.rect.y = deck[num-1].rect.y;
+  Card.rect.w = deck[num-1].rect.w;
+  Card.rect.h = deck[num-1].rect.h;
+  Card.textRect = Card.rect;
+  Card.textRect.x += Card.textRect.w/2 - Card.rect.w/8;
+  Card.textRect.y += Card.textRect.h/2 - Card.rect.h/8;
+  Card.textRect.w = Card.rect.w/4;
+  Card.textRect.h = Card.rect.h/4;
   return Card;
 }
 
