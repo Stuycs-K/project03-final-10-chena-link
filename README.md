@@ -16,7 +16,7 @@ When the game ends, the game server shuts down, and all players are booted back 
 ### Instructions
 
 #### Dependencies
-We render UI with SDL2. To install, run the following commands before compilation: `sudo apt-get install libsdl2-2.0` and `sudo apt-get install libsdl2-dev`.
+We render UI with SDL2. To install, run the following commands before compilation: `sudo apt-get install libsdl2-2.0`, `sudo apt-get install libsdl2-dev`, and `sudo apt-get install libsdl2-ttf-dev`.
 
 #### Compilation
 First, run `make clean` just in case.
