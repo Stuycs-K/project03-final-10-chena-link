@@ -39,7 +39,9 @@ SDL_Event e;
 SDL_Texture * textures[10];
 int num_cards = 7;
 gameState *data;
-int others[8];
+int others[8] = {7,7,7,7,7,7,7,7};
+int shmid = 0;
+card deck[100];
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -211,6 +213,18 @@ void disconnect_from_gserver(BaseClient *client) {
     client_state = IN_CSERVER;
 }
 
+void disconnectSDL(BaseClient *gclient){
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    shmdt(data);
+    shmctl(shmid,IPC_RMID,0);
+    shmid = 0;
+    num_cards = 7;
+    TTF_Quit();
+    SDL_Quit();
+    disconnect_from_gserver(gclient);
+}
+
 void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     void *args = event->args;
 
@@ -233,6 +247,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     case GAME_OVER:
         int *winner = args;
         printf("client %d has won\n", winner[0]);
+        disconnectSDL(client);
         break;
 
     case GSERVER_CONFIG: // We're the host!
@@ -294,7 +309,8 @@ int actions(card * deck,BaseClient *gclient){
         return 2;
     }
     if(action == -3){
-        disconnect_from_gserver(gclient);
+        disconnectSDL(gclient);
+        printf("disconnected from game\n");
         return 3;
     }
     card picked = deck[action];
@@ -331,9 +347,6 @@ void client_main(void) {
 
     // Game stuff (should be in a separate function)
     srand(getpid());
-
-    card deck[100];
-    int shmid = 0;
 
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     SDLInit();
@@ -378,7 +391,7 @@ void client_main(void) {
                 SDLInitText(textures, renderer);
             }
             modCoords(deck,num_cards);
-            render(renderer, textures, deck, num_cards,data->lastCard);
+            render(renderer, textures, deck, num_cards,data->lastCard,others,gclient->client_id);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
                 printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
                 for (int i = 0; i < num_cards; i++) {

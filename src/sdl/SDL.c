@@ -8,15 +8,18 @@
 
 #define width 800
 #define height 800
-SDL_Rect draw = {240,430,width/15,height/8};
-SDL_Rect statecard = {380,430,width/15,height/8};
-SDL_Rect statenum = {380+width/30-width/120,430+height/16-height/64,width/60,height/32};
+SDL_Rect draw = {240,height/2-height/16,width/15,height/8};
+SDL_Rect statecard = {width/2-width/30,height/2-height/16,width/15,height/8};
+SDL_Rect statenum = {width/2-width/120,height/2-height/64,width/60,height/32};
+SDL_Rect first = {40,height/2-height/16,width/16,height/8};
+SDL_Rect second = {width/2-width/32,40,width/16,height/8};
+SDL_Rect third = {width-40-width/16,height/2-height/16,width/16,height/8};
 
-void render(SDL_Renderer * renderer, SDL_Texture** textures, card * deck,int num, card state){
+void render(SDL_Renderer * renderer, SDL_Texture** textures, card * deck,int num, card state, int*others, int client_id){
     modCoords(deck,num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    renderBackground(renderer,textures,state);
+    renderBackground(renderer,textures,state,others,client_id);
     for(int i = 0; i < num; i ++){
         if(deck[i].color == 0){
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -72,7 +75,7 @@ int EventPoll(SDL_Event event, card * deck, int num){
         switch (event.type) {
             case SDL_MOUSEBUTTONUP:
                 printf("Mouse button %d released at (%d, %d)\n",event.button.button,event.button.x,event.button.y);
-                if(event.button.x > 240 && event.button.x < 240+40 && event.button.y > 430 && event.button.y < 430+60){
+                if(event.button.x > 240 && event.button.x < 240+width/15 && event.button.y > height/2-height/16 && event.button.y < height/2-height/16+height/8){
                     return -2;
                 }
                 for(int i = 0; i < num; i ++){
@@ -99,7 +102,7 @@ void modCoords(card * deck,int num){
         }
     }
 }
-void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,card state, int *others){
+void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,card state, int *others,int client_id){
     if(state.color == 0){
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     }
@@ -116,4 +119,23 @@ void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,card state,
     SDL_RenderCopy(renderer, textures[state.num], NULL, &statenum);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &draw);
+    for(int i = 0; i < 4; i ++){
+        if(others[i*2] == client_id){
+            SDL_SetRenderDrawColor(renderer,255,255,255,255);
+            for (int offset = 1; offset <= 3; offset++) {
+                int a = (i - offset + 4) % 4;
+                
+                if (offset == 1) {
+                    SDL_RenderFillRect(renderer, &first);
+                    SDL_RenderCopy(renderer, textures[others[a*2 + 1]], NULL, &first);
+                } else if (offset == 2) {
+                    SDL_RenderFillRect(renderer, &second);
+                    SDL_RenderCopy(renderer, textures[others[a*2 + 1]], NULL, &second);
+                } else if (offset == 3) {
+                    SDL_RenderFillRect(renderer, &third);
+                    SDL_RenderCopy(renderer, textures[others[a*2 + 1]], NULL, &third);
+                }
+            }
+        }
+    }
 }
