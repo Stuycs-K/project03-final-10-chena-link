@@ -65,6 +65,10 @@ This document must be updated daily by EACH group member.
 * Fix the mysterious joining bug from 01-16. 30 minutes.
 * Streamline cleaning up servers and implement server shutdowns. 1.5 hours.
 
+### 2025-01-19: SDL
+* Server list in SDL. 3 hours.
+* GServer player list in SDL. Unfinished. 1 hour.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
