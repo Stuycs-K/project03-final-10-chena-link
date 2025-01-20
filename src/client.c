@@ -369,6 +369,7 @@ void client_main(void) {
                     *unoEvent = gclient->client_id;
                     NetEvent *uno = net_event_new(UNO, unoEvent);
                     client_send_event(gclient, uno);
+                    printf("WE CALLED UNO!\n");
                     unoCalled = 0;
                 }
 

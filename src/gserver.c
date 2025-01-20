@@ -289,7 +289,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             int *nargs = nargs_drawCards();
             *nargs = client_id;
             NetEvent *drawCards = net_event_new(DRAWCARDS, nargs);
-            server_send_event_to(this->server, this->data->currentUno, drawCards);
+            server_send_event_to_all(this->server, drawCards);
         }
     default:
         break;
