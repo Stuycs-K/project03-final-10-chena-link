@@ -153,14 +153,11 @@ void disconnect_from_gserver(BaseClient *client) {
 }
 
 void disconnectSDL(BaseClient *gclient) {
-    // SDL_DestroyRenderer(renderer);
-    // SDL_DestroyWindow(window);
     shmdt(data);
     shmctl(shmid, IPC_RMID, 0);
     shmid = 0;
     num_cards = 7;
-    // TTF_Quit();
-    // SDL_Quit();
+
     disconnect_from_gserver(gclient);
 }
 
@@ -179,7 +176,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case SHMID:
         int *shmid = args;
-        // printf("client recieved shmid: %d\n", *shmid);
         SERVERSHMID = *shmid;
         break;
 
@@ -253,7 +249,7 @@ static void sighandler(int signo) {
 }
 
 int actions(card *deck, BaseClient *gclient, int action) {
-    if (action == -3) {
+    if (action == -3) { // DC
         disconnectSDL(gclient);
         printf("disconnected from game\n");
         return 3;
@@ -268,7 +264,7 @@ int actions(card *deck, BaseClient *gclient, int action) {
         return 2;
     }
 
-    if (action == -2) {
+    if (action == -2) { // Draw cards
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
         return 2;
@@ -277,7 +273,7 @@ int actions(card *deck, BaseClient *gclient, int action) {
     if (action == -4) {
         return -4;
     }
-    card picked = deck[action];
+    card picked = deck[action]; // Play card
     if (action != -1) {
         if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
             data->lastCard = picked;
@@ -316,14 +312,16 @@ void client_main(void) {
 
     currentConfig = nargs_gserver_config();
 
-    window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+    char windowName[100];
+    snprintf(windowName, sizeof(windowName), "Game (%s)", username);
+
+    window = SDL_CreateWindow(windowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDLInitText(textures, renderer);
 
     srand(getpid());
 
     while (1) {
-        // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
         if (!client_is_connected(cclient)) {
             sighandler(SIGINT);
@@ -371,6 +369,13 @@ void client_main(void) {
                     disconnectSDL(gclient);
                     printf("disconnected from game\n");
                     continue;
+                }
+                if (action == -4) { // Always check for calling Uno
+                    int *unoEvent = nargs_uno();
+                    *unoEvent = gclient->client_id;
+                    NetEvent *uno = net_event_new(UNO, unoEvent);
+                    client_send_event(gclient, uno);
+                    unoCalled = 0;
                 }
 
                 if (data->client_id == gclient->client_id) {

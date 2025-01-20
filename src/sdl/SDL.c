@@ -113,15 +113,18 @@ int EventPoll(SDL_Event event, card *deck, int num) {
                 return -3;
             }
 
+            // Draw
             if (event.button.x > 240 && event.button.x < 240 + WIDTH / 15 && event.button.y > HEIGHT / 2 - HEIGHT / 16 && event.button.y < HEIGHT / 2 - HEIGHT / 16 + HEIGHT / 8) {
                 return -2;
             }
+            // Call Uno
             if (event.button.x > 3 * WIDTH / 4 && event.button.x < 3 * WIDTH / 4 + WIDTH / 6 && event.button.y > 3 * HEIGHT / 4 && event.button.y < 3 * HEIGHT / 4 + HEIGHT / 8) {
                 return -4;
             }
+            // Play a card
             for (int i = 0; i < num; i++) {
                 if (event.button.x > deck[i].rect.x && event.button.x < deck[i].rect.x + deck[i].rect.w && event.button.y > deck[i].rect.y && event.button.y < deck[i].rect.y + deck[i].rect.h) {
-                    printf("%d\n", i);
+                    // printf("%d\n", i);
                     return i;
                 }
             }
@@ -162,11 +165,13 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
     SDL_RenderCopy(renderer, textures[state.num], NULL, &statenum);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &draw);
+
     TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 24);
     if (!font) {
         printf("Error loading font: %s\n", TTF_GetError());
         return;
     }
+
     ClientInfoNode *node = gclient->client_info_list;
     int counter = 0;
     int clients[4];
