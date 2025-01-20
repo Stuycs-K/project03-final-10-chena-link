@@ -24,6 +24,15 @@
 
 #define CSERVER_WKP_NAME "CSERVER"
 
+#define WIDTH 800
+#define HEIGHT 800
+
+#define RED 215, 38, 0
+#define BLUE 9, 86, 191
+#define GREEN 55, 151, 17
+#define YELLOW 236, 212, 7
+#define WHITE 255, 255, 255
+
 typedef enum GServerStatus GServerStatus;
 enum GServerStatus {
     GSS_UNRESERVED = 0,

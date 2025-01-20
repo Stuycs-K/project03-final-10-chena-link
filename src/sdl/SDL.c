@@ -6,36 +6,28 @@
 
 #include "../client/baseclient.h"
 #include "../game.h"
+#include "../shared.h"
 #include "SDL.h"
 
-#define RED 215, 38, 0
-#define BLUE 9, 86, 191
-#define GREEN 55, 151, 17
-#define YELLOW 236, 212, 7
-#define WHITE 255, 255, 255
+SDL_Rect draw = {240, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
+SDL_Rect statecard = {WIDTH / 2 - WIDTH / 30, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
+SDL_Rect statenum = {WIDTH / 2 - WIDTH / 120, HEIGHT / 2 - HEIGHT / 64, WIDTH / 60, HEIGHT / 32};
 
-#define width 800
-#define height 800
-
-SDL_Rect draw = {240, height / 2 - height / 16, width / 15, height / 8};
-SDL_Rect statecard = {width / 2 - width / 30, height / 2 - height / 16, width / 15, height / 8};
-SDL_Rect statenum = {width / 2 - width / 120, height / 2 - height / 64, width / 60, height / 32};
-
-SDL_Rect first = {40, height / 2 - height / 16, width / 16, height / 8};
-SDL_Rect second = {width / 2 - width / 32, 40, width / 16, height / 8};
-SDL_Rect third = {width - 40 - width / 16, height / 2 - height / 16, width / 16, height / 8};
+SDL_Rect first = {40, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8};
+SDL_Rect second = {WIDTH / 2 - WIDTH / 32, 40, WIDTH / 16, HEIGHT / 8};
+SDL_Rect third = {WIDTH - 40 - WIDTH / 16, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8};
 
 // Now this is ugly
 SDL_Rect otherPlayerRectList[3] = {
-    {40, height / 2 - height / 16, width / 16, height / 8},                       // First (left)
-    {width / 2 - width / 32, 40, width / 16, height / 8},                         // Second (above)
-    {width - 40 - width / 16, height / 2 - height / 16, width / 16, height / 8}}; // Third (right)
+    {40, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8},                       // First (left)
+    {WIDTH / 2 - WIDTH / 32, 40, WIDTH / 16, HEIGHT / 8},                         // Second (above)
+    {WIDTH - 40 - WIDTH / 16, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8}}; // Third (right)
 
-SDL_Rect Uno = {3 * width / 4, 3 * height / 4, width / 6, height / 8};
+SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
 // Util
-void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPosition, SDL_Color *color) {
-    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
+void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPosition, SDL_Color *color, int *fontSize) {
+    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", (fontSize == NULL ? 18 : *fontSize));
     if (!font) {
         printf("Error loading font: %s\n", TTF_GetError());
         return;
@@ -64,6 +56,29 @@ void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPositi
     SDL_DestroyTexture(texture);
 
     TTF_CloseFont(font);
+}
+
+void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
+    int startX = 40;
+    int startY = HEIGHT - 40;
+
+    int sizeX = WIDTH - 2 * startX;
+    int sizeY = 60;
+
+    int currentY = startY;
+
+    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+        GServerInfo *currentInfo = serverList[i];
+
+        int shouldRender = (currentInfo->status != GSS_UNRESERVED || currentInfo->status != GSS_SHUTTING_DOWN);
+        if (!shouldRender) {
+            continue;
+        }
+
+        SDL_Rect serverInfoContainer;
+        serverInfoContainer.w = sizeX;
+        serverInfoContainer.y = sizeY;
+    }
 }
 
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
@@ -137,10 +152,10 @@ int EventPoll(SDL_Event event, card *deck, int num) {
         switch (event.type) {
         case SDL_MOUSEBUTTONUP:
             printf("Mouse button %d released at (%d, %d)\n", event.button.button, event.button.x, event.button.y);
-            if (event.button.x > 240 && event.button.x < 240 + width / 15 && event.button.y > height / 2 - height / 16 && event.button.y < height / 2 - height / 16 + height / 8) {
+            if (event.button.x > 240 && event.button.x < 240 + WIDTH / 15 && event.button.y > HEIGHT / 2 - HEIGHT / 16 && event.button.y < HEIGHT / 2 - HEIGHT / 16 + HEIGHT / 8) {
                 return -2;
             }
-            if (event.button.x > 3 * width / 4 && event.button.x < 3 * width / 4 + width / 6 && event.button.y > 3 * height / 4 && event.button.y < 3 * height / 4 + height / 8) {
+            if (event.button.x > 3 * WIDTH / 4 && event.button.x < 3 * WIDTH / 4 + WIDTH / 6 && event.button.y > 3 * HEIGHT / 4 && event.button.y < 3 * HEIGHT / 4 + HEIGHT / 8) {
                 return -4;
             }
             for (int i = 0; i < num; i++) {
@@ -160,7 +175,7 @@ int EventPoll(SDL_Event event, card *deck, int num) {
 }
 
 void modCoords(card *deck, int num) {
-    int increment = (width - deck[0].rect.w * num) / 2 - deck[0].rect.x;
+    int increment = (WIDTH - deck[0].rect.w * num) / 2 - deck[0].rect.x;
     if (increment != 0) {
         for (int i = 0; i < num; i++) {
             deck[i].rect.x += increment;
@@ -193,9 +208,9 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
     }
 
     SDL_Point usernamePosition;
-    usernamePosition.x = width * 0.5;
-    usernamePosition.y = height * 0.8;
-    renderTextLabel(renderer, gclient->name, &usernamePosition, NULL);
+    usernamePosition.x = WIDTH * 0.5;
+    usernamePosition.y = HEIGHT * 0.8;
+    renderTextLabel(renderer, gclient->name, &usernamePosition, NULL, NULL);
     /*
     ClientInfoNode *node = gclient->client_info_list;
     while (node != NULL) {
