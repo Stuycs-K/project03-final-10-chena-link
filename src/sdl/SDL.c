@@ -253,4 +253,5 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState 
             }
         }
     }
+    TTF_CloseFont(font);
 }
