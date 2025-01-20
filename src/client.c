@@ -46,6 +46,8 @@ card deck[100];
 int unoCalled = 0;
 int drawUno = 0;
 
+GServerConfig *currentConfig;
+
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
     if (connected_to_gserver == -1) {
@@ -94,7 +96,7 @@ char *get_username() {
 
     char input[MAX_PLAYER_NAME_CHARACTERS + 1];
     printf("Enter your username (%d characters maximum):\n", MAX_PLAYER_NAME_CHARACTERS - 1);
-
+    memset(input, 0, sizeof(input));
     fgets(input, sizeof(input), stdin);
 
     // Remove the newline, if it exists
@@ -204,41 +206,9 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         disconnectSDL(client);
         break;
 
-    case GSERVER_CONFIG: // We're the host!
-        // return;
+    case GSERVER_CONFIG:
         GServerConfig *config = args;
-
-        GServerConfig *new_config = nargs_gserver_config();
-        memcpy(new_config, config, sizeof(GServerConfig));
-
-        NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
-
-        printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n");
-
-        char input[100];
-        fgets(input, sizeof(input), stdin);
-        switch (input[0]) {
-
-        case 'c':
-            int max_clients;
-            sscanf(input + 1, "%d", &max_clients);
-            new_config->max_clients = max_clients;
-
-            break;
-
-        case 's':
-            new_config->start_game = 1;
-            break;
-
-        case 'd':
-            disconnect_from_gserver(client);
-            return;
-
-        default:
-            break;
-        }
-
-        client_send_event(client, send_config_event);
+        memcpy(currentConfig, config, sizeof(GServerConfig));
         break;
 
     default:
@@ -246,12 +216,39 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
+void handleInputForGServerWait(GServerInfo *serverInfo, BaseClient *gclient, int action) {
+    if (action == GSERVER_WAITING_NOTHING) {
+        return;
+    }
+
+    if (action == GSERVER_WAITING_DISCONNECT) {
+        disconnect_from_gserver(gclient);
+        return;
+    }
+
+    NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, currentConfig);
+    send_config_event->cleanup_behavior = NEVENT_PERSISTENT_ARGS; // Remove this to see a LEGENDARY malloc error
+
+    if (action == GSERVER_WAITING_START_GAME) {
+        if (serverInfo->current_clients > 1) {
+            currentConfig->start_game = 1;
+        } else {
+            printf("Can't start the game! There needs to be at least 2 players connected\n");
+            return;
+        }
+    }
+
+    // Change max clients
+    currentConfig->max_clients = action;
+    client_send_event(gclient, send_config_event);
+}
+
 static void sighandler(int signo) {
     if (signo == SIGINT) {
-        printf("SIGINT received\n");
         TTF_Quit();
         SDL_Quit();
-        exit(0);
+        printf("EXIT\n");
+        exit(EXIT_SUCCESS);
     }
 }
 
@@ -316,6 +313,8 @@ void client_main(void) {
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
 
+    currentConfig = nargs_gserver_config();
+
     window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDLInitText(textures, renderer);
@@ -326,7 +325,7 @@ void client_main(void) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
         if (!client_is_connected(cclient)) {
-            exit(EXIT_SUCCESS);
+            sighandler(SIGINT);
         }
 
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
@@ -383,8 +382,9 @@ void client_main(void) {
                     }
                 }
             } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
-                printf("render \n");
                 renderGServerWait(renderer, gservers[connected_gserver_id], gclient);
+                int action = handleGServerWaitEvent(gservers[connected_gserver_id], gclient);
+                handleInputForGServerWait(gservers[connected_gserver_id], gclient, action);
             }
 
             client_send_to_server(gclient);

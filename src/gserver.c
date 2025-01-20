@@ -33,6 +33,7 @@ void update_gserver_info(GServer *this) {
     server_info->current_clients = this->server->current_clients;
     server_info->max_clients = this->server->max_clients;
     server_info->status = this->status;
+    server_info->host_id = this->host_client_id;
     strcpy(server_info->name, this->server->name);
 }
 
@@ -214,7 +215,6 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         break;
 
     case CARD_COUNT:
-        printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
         for (int i = 0; i < 4; i++) {
             if (this->all_clients[i] == client_id) {
@@ -286,6 +286,7 @@ void get_host_client_id(GServer *this) {
     }
 
     Server *server = this->server;
+
     FOREACH_CLIENT(server) {
         // Our host disconnected while we're in the waiting phase. We must assign a new host to start the game
         if (client->recently_disconnected && this->host_client_id == client->id && this->status == GSS_WAITING_FOR_PLAYERS) {
@@ -299,6 +300,10 @@ void get_host_client_id(GServer *this) {
                 // Get the first client and give them host permissions
                 if (!client->recently_disconnected) {
                     this->host_client_id = client_id;
+
+                    update_gserver_info(this);
+                    this->info_changed = 1;
+
                     send_gserver_config_to_host(this);
                     break;
                 }
@@ -311,6 +316,10 @@ void get_host_client_id(GServer *this) {
         // The first person who joins this fresh server is the host
         if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients == 1 && this->host_client_id == -1 && client->recently_connected) {
             this->host_client_id = client_id;
+
+            update_gserver_info(this);
+            this->info_changed = 1;
+
             break;
         }
     }
@@ -371,6 +380,10 @@ void gserver_loop(GServer *this) {
             // Set the host to the first person who joined
             if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
                 this->host_client_id = 0;
+
+                update_gserver_info(this);
+                this->info_changed = 1;
+
                 send_gserver_config_to_host(this);
             }
         }
