@@ -249,12 +249,6 @@ static void sighandler(int signo) {
 }
 
 int actions(card *deck, BaseClient *gclient, int action) {
-    if (action == -3) { // DC
-        disconnectSDL(gclient);
-        printf("disconnected from game\n");
-        return 3;
-    }
-
     if (drawUno == 1) {
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
@@ -367,10 +361,10 @@ void client_main(void) {
                 int action = EventPoll(e, deck, num_cards);
                 if (action == -3) { // Always check for disconnects even when its not our turn
                     disconnectSDL(gclient);
-                    printf("disconnected from game\n");
+                    printf("Disconnected from game\n");
                     continue;
                 }
-                if (action == -4) { // Always check for calling Uno
+                if (action == -4 && unoCalled) { // Always check for calling Uno
                     int *unoEvent = nargs_uno();
                     *unoEvent = gclient->client_id;
                     NetEvent *uno = net_event_new(UNO, unoEvent);
@@ -382,18 +376,19 @@ void client_main(void) {
                     int input = actions(deck, gclient, action);
 
                     if (input != 0) {
-                        if (input == -4) {
+                        /*
+                            if (input == -4) {
                             int *unoEvent = nargs_uno();
                             *unoEvent = gclient->client_id;
                             NetEvent *uno = net_event_new(UNO, unoEvent);
                             client_send_event(gclient, uno);
                             unoCalled = 0;
                         } else {
-                            CardCountArray *cardcounts = nargs_card_count_array();
-                            cardcounts[0] = num_cards;
-                            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
-                            client_send_event(gclient, card_counts);
-                        }
+                        */
+                        CardCountArray *cardcounts = nargs_card_count_array();
+                        cardcounts[0] = num_cards;
+                        NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+                        client_send_event(gclient, card_counts);
                     }
                 }
             } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
