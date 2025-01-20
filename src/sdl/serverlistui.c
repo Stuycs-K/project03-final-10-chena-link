@@ -103,6 +103,28 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
         SDL_Point playersPosition = {gserverPanels[i].mainPanel.x, gserverPanels[i].mainPanel.y};
         renderTextLabel(renderer, playerStatus, &playersPosition, X_RIGHT | Y_BOTTOM, NULL, &serverNameFontSize);
 
+        char serverStatus[64];
+        memset(serverStatus, 0, sizeof(serverStatus));
+
+        SDL_Point statusPosition = {gserverPanels[i].mainPanel.x + 100, gserverPanels[i].mainPanel.y};
+        switch (currentInfo->status) {
+
+        case GSS_GAME_IN_PROGRESS:
+            strcpy(serverStatus, "Game in progress");
+            break;
+        case GSS_WAITING_FOR_PLAYERS:
+            strcpy(serverStatus, "Waiting for players to join");
+            break;
+        case GSS_SHUTTING_DOWN:
+            strcpy(serverStatus, "Shutting down");
+            break;
+
+        default:
+            break;
+        }
+        renderTextLabel(renderer, serverStatus, &statusPosition, X_RIGHT | Y_BOTTOM, NULL, &serverNameFontSize);
+
+        // Join button
         SDL_SetRenderDrawColor(renderer, GREEN, 255);
         SDL_RenderFillRect(renderer, &gserverPanels[i].joinButton);
 

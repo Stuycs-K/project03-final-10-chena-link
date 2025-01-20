@@ -366,6 +366,9 @@ void client_main(void) {
 
                 if (data->client_id == gclient->client_id) {
                     int input = actions(deck, gclient);
+                    if (input == 3) { // We disconnected from GServer
+                        continue;
+                    }
                     if (input != 0) {
                         if (input == -4) {
                             int *unoEvent = nargs_uno();
