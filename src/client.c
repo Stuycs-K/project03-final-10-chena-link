@@ -46,6 +46,8 @@ card deck[100];
 int unoCalled = 0;
 int drawUno = 0;
 
+GServerConfig *currentConfig;
+
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
     if (connected_to_gserver == -1) {
@@ -205,11 +207,13 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
-        // return;
         GServerConfig *config = args;
 
         GServerConfig *new_config = nargs_gserver_config();
         memcpy(new_config, config, sizeof(GServerConfig));
+
+        currentConfig = new_config;
+        return;
 
         NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
 
@@ -244,6 +248,30 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     default:
         break;
     }
+}
+
+void handleInputForGServerWait(GServerInfo *serverInfo, BaseClient *gclient, int action) {
+    if (action == GSERVER_WAITING_NOTHING) {
+        return;
+    }
+
+    if (action == GSERVER_WAITING_DISCONNECT) {
+        disconnect_from_gserver(gclient);
+        return;
+    }
+
+    NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, currentConfig);
+    if (action == GSERVER_WAITING_START_GAME && serverInfo->current_clients > 1) {
+        currentConfig->start_game = 1;
+    } else {
+        printf("Can't start the game!");
+        return;
+    }
+
+    // Change max clients
+    currentConfig->max_clients = action;
+
+    client_send_event(gclient, send_config_event);
 }
 
 static void sighandler(int signo) {
@@ -385,6 +413,8 @@ void client_main(void) {
                 }
             } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
                 renderGServerWait(renderer, gservers[connected_gserver_id], gclient);
+                int action = handleGServerWaitEvent(gservers[connected_gserver_id], gclient);
+                handleInputForGServerWait(gservers[connected_gserver_id], gclient, action);
             }
 
             client_send_to_server(gclient);

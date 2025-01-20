@@ -299,6 +299,10 @@ void get_host_client_id(GServer *this) {
                 // Get the first client and give them host permissions
                 if (!client->recently_disconnected) {
                     this->host_client_id = client_id;
+
+                    update_gserver_info(this);
+                    this->info_changed = 1;
+
                     send_gserver_config_to_host(this);
                     break;
                 }
@@ -311,6 +315,10 @@ void get_host_client_id(GServer *this) {
         // The first person who joins this fresh server is the host
         if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients == 1 && this->host_client_id == -1 && client->recently_connected) {
             this->host_client_id = client_id;
+
+            update_gserver_info(this);
+            this->info_changed = 1;
+
             break;
         }
     }
