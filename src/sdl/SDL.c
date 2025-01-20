@@ -146,55 +146,84 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
     SDL_RenderCopy(renderer, textures[state.num], NULL, &statenum);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &draw);
-    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
+    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 24);
     if (!font) {
         printf("Error loading font: %s\n", TTF_GetError());
         return;
     }
 
-    SDL_Point usernamePosition;
+    /*
+        SDL_Point usernamePosition;
     usernamePosition.x = WIDTH * 0.5;
     usernamePosition.y = HEIGHT * 0.8;
     renderTextLabel(renderer, gclient->name, &usernamePosition, X_CENTER | Y_CENTER, NULL, NULL);
-    /*
-    ClientInfoNode *node = gclient->client_info_list;
-    while (node != NULL) {
-        int current_client_id = node->id;
-
-        for (int i = 0; i < 4; ++i) {
-            if (others[i * 2] != current_client_id) {
-                continue;
-            }
-
-            printf("Rendering username: %s\n", node->name);
-
-            SDL_Color color = {RED};
-
-            renderTextLabel(renderer, node->name, NULL, &color);
-
-            SDL_Surface *surface = TTF_RenderText_Solid(font, node->name, color);
-            SDL_Texture *username = SDL_CreateTextureFromSurface(renderer, surface);
-            SDL_FreeSurface(surface);
-            SDL_RenderCopy(renderer, username, NULL, &first);
-
-            break;
-        }
-
-        node = node->next;
-    }
     */
-
+    ClientInfoNode *node = gclient->client_info_list;
+    int counter = 0;
+    int clients[4];
+    char *name[4];
+    while (node != NULL) {
+        clients[counter] = node->id;
+        name[counter] = node->name;
+        node = node->next;
+        counter++;
+    }
     SDL_Surface *surface;
+    SDL_Texture *textTexture;
     SDL_Color color = {255, 255, 255, 255};
+    SDL_Rect textRect;
     for (int i = 0; i < 4; i++) {
         if (others[i * 2] == client_id) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-
             for (int offset = 1; offset <= 3; offset++) {
                 int a = (i - offset + 4) % 4;
-
-                SDL_RenderFillRect(renderer, &otherPlayerRectList[offset - 1]);
-                SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &otherPlayerRectList[offset - 1]);
+                if (offset == 1) {
+                    for (int i = 0; i < counter; i++) {
+                        if (clients[i] == others[a * 2]) {
+                            surface = TTF_RenderText_Solid(font, name[i], color);
+                            textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+                            textRect = first;
+                            textRect.y -= HEIGHT / 8;
+                            textRect.w *= 1.5;
+                            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+                            SDL_FreeSurface(surface);
+                            SDL_DestroyTexture(textTexture);
+                        }
+                    }
+                    SDL_RenderFillRect(renderer, &first);
+                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &first);
+                } else if (offset == 2) {
+                    for (int i = 0; i < counter; i++) {
+                        if (clients[i] == others[a * 2]) {
+                            surface = TTF_RenderText_Solid(font, name[i], color);
+                            textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+                            textRect = second;
+                            textRect.y += HEIGHT / 8;
+                            textRect.w *= 1.5;
+                            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+                            SDL_FreeSurface(surface);
+                            SDL_DestroyTexture(textTexture);
+                        }
+                    }
+                    SDL_RenderFillRect(renderer, &second);
+                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &second);
+                } else if (offset == 3) {
+                    for (int i = 0; i < counter; i++) {
+                        if (clients[i] == others[a * 2]) {
+                            surface = TTF_RenderText_Solid(font, name[i], color);
+                            textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+                            textRect = third;
+                            textRect.y -= HEIGHT / 8;
+                            textRect.w *= 1.5;
+                            textRect.x -= WIDTH / 32;
+                            SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+                            SDL_FreeSurface(surface);
+                            SDL_DestroyTexture(textTexture);
+                        }
+                    }
+                    SDL_RenderFillRect(renderer, &third);
+                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &third);
+                }
             }
         }
     }
