@@ -253,6 +253,12 @@ static void sighandler(int signo) {
 }
 
 int actions(card *deck, BaseClient *gclient, int action) {
+    if (action == -3) {
+        disconnectSDL(gclient);
+        printf("disconnected from game\n");
+        return 3;
+    }
+
     if (drawUno == 1) {
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
@@ -267,11 +273,7 @@ int actions(card *deck, BaseClient *gclient, int action) {
         num_cards++;
         return 2;
     }
-    if (action == -3) {
-        disconnectSDL(gclient);
-        printf("disconnected from game\n");
-        return 3;
-    }
+
     if (action == -4) {
         return -4;
     }
@@ -365,12 +367,15 @@ void client_main(void) {
 
                 SDL_Event e;
                 int action = EventPoll(e, deck, num_cards);
+                if (action == -3) { // Always check for disconnects even when its not our turn
+                    disconnectSDL(gclient);
+                    printf("disconnected from game\n");
+                    continue;
+                }
 
                 if (data->client_id == gclient->client_id) {
                     int input = actions(deck, gclient, action);
-                    if (input == 3) { // We disconnected from GServer
-                        continue;
-                    }
+
                     if (input != 0) {
                         if (input == -4) {
                             int *unoEvent = nargs_uno();
