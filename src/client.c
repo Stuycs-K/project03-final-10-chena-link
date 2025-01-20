@@ -188,7 +188,7 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         GServerStatus status = gserver_info->status;
 
         // Server must be in the waiting for players phase and not be full
-        if (status == GSS_WAITING_FOR_PLAYERS || gserver_info->current_clients >= gserver_info->max_clients) {
+        if (status == GSS_WAITING_FOR_PLAYERS && gserver_info->current_clients < gserver_info->max_clients) {
             connect_to_gserver(gclient, gserver_info);
         } else {
             printf("YOU CAN'T JOIN THAT ONE!\n");
@@ -269,7 +269,6 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
-        printf("recved config\n");
         GServerConfig *config = args;
 
         GServerConfig *new_config = nargs_gserver_config();
@@ -397,7 +396,6 @@ void client_main(void) {
             input_for_cserver(cclient, gclient);
         }
 
-        // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
             client_recv_from_server(gclient);
             if (!client_is_connected(gclient)) {
@@ -442,33 +440,10 @@ void client_main(void) {
                             client_send_event(gclient, card_counts);
                         }
                     }
-                    /*if (input[0] == 'l') {
-                        deck[num_cards] = generate_card();
-                        num_cards++;
-                    }
-                    if (input[0] == 'p') {
-                        card picked;
-                        int col;
-                        int num;
-                        sscanf(input + 1, "%d %d", &col, &num);
-                        picked.color = col;
-                        picked.num = num;
-                        if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
-                            data->lastCard = picked;
-                            play_card(deck, picked, num_cards);
-                            num_cards--;
-                        }
-                    }*/
                 }
-            };
+            }
 
             client_send_to_server(gclient);
-
-            // TEMP DISCONNECT INPUT
-            /*if (input[0] == 'D') {
-                disconnect_from_gserver(gclient);
-                continue;
-            }*/
         }
 
         client_send_to_server(cclient);

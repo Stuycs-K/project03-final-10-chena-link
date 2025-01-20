@@ -55,6 +55,7 @@ void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num,
     }
     SDL_RenderPresent(renderer);
 }
+
 void SDLInit() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Error: %s\n", SDL_GetError());
@@ -66,6 +67,7 @@ void SDLInit() {
         return;
     }
 }
+
 void SDLInitText(SDL_Texture **textures, SDL_Renderer *renderer) {
     TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
     if (font == NULL) {
@@ -87,6 +89,7 @@ void SDLInitText(SDL_Texture **textures, SDL_Renderer *renderer) {
     }
     TTF_CloseFont(font);
 }
+
 int EventPoll(SDL_Event event, card *deck, int num) {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -113,6 +116,7 @@ int EventPoll(SDL_Event event, card *deck, int num) {
     }
     return -1;
 }
+
 void modCoords(card *deck, int num) {
     int increment = (width - deck[0].rect.w * num) / 2 - deck[0].rect.x;
     if (increment != 0) {
@@ -122,6 +126,7 @@ void modCoords(card *deck, int num) {
         }
     }
 }
+
 void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state, int *others, int client_id, BaseClient *gclient) {
     if (state.color == 0) {
         SDL_SetRenderDrawColor(renderer, RED, 255);
@@ -144,17 +149,32 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
         printf("Error loading font: %s\n", TTF_GetError());
         return;
     }
-    /*ClientInfoNode * node = gclient->client_info_list;
-        while(node != NULL){
-            if(node->id == others[a*2]){
-                printf("Rendering username: %s\n", node->name);
-                surface = TTF_RenderText_Solid(font,node->name,color);
-                SDL_Texture * username = SDL_CreateTextureFromSurface(renderer,surface);
-                SDL_FreeSurface(surface);
-                SDL_RenderCopy(renderer, username, NULL, &first);
+
+    // Usernames
+    ClientInfoNode *node = gclient->client_info_list;
+    while (node != NULL) {
+        int current_client_id = node->id;
+
+        for (int i = 0; i < 4; ++i) {
+            if (others[i * 2] != current_client_id) {
+                continue;
             }
-            node = node->next;
-        }*/
+
+            printf("Rendering username: %s\n", node->name);
+
+            struct SDL_Color color = {RED};
+
+            SDL_Surface *surface = TTF_RenderText_Solid(font, node->name, color);
+            SDL_Texture *username = SDL_CreateTextureFromSurface(renderer, surface);
+            SDL_FreeSurface(surface);
+            SDL_RenderCopy(renderer, username, NULL, &first);
+
+            break;
+        }
+
+        node = node->next;
+    }
+
     SDL_Surface *surface;
     SDL_Color color = {255, 255, 255, 255};
     for (int i = 0; i < 4; i++) {
