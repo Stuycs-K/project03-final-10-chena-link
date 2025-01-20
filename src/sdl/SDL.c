@@ -18,6 +18,8 @@ SDL_Rect first = {40, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8};
 SDL_Rect second = {WIDTH / 2 - WIDTH / 32, 40, WIDTH / 16, HEIGHT / 8};
 SDL_Rect third = {WIDTH - 40 - WIDTH / 16, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8};
 
+SDL_Rect leaveButton = {WIDTH - 125, 20, 120, 40};
+
 // Now this is ugly
 SDL_Rect otherPlayerRectList[3] = {
     {40, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8},                       // First (left)
@@ -31,6 +33,12 @@ void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num,
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     renderBackground(renderer, textures, state, others, client_id, gclient);
+
+    SDL_SetRenderDrawColor(renderer, RED, 255);
+    SDL_RenderFillRect(renderer, &leaveButton);
+    SDL_Point disconnectTextPosition = {leaveButton.x + leaveButton.w / 2, leaveButton.y + leaveButton.h / 2};
+    renderTextLabel(renderer, "Disconnect", &disconnectTextPosition, X_CENTER | Y_CENTER, NULL, NULL);
+
     for (int i = 0; i < num; i++) {
         if (deck[i].color == 0) {
             SDL_SetRenderDrawColor(renderer, RED, 255);

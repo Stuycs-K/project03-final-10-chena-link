@@ -153,14 +153,14 @@ void disconnect_from_gserver(BaseClient *client) {
 }
 
 void disconnectSDL(BaseClient *gclient) {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    // SDL_DestroyRenderer(renderer);
+    // SDL_DestroyWindow(window);
     shmdt(data);
     shmctl(shmid, IPC_RMID, 0);
     shmid = 0;
     num_cards = 7;
-    TTF_Quit();
-    SDL_Quit();
+    // TTF_Quit();
+    // SDL_Quit();
     disconnect_from_gserver(gclient);
 }
 
