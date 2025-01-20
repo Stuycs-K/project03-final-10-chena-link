@@ -34,7 +34,7 @@ SDL_Rect otherPlayerRectList[3] = {
 SDL_Rect Uno = {3 * width / 4, 3 * height / 4, width / 6, height / 8};
 
 // Util
-void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Rect *rect, SDL_Color *color) {
+void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPosition, SDL_Color *color) {
     TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
     if (!font) {
         printf("Error loading font: %s\n", TTF_GetError());
@@ -52,23 +52,18 @@ void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Rect *rect, SDL_Col
 
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, textSurface);
 
-    SDL_RenderCopy(renderer, texture, NULL, rect);
+    SDL_Rect destinationRect;
+    destinationRect.w = textSurface->w;
+    destinationRect.h = textSurface->h;
+    destinationRect.x = centerPosition->x - destinationRect.w / 2;
+    destinationRect.y = centerPosition->y - destinationRect.h / 2;
+
+    SDL_RenderCopy(renderer, texture, NULL, &destinationRect);
 
     SDL_FreeSurface(textSurface);
     SDL_DestroyTexture(texture);
 
     TTF_CloseFont(font);
-}
-
-void renderPlayerNameLabel(SDL_Renderer *renderer, char *name, int xCenter, int yCenter, SDL_Color *color) {
-    int w = 120;
-    int h = 35;
-
-    int x = xCenter - w / 2;
-    int y = yCenter - h / 2;
-
-    SDL_Rect nameRect = {x, y, w, h};
-    renderTextLabel(renderer, name, &nameRect, NULL);
 }
 
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
@@ -197,7 +192,10 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
         return;
     }
 
-    renderPlayerNameLabel(renderer, gclient->name, width * 0.5, 0.8 * height, NULL);
+    SDL_Point usernamePosition;
+    usernamePosition.x = width * 0.5;
+    usernamePosition.y = height * 0.8;
+    renderTextLabel(renderer, gclient->name, &usernamePosition, NULL);
     /*
     ClientInfoNode *node = gclient->client_info_list;
     while (node != NULL) {
