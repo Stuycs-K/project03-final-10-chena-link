@@ -286,6 +286,7 @@ void get_host_client_id(GServer *this) {
     }
 
     Server *server = this->server;
+
     FOREACH_CLIENT(server) {
         // Our host disconnected while we're in the waiting phase. We must assign a new host to start the game
         if (client->recently_disconnected && this->host_client_id == client->id && this->status == GSS_WAITING_FOR_PLAYERS) {
@@ -379,6 +380,10 @@ void gserver_loop(GServer *this) {
             // Set the host to the first person who joined
             if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
                 this->host_client_id = 0;
+
+                update_gserver_info(this);
+                this->info_changed = 1;
+
                 send_gserver_config_to_host(this);
             }
         }

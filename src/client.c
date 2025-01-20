@@ -209,40 +209,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     case GSERVER_CONFIG: // We're the host!
         GServerConfig *config = args;
 
-        GServerConfig *new_config = nargs_gserver_config();
-        memcpy(new_config, config, sizeof(GServerConfig));
-
-        currentConfig = new_config;
-        return;
-
-        NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
-
-        printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n");
-
-        char input[100];
-        fgets(input, sizeof(input), stdin);
-        switch (input[0]) {
-
-        case 'c':
-            int max_clients;
-            sscanf(input + 1, "%d", &max_clients);
-            new_config->max_clients = max_clients;
-
-            break;
-
-        case 's':
-            new_config->start_game = 1;
-            break;
-
-        case 'd':
-            disconnect_from_gserver(client);
-            return;
-
-        default:
-            break;
-        }
-
-        client_send_event(client, send_config_event);
+        memcpy(currentConfig, config, sizeof(GServerConfig));
         break;
 
     default:
@@ -261,16 +228,19 @@ void handleInputForGServerWait(GServerInfo *serverInfo, BaseClient *gclient, int
     }
 
     NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, currentConfig);
-    if (action == GSERVER_WAITING_START_GAME && serverInfo->current_clients > 1) {
-        currentConfig->start_game = 1;
-    } else {
-        printf("Can't start the game!");
-        return;
+    send_config_event->cleanup_behavior = NEVENT_PERSISTENT_ARGS; // Remove this to see a LEGENDARY malloc error
+
+    if (action == GSERVER_WAITING_START_GAME) {
+        if (serverInfo->current_clients > 1) {
+            currentConfig->start_game = 1;
+        } else {
+            printf("Can't start the game! There needs to be at least 2 players connected\n");
+            return;
+        }
     }
 
     // Change max clients
     currentConfig->max_clients = action;
-
     client_send_event(gclient, send_config_event);
 }
 
@@ -344,6 +314,8 @@ void client_main(void) {
     gservers = nargs_gserver_info_list();
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
+
+    currentConfig = nargs_gserver_config();
 
     window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);

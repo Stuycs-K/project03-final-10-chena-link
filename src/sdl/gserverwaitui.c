@@ -38,7 +38,6 @@ void drawDisconnectButton(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseC
 
 void drawHostControls(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient *gclient) {
     if (serverInfo->host_id != gclient->client_id) {
-        printf("the host is %d but we're %d\n", serverInfo->host_id, gclient->client_id);
         return;
     }
 
@@ -127,7 +126,7 @@ int handleGServerWaitEvent(GServerInfo *serverInfo, BaseClient *gclient) {
             clickPosition.y = event.button.y;
 
             if (SDL_PointInRect(&clickPosition, &disconnectButton)) {
-                return GSERVER_WAITING_DISCONNECT; // We'll be disconnected
+                return GSERVER_WAITING_DISCONNECT;
             }
 
             if (serverInfo->host_id != gclient->client_id) {
