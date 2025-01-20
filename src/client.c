@@ -96,7 +96,7 @@ char *get_username() {
 
     char input[MAX_PLAYER_NAME_CHARACTERS + 1];
     printf("Enter your username (%d characters maximum):\n", MAX_PLAYER_NAME_CHARACTERS - 1);
-
+    memset(input, 0, sizeof(input));
     fgets(input, sizeof(input), stdin);
 
     // Remove the newline, if it exists
@@ -206,9 +206,8 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         disconnectSDL(client);
         break;
 
-    case GSERVER_CONFIG: // We're the host!
+    case GSERVER_CONFIG:
         GServerConfig *config = args;
-
         memcpy(currentConfig, config, sizeof(GServerConfig));
         break;
 
