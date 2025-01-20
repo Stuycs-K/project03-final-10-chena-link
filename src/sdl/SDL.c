@@ -17,9 +17,10 @@ SDL_Rect first = {40,height/2-height/16,width/16,height/8};
 SDL_Rect second = {width/2-width/32,40,width/16,height/8};
 SDL_Rect third = {width-40-width/16,height/2-height/16,width/16,height/8};
 SDL_Rect Uno = {3*width/4,3*height/4,width/6,height/8};
+SDL_Rect turn = {width/2,height/4,width/16,height/8};
 
 
-void render(SDL_Renderer * renderer, SDL_Texture** textures, card * deck,int num, card state, int*others, int client_id,int uno,BaseClient*gclient){
+void render(SDL_Renderer * renderer, SDL_Texture** textures, card * deck,int num, gameState state, int*others, int client_id,int uno,BaseClient*gclient){
     modCoords(deck,num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -117,21 +118,21 @@ void modCoords(card * deck,int num){
         }
     }
 }
-void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,card state, int *others,int client_id,BaseClient*gclient){
-    if(state.color == 0){
+void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,gameState state, int *others,int client_id,BaseClient*gclient){
+    if(state->lastCard.color == 0){
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     }
-    if(state.color == 1){
+    if(state->lastCard.color == 1){
         SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
     }
-    if(state.color == 2){
+    if(state->lastCard.color == 2){
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
     }
-    if(state.color == 3){
+    if(state->lastCard.color == 3){
         SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
     }
     SDL_RenderFillRect(renderer, &statecard);
-    SDL_RenderCopy(renderer, textures[state.num], NULL, &statenum);
+    SDL_RenderCopy(renderer, textures[state->lastCard.num], NULL, &statenum);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &draw);
     TTF_Font * font = TTF_OpenFont("OpenSans-Regular.ttf", 24);
@@ -208,4 +209,5 @@ void renderBackground(SDL_Renderer * renderer,SDL_Texture** textures,card state,
             }
         }
     }
+    TTF_CloseFont(font);
 }
