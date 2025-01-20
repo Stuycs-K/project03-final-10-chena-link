@@ -104,7 +104,15 @@ int EventPoll(SDL_Event event, card *deck, int num) {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_MOUSEBUTTONUP:
+            SDL_Point clickPosition;
+            clickPosition.x = event.button.x;
+            clickPosition.y = event.button.y;
+
             printf("Mouse button %d released at (%d, %d)\n", event.button.button, event.button.x, event.button.y);
+            if (SDL_PointInRect(&clickPosition, &leaveButton)) {
+                return -3;
+            }
+
             if (event.button.x > 240 && event.button.x < 240 + WIDTH / 15 && event.button.y > HEIGHT / 2 - HEIGHT / 16 && event.button.y < HEIGHT / 2 - HEIGHT / 16 + HEIGHT / 8) {
                 return -2;
             }
