@@ -251,6 +251,7 @@ static void sighandler(int signo) {
         printf("SIGINT received\n");
         TTF_Quit();
         SDL_Quit();
+        printf("EXIT\n");
         exit(0);
     }
 }
@@ -383,7 +384,6 @@ void client_main(void) {
                     }
                 }
             } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
-                printf("render \n");
                 renderGServerWait(renderer, gservers[connected_gserver_id], gclient);
             }
 

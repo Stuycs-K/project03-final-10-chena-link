@@ -17,11 +17,19 @@ void drawServerInfo(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient 
     char playerStatus[32];
     snprintf(playerStatus, sizeof(playerStatus), "%d / %d", serverInfo->current_clients, serverInfo->max_clients);
 
-    SDL_Point playerStatusPosition = {5, 20};
+    SDL_Point playerStatusPosition = {5, 30};
     renderTextLabel(renderer, playerStatus, &playerStatusPosition, X_LEFT | Y_TOP, NULL, &normalFontSize);
 }
 
+void drawDisconnectButton(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient *gclient) {
+    client_disconnect_from_server(gclient);
+}
+
 void drawHostControls(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient *gclient) {
+    if (serverInfo->host_id != gclient->client_id) {
+        printf("the host is %d but we're %d\n", serverInfo->host_id, gclient->client_id);
+        return;
+    }
 }
 
 void drawClientList(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient *gclient) {
@@ -50,6 +58,8 @@ void drawClientList(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClient 
 
         SDL_Point textPosition = {mainPanel.x, mainPanel.y};
         renderTextLabel(renderer, node->name, &textPosition, X_LEFT | Y_TOP, NULL, &normalFontSize);
+
+        node = node->next;
     }
 }
 
@@ -59,6 +69,7 @@ void renderGServerWait(SDL_Renderer *renderer, GServerInfo *serverInfo, BaseClie
 
     drawServerInfo(renderer, serverInfo, gclient);
     drawClientList(renderer, serverInfo, gclient);
+    drawHostControls(renderer, serverInfo, gclient);
 
     SDL_RenderPresent(renderer);
 }

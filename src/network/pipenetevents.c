@@ -215,6 +215,7 @@ DECLARE_CONSTRUCTOR(GServerInfo, gserver_info) {
     nargs->status = 0;
     nargs->current_clients = 0;
     nargs->max_clients = DEFAULT_GSERVER_MAX_CLIENTS;
+    nargs->host_id = -1;
 
     // Null out the strings
     nargs->name[0] = 0;
@@ -227,6 +228,7 @@ DECLARE_HANDLER(GServerInfo, gserver_info) {
     VALUE(nargs->status);
     VALUE(nargs->current_clients);
     VALUE(nargs->max_clients);
+    VALUE(nargs->host_id);
     VALUE(nargs->name);
     VALUE(nargs->wkp_name);
 }
@@ -260,7 +262,7 @@ DECLARE_DESTRUCTOR(GServerInfoList, gserver_info_list) {
 END_DESTRUCTOR()
 
 //=================================================
-//SEND CARDCOUNT BETWEEN CLIENT AND SERVER
+// SEND CARDCOUNT BETWEEN CLIENT AND SERVER
 DECLARE_CONSTRUCTOR(CardCountArray, card_count_array) {
     nargs = malloc(sizeof(int) * 8);
     for (int i = 0; i < 8; i++) {
@@ -278,7 +280,7 @@ DECLARE_DESTRUCTOR(CardCountArray, card_count_array) {
 }
 END_DESTRUCTOR()
 
-//SEND SHMID FOR GAMESTATE AT START OF GAME
+// SEND SHMID FOR GAMESTATE AT START OF GAME
 DECLARE_CONSTRUCTOR(int, shmid) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
@@ -292,7 +294,7 @@ DECLARE_DESTRUCTOR(int, shmid) {
 }
 END_DESTRUCTOR()
 
-//SEND WINNER
+// SEND WINNER
 DECLARE_CONSTRUCTOR(int, gameover) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
@@ -306,7 +308,7 @@ DECLARE_DESTRUCTOR(int, gameover) {
 }
 END_DESTRUCTOR()
 
-//INIATE UNO
+// INIATE UNO
 DECLARE_CONSTRUCTOR(int, uno) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
@@ -319,7 +321,7 @@ END_HANDLER()
 DECLARE_DESTRUCTOR(int, uno) {
 }
 END_DESTRUCTOR()
-//DRAW UNO CARDS WHEN YOU FAIL
+// DRAW UNO CARDS WHEN YOU FAIL
 DECLARE_CONSTRUCTOR(int, drawCards) {
     nargs = malloc(sizeof(int));
     *nargs = 0;
