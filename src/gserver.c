@@ -376,8 +376,22 @@ void gserver_loop(GServer *this) {
     get_host_client_id(this);
     check_update_gserver_info(this);
 
+    // 1 player remaining and we're still in the game, so whoever is last standing wins
     int current_clients = server->current_clients;
-    if (current_clients == 1) {
+    if (current_clients == 1 && this->status == GSS_GAME_IN_PROGRESS) {
+        int *nargs = nargs_gameover();
+
+        FOREACH_CLIENT(server) {
+            if (client->recently_disconnected) {
+                continue;
+            }
+            *nargs = client_id;
+            break;
+        }
+        END_FOREACH_CLIENT()
+
+        NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
+        server_send_event_to_all(this->server, winnerClient);
     }
 
     // Newly connected clients
