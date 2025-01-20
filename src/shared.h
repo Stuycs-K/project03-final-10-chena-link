@@ -19,10 +19,19 @@
 #define MAX_CSERVER_GSERVERS 12
 #define MAX_CSERVER_CLIENTS 64
 
-// 1/10th second
-#define TICK_TIME_MICROSECONDS 100000
+// 1/20th second
+#define TICK_TIME_MICROSECONDS 50000
 
 #define CSERVER_WKP_NAME "CSERVER"
+
+#define WIDTH 800
+#define HEIGHT 800
+
+#define RED 215, 38, 0
+#define BLUE 9, 86, 191
+#define GREEN 55, 151, 17
+#define YELLOW 236, 212, 7
+#define WHITE 255, 255, 255
 
 typedef enum GServerStatus GServerStatus;
 enum GServerStatus {

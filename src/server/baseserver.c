@@ -83,7 +83,8 @@ void server_set_max_clients(Server *this, int max_clients) {
             this->clients[i] = client_connection_new(i);
         }
     } else {
-        for (int i = old_max_clients - 1; i >= max_clients - 1; --i) {
+        for (int i = old_max_clients - 1; i > max_clients - 1; --i) {
+            printf("free %d\n", i);
             free_client_connection(this->clients[i]);
         }
 

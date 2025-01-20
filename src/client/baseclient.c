@@ -115,12 +115,8 @@ void client_disconnect_from_server(BaseClient *this) {
 */
 void on_recv_client_list(BaseClient *this, ClientList *nargs) {
     this->client_id = nargs->local_client_id;
-    printf("Our client ID: %d\n", this->client_id);
-
     free_client_list(this->client_info_list);
     this->client_info_list = copy_client_list(nargs->info_list);
-
-    print_client_list(this->client_info_list);
 }
 
 /*

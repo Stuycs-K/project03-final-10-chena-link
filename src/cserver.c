@@ -115,6 +115,7 @@ static void update_gserver_list(CServer *this, GServerInfo *recv_server_info) {
     local_server_info->status = recv_server_info->status;
     local_server_info->current_clients = recv_server_info->current_clients;
     local_server_info->max_clients = recv_server_info->max_clients;
+    local_server_info->host_id = recv_server_info->host_id;
     strcpy(local_server_info->name, recv_server_info->name);
 
     this->server_list_updated = 1;

@@ -33,6 +33,7 @@ void update_gserver_info(GServer *this) {
     server_info->current_clients = this->server->current_clients;
     server_info->max_clients = this->server->max_clients;
     server_info->status = this->status;
+    server_info->host_id = this->host_client_id;
     strcpy(server_info->name, this->server->name);
 }
 
@@ -193,6 +194,21 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     this->info_changed = 1;
 }
 
+void set_next_player_to_go(GServer *this, int current_id) {
+    for (int i = 0; i < 4; i++) {
+        if (this->all_clients[i] == current_id) {
+            int next = (i + 1) % 4;
+            while (this->all_clients[next] == -1 && next != i) {
+                next = (next + 1) % 4;
+            }
+            if (this->all_clients[next] != -1) {
+                this->data->client_id = this->all_clients[next];
+            }
+            break;
+        }
+    }
+}
+
 /*
     Handles all client NetEvents (i.e. playing the game, starting the game)
 
@@ -214,18 +230,17 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         break;
 
     case CARD_COUNT:
-        printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
-        for(int i = 0; i < 4; i ++){
-          if(this->all_clients[i] == client_id){
-            this->decks[i*2 + 1] = arg[0];
-          }
+        for (int i = 0; i < 4; i++) {
+            if (this->all_clients[i] == client_id) {
+                this->decks[i * 2 + 1] = arg[0];
+            }
         }
         CardCountArray *cardcounts = nargs_card_count_array();
         for (int i = 0; i < 8; i++) {
             cardcounts[i] = this->decks[i];
         }
-        if(arg[0] == 1){
+        if (arg[0] == 1) {
             this->data->currentUno = client_id;
             this->firstUNO = -1;
             int *nargs = nargs_uno();
@@ -243,6 +258,8 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             server_send_event_to_all(this->server, newEvent);
         }
 
+        // set_next_player_to_go(this, client_id);
+
         for (int i = 0; i < 4; i++) {
             if (this->all_clients[i] == client_id) {
                 int next = (i + 1) % 4;
@@ -255,6 +272,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
                 break;
             }
         }
+
         /*FOREACH_CLIENT(this->server){
             if(this->data->client_id != client_id){
                 this->data->client_id = client_id;
@@ -266,12 +284,12 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
 
     case UNO:
         int *uno = args;
-        if(this->firstUNO == -1){
+        if (this->firstUNO == -1) {
             this->firstUNO = uno[0];
             int *nargs = nargs_drawCards();
             *nargs = client_id;
             NetEvent *drawCards = net_event_new(DRAWCARDS, nargs);
-            server_send_event_to(this->server,this->data->currentUno ,drawCards);
+            server_send_event_to(this->server, this->data->currentUno, drawCards);
         }
     default:
         break;
@@ -286,9 +304,10 @@ void get_host_client_id(GServer *this) {
     }
 
     Server *server = this->server;
+
     FOREACH_CLIENT(server) {
-        // Our host disconnected
-        if (client->recently_disconnected && this->host_client_id == client->id) {
+        // Our host disconnected while we're in the waiting phase. We must assign a new host to start the game
+        if (client->recently_disconnected && this->host_client_id == client->id && this->status == GSS_WAITING_FOR_PLAYERS) {
 
             if (this->server->current_clients == 0) { // No point. The server should be shutting down.
                 this->host_client_id = -1;
@@ -299,6 +318,10 @@ void get_host_client_id(GServer *this) {
                 // Get the first client and give them host permissions
                 if (!client->recently_disconnected) {
                     this->host_client_id = client_id;
+
+                    update_gserver_info(this);
+                    this->info_changed = 1;
+
                     send_gserver_config_to_host(this);
                     break;
                 }
@@ -311,6 +334,10 @@ void get_host_client_id(GServer *this) {
         // The first person who joins this fresh server is the host
         if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients == 1 && this->host_client_id == -1 && client->recently_connected) {
             this->host_client_id = client_id;
+
+            update_gserver_info(this);
+            this->info_changed = 1;
+
             break;
         }
     }
@@ -349,18 +376,19 @@ void gserver_loop(GServer *this) {
     get_host_client_id(this);
     check_update_gserver_info(this);
 
-    if (this->status == GSS_WAITING_FOR_PLAYERS) {
+    int current_clients = server->current_clients;
+    if (current_clients == 1) {
     }
 
     // Newly connected clients
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
-            for(int i = 0; i < 4; i ++){
-              if(this->all_clients[i] == -1){
-                this->all_clients[i] = client_id;
-                this->decks[i*2] = client_id;
-                break;
-              }
+            for (int i = 0; i < 4; i++) {
+                if (this->all_clients[i] == -1) {
+                    this->all_clients[i] = client_id;
+                    this->decks[i * 2] = client_id;
+                    break;
+                }
             }
             int *nargs = nargs_shmid();
             *nargs = this->SERVERSHMID;
@@ -370,13 +398,17 @@ void gserver_loop(GServer *this) {
             // Set the host to the first person who joined
             if (this->status == GSS_WAITING_FOR_PLAYERS && this->server->current_clients > 0 && this->host_client_id == -1) {
                 this->host_client_id = 0;
+
+                update_gserver_info(this);
+                this->info_changed = 1;
+
                 send_gserver_config_to_host(this);
             }
         }
     }
     END_FOREACH_CLIENT()
 
-    FOREACH_CLIENT(server) {
+    FOREACH_CLIENT(server) { // Each player's events
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {
             gserver_handle_net_event(this, client_id, queue->events[i]);

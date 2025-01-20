@@ -14,6 +14,8 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "sdl/SDL.h"
+#include "sdl/gserverwaitui.h"
+#include "sdl/serverlistui.h"
 #include "shared.h"
 #include "util/file.h"
 
@@ -35,14 +37,16 @@ int width = 800;
 int height = 800;
 SDL_Window *window;
 SDL_Renderer *renderer;
-SDL_Texture * textures[100];
+SDL_Texture *textures[100];
 int num_cards = 7;
 gameState *data;
-int others[8] = {7,7,7,7,7,7,7,7};
+int others[8] = {7, 7, 7, 7, 7, 7, 7, 7};
 int shmid = 0;
 card deck[100];
 int unoCalled = 0;
 int drawUno = 0;
+
+GServerConfig *currentConfig;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -63,63 +67,10 @@ void connect_to_cserver(BaseClient *cclient) {
     client_state = IN_CSERVER;
 }
 
-void print_gserver_list(GServerInfoList *recv_gserver_list) {
-    // Don't print the server list if we're in a game server.
-    if (client_state == IN_GSERVER) {
-        return;
-    }
-
-    printf("======= Game Server List\n");
-
-    int reserved_server_count = 0;
-    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *info = recv_gserver_list[i];
-        if (info->status != GSS_UNRESERVED) {
-            reserved_server_count++;
-        }
-    }
-    printf("Available game servers: %d\n", reserved_server_count);
-
-    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *info = recv_gserver_list[i];
-
-        if (info->status == GSS_UNRESERVED) { // Don't display unreserved servers
-            continue;
-        }
-
-        char status[100];
-        switch (info->status) {
-
-        case GSS_RESERVED:
-            strcpy(status, "RESERVED");
-            break;
-
-        case GSS_WAITING_FOR_PLAYERS:
-            strcpy(status, "WAITING FOR PLAYERS");
-            break;
-
-        case GSS_GAME_IN_PROGRESS:
-            strcpy(status, "GAME IN PROGRESS");
-            break;
-
-        default:
-            break;
-        }
-
-        printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
-    }
-    printf("========================\n");
-}
-
 void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
-
-    case GSERVER_LIST: { // Print server list
-        print_gserver_list(args);
-        break;
-    }
 
     case RESERVE_GSERVER: { // The CServer has given us the GServer to join
         ReserveGServer *nargs = args;
@@ -145,7 +96,7 @@ char *get_username() {
 
     char input[MAX_PLAYER_NAME_CHARACTERS + 1];
     printf("Enter your username (%d characters maximum):\n", MAX_PLAYER_NAME_CHARACTERS - 1);
-
+    memset(input, 0, sizeof(input));
     fgets(input, sizeof(input), stdin);
 
     // Remove the newline, if it exists
@@ -163,41 +114,28 @@ char *get_username() {
     return username;
 }
 
-void input_for_cserver(BaseClient *client, BaseClient *gclient) {
+void handleInputForCServer(BaseClient *client, BaseClient *gclient, int action) {
     if (client_state == IN_GSERVER) {
         return;
     }
 
-    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
-    char input[256];
-    fgets(input, sizeof(input), stdin);
+    if (action == SERVER_LIST_EVENT_NOTHING) {
+        return;
+    }
 
-    char option = input[0];
-    switch (option) {
-
-    case 'c':
+    if (action == SERVER_LIST_EVENT_RESERVE) {
         NetEvent *reserve_event = net_event_new(RESERVE_GSERVER, nargs_reserve_gserver());
         insert_event(client->send_queue, reserve_event);
-        break;
-
-    case 'j':
-        int which_server;
-        sscanf(input, "j %d", &which_server);
-
-        GServerInfo *gserver_info = gservers[which_server];
+    } else {
+        GServerInfo *gserver_info = gservers[action];
         GServerStatus status = gserver_info->status;
 
         // Server must be in the waiting for players phase and not be full
-        if (status == GSS_WAITING_FOR_PLAYERS || gserver_info->current_clients >= gserver_info->max_clients) {
+        if (status == GSS_WAITING_FOR_PLAYERS && gserver_info->current_clients < gserver_info->max_clients) {
             connect_to_gserver(gclient, gserver_info);
         } else {
             printf("YOU CAN'T JOIN THAT ONE!\n");
         }
-
-        break;
-
-    default:
-        break;
     }
 }
 
@@ -214,15 +152,15 @@ void disconnect_from_gserver(BaseClient *client) {
     client_state = IN_CSERVER;
 }
 
-void disconnectSDL(BaseClient *gclient){
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+void disconnectSDL(BaseClient *gclient) {
+    // SDL_DestroyRenderer(renderer);
+    // SDL_DestroyWindow(window);
     shmdt(data);
-    shmctl(shmid,IPC_RMID,0);
+    shmctl(shmid, IPC_RMID, 0);
     shmid = 0;
     num_cards = 7;
-    TTF_Quit();
-    SDL_Quit();
+    // TTF_Quit();
+    // SDL_Quit();
     disconnect_from_gserver(gclient);
 }
 
@@ -233,29 +171,29 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     switch (event->protocol) {
     case CARD_COUNT:
         int *arg = args;
-        for(int i = 0; i < 8; i ++){
+        for (int i = 0; i < 8; i++) {
             others[i] = arg[i];
         }
-        //printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
+        // printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
         break;
 
     case SHMID:
         int *shmid = args;
-        //printf("client recieved shmid: %d\n", *shmid);
+        // printf("client recieved shmid: %d\n", *shmid);
         SERVERSHMID = *shmid;
         break;
 
     case UNO:
         int *uno = args;
-        printf("%d has uno.\n",uno[0]);
+        printf("%d has uno.\n", uno[0]);
         unoCalled = 1;
         break;
 
     case DRAWCARDS:
         int *draw = args;
-        printf("%d called uno.\n",draw[0]);
-        if(data->currentUno == client->client_id){
-            if(draw[0] != client->client_id){
+        printf("%d called uno.\n", draw[0]);
+        if (data->currentUno == client->client_id) {
+            if (draw[0] != client->client_id) {
                 drawUno = 1;
             }
         }
@@ -268,41 +206,9 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         disconnectSDL(client);
         break;
 
-    case GSERVER_CONFIG: // We're the host!
-
+    case GSERVER_CONFIG:
         GServerConfig *config = args;
-
-        GServerConfig *new_config = nargs_gserver_config();
-        memcpy(new_config, config, sizeof(GServerConfig));
-
-        NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, new_config);
-
-        printf("YOU ARE THE HOST! Edit the server with: c {n} to set server to n max clients; s to start the game\n");
-
-        char input[100];
-        fgets(input, sizeof(input), stdin);
-        switch (input[0]) {
-
-        case 'c':
-            int max_clients;
-            sscanf(input + 1, "%d", &max_clients);
-            new_config->max_clients = max_clients;
-
-            break;
-
-        case 's':
-            new_config->start_game = 1;
-            break;
-
-        case 'd':
-            disconnect_from_gserver(client);
-            return;
-
-        default:
-            break;
-        }
-
-        client_send_event(client, send_config_event);
+        memcpy(currentConfig, config, sizeof(GServerConfig));
         break;
 
     default:
@@ -310,42 +216,70 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
     }
 }
 
-static void sighandler(int signo){
-    if(signo == SIGINT){
-        printf("SIGINT received\n");
+void handleInputForGServerWait(GServerInfo *serverInfo, BaseClient *gclient, int action) {
+    if (action == GSERVER_WAITING_NOTHING) {
+        return;
+    }
+
+    if (action == GSERVER_WAITING_DISCONNECT) {
+        disconnect_from_gserver(gclient);
+        return;
+    }
+
+    NetEvent *send_config_event = net_event_new(GSERVER_CONFIG, currentConfig);
+    send_config_event->cleanup_behavior = NEVENT_PERSISTENT_ARGS; // Remove this to see a LEGENDARY malloc error
+
+    if (action == GSERVER_WAITING_START_GAME) {
+        if (serverInfo->current_clients > 1) {
+            currentConfig->start_game = 1;
+        } else {
+            printf("Can't start the game! There needs to be at least 2 players connected\n");
+            return;
+        }
+    }
+
+    // Change max clients
+    currentConfig->max_clients = action;
+    client_send_event(gclient, send_config_event);
+}
+
+static void sighandler(int signo) {
+    if (signo == SIGINT) {
         TTF_Quit();
         SDL_Quit();
-        exit(0);
+        printf("EXIT\n");
+        exit(EXIT_SUCCESS);
     }
 }
 
-int actions(card * deck,BaseClient *gclient){
-    if(drawUno == 1){
-        deck[num_cards] = add_card(deck,num_cards,width,height);
-        num_cards++;
-        deck[num_cards] = add_card(deck,num_cards,width,height);
-        num_cards++;
-        drawUno = 0;
-        return 2;
-    }
-    SDL_Event e;
-    int action = EventPoll(e,deck,num_cards);
-    if(action == -2){
-        deck[num_cards] = add_card(deck,num_cards,width,height);
-        num_cards++;
-        return 2;
-    }
-    if(action == -3){
+int actions(card *deck, BaseClient *gclient, int action) {
+    if (action == -3) {
         disconnectSDL(gclient);
         printf("disconnected from game\n");
         return 3;
     }
-    if(action == -4){
+
+    if (drawUno == 1) {
+        deck[num_cards] = add_card(deck, num_cards, width, height);
+        num_cards++;
+        deck[num_cards] = add_card(deck, num_cards, width, height);
+        num_cards++;
+        drawUno = 0;
+        return 2;
+    }
+
+    if (action == -2) {
+        deck[num_cards] = add_card(deck, num_cards, width, height);
+        num_cards++;
+        return 2;
+    }
+
+    if (action == -4) {
         return -4;
     }
     card picked = deck[action];
-    if(action != -1){
-        if (picked.num == data->lastCard.num || picked.color == data->lastCard.color){
+    if (action != -1) {
+        if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
             data->lastCard = picked;
             play_card(deck, picked, num_cards);
             num_cards--;
@@ -356,6 +290,13 @@ int actions(card * deck,BaseClient *gclient){
 }
 
 void client_main(void) {
+    signal(SIGINT, sighandler);
+
+    printf("LOADING ... \n");
+
+    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+    SDLInit();
+
     client_state = IN_CSERVER;
     char *username = get_username();
     if (username == NULL) {
@@ -368,35 +309,37 @@ void client_main(void) {
 
     BaseClient *gclient = client_new(username);
 
-    // fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-
     // Set up the networked server list
     gservers = nargs_gserver_info_list();
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
 
-    // Game stuff (should be in a separate function)
+    currentConfig = nargs_gserver_config();
+
+    window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDLInitText(textures, renderer);
+
     srand(getpid());
-
-    SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
-    printf("LOADING ... \n");
-    SDLInit();
-
-    signal(SIGINT,sighandler);
 
     while (1) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
+        if (!client_is_connected(cclient)) {
+            sighandler(SIGINT);
+        }
+
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
             NetEvent *event = cclient->recv_queue->events[i];
             handle_cserver_net_event(cclient, gclient, event);
         }
 
-        if (cclient->client_id >= 0) {
-            input_for_cserver(cclient, gclient);
+        if (client_state == IN_CSERVER && cclient->client_id >= 0) {
+            renderServerList(renderer, gservers);
+            int action = handleServerListEvent();
+            handleInputForCServer(cclient, gclient, action);
         }
 
-        // 3) If we connected to a GServer, play the game!
         if (client_is_connected(gclient)) {
             client_recv_from_server(gclient);
             if (!client_is_connected(gclient)) {
@@ -413,59 +356,48 @@ void client_main(void) {
                 continue;
             }
 
-            if (shmid == 0) {
-                shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
-                data = shmat(shmid, 0, 0);
-                generate_cards(deck, num_cards, width, height);
-                window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
-                renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-                SDLInitText(textures, renderer);
-            }
-            modCoords(deck,num_cards);
-            render(renderer, textures, deck, num_cards,data->lastCard,others,gclient->client_id,unoCalled,gclient);
-            if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
-                int input = actions(deck,gclient);
-                if(input != 0){
-                    if(input == -4){
-                        int *unoEvent = nargs_uno();
-                        *unoEvent = gclient->client_id;
-                        NetEvent *uno = net_event_new(UNO, unoEvent);
-                        client_send_event(gclient, uno);
-                        unoCalled = 0;
-                    }
-                    else{
-                        CardCountArray *cardcounts = nargs_card_count_array();
-                        cardcounts[0] = num_cards;
-                        NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
-                        client_send_event(gclient, card_counts);
+            if (gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
+                if (shmid == 0) {
+                    shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
+                    data = shmat(shmid, 0, 0);
+                    generate_cards(deck, num_cards, width, height);
+                }
+                modCoords(deck, num_cards);
+                render(renderer, textures, deck, num_cards, data->lastCard, others, gclient->client_id, unoCalled, gclient);
+
+                SDL_Event e;
+                int action = EventPoll(e, deck, num_cards);
+                if (action == -3) { // Always check for disconnects even when its not our turn
+                    disconnectSDL(gclient);
+                    printf("disconnected from game\n");
+                    continue;
+                }
+
+                if (data->client_id == gclient->client_id) {
+                    int input = actions(deck, gclient, action);
+
+                    if (input != 0) {
+                        if (input == -4) {
+                            int *unoEvent = nargs_uno();
+                            *unoEvent = gclient->client_id;
+                            NetEvent *uno = net_event_new(UNO, unoEvent);
+                            client_send_event(gclient, uno);
+                            unoCalled = 0;
+                        } else {
+                            CardCountArray *cardcounts = nargs_card_count_array();
+                            cardcounts[0] = num_cards;
+                            NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+                            client_send_event(gclient, card_counts);
+                        }
                     }
                 }
-                /*if (input[0] == 'l') {
-                    deck[num_cards] = generate_card();
-                    num_cards++;
-                }
-                if (input[0] == 'p') {
-                    card picked;
-                    int col;
-                    int num;
-                    sscanf(input + 1, "%d %d", &col, &num);
-                    picked.color = col;
-                    picked.num = num;
-                    if (picked.num == data->lastCard.num || picked.color == data->lastCard.color) {
-                        data->lastCard = picked;
-                        play_card(deck, picked, num_cards);
-                        num_cards--;
-                    }
-                }*/
+            } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
+                renderGServerWait(renderer, gservers[connected_gserver_id], gclient);
+                int action = handleGServerWaitEvent(gservers[connected_gserver_id], gclient);
+                handleInputForGServerWait(gservers[connected_gserver_id], gclient, action);
             }
 
             client_send_to_server(gclient);
-
-            // TEMP DISCONNECT INPUT
-            /*if (input[0] == 'D') {
-                disconnect_from_gserver(gclient);
-                continue;
-            }*/
         }
 
         client_send_to_server(cclient);

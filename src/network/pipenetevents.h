@@ -1,8 +1,8 @@
 #include "pipenet.h"
 
+#include "../gserver.h"
 #include "../shared.h"
 #include "clientlist.h"
-#include "../gserver.h"
 
 #ifndef PIPENETEVENTS_H
 #define PIPENETEVENTS_H
@@ -86,8 +86,8 @@ DECLARE_NET_ARGS(ReserveGServer, reserve_gserver)
 typedef struct GServerConfig GServerConfig;
 struct GServerConfig {
     char name[MAX_GSERVER_NAME_CHARACTERS]; // The name of the GServer
-    int max_clients; // How many clients the GServer should hold
-    int start_game; // If 1, start the game
+    int max_clients;                        // How many clients the GServer should hold
+    int start_game;                         // If 1, start the game
 };
 DECLARE_NET_ARGS(GServerConfig, gserver_config)
 
@@ -100,6 +100,7 @@ struct GServerInfo {
     GServerStatus status; // See GServerStatus in shared.h
     int current_clients;  // How many clients are currently connected
     int max_clients;      // Maximum number of clients
+    int host_id;          // Who the host is
 
     char name[MAX_GSERVER_NAME_CHARACTERS]; // The visible name of the server
     char wkp_name[GSERVER_WKP_NAME_LEN];    // The WKP name (what clients use to join)
