@@ -355,7 +355,7 @@ void client_main(void) {
                     generate_cards(deck, num_cards, width, height);
                 }
                 modCoords(deck, num_cards);
-                render(renderer, textures, deck, num_cards, data->lastCard, others, gclient->client_id, unoCalled, gclient);
+                render(renderer, textures, deck, num_cards, data, others, gclient->client_id, unoCalled, gclient);
 
                 SDL_Event e;
                 int action = EventPoll(e, deck, num_cards);

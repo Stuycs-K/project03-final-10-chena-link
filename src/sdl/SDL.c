@@ -20,6 +20,8 @@ SDL_Rect third = {WIDTH - 40 - WIDTH / 16, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16,
 
 SDL_Rect leaveButton = {WIDTH - 125, 20, 120, 40};
 
+SDL_Rect currentTurn = {WIDTH/2-WIDTH/12,HEIGHT/4,WIDTH/5,HEIGHT/15};
+
 // Now this is ugly
 SDL_Rect otherPlayerRectList[3] = {
     {40, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16, HEIGHT / 8},                       // First (left)
@@ -28,7 +30,7 @@ SDL_Rect otherPlayerRectList[3] = {
 
 SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
-void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
+void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, gameState * state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -148,21 +150,21 @@ void modCoords(card *deck, int num) {
     }
 }
 
-void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state, int *others, int client_id, BaseClient *gclient) {
-    if (state.color == 0) {
+void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState * state, int *others, int client_id, BaseClient *gclient) {
+    if (state->lastCard.color == 0) {
         SDL_SetRenderDrawColor(renderer, RED, 255);
     }
-    if (state.color == 1) {
+    if (state->lastCard.color == 1) {
         SDL_SetRenderDrawColor(renderer, BLUE, 255);
     }
-    if (state.color == 2) {
+    if (state->lastCard.color == 2) {
         SDL_SetRenderDrawColor(renderer, GREEN, 255);
     }
-    if (state.color == 3) {
+    if (state->lastCard.color == 3) {
         SDL_SetRenderDrawColor(renderer, YELLOW, 255);
     }
     SDL_RenderFillRect(renderer, &statecard);
-    SDL_RenderCopy(renderer, textures[state.num], NULL, &statenum);
+    SDL_RenderCopy(renderer, textures[state->lastCard.num], NULL, &statenum);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &draw);
 
@@ -184,7 +186,14 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
     }
     SDL_Surface *surface;
     SDL_Texture *textTexture;
+    char buffer[20];
     SDL_Color color = {255, 255, 255, 255};
+    snprintf(buffer, sizeof(buffer), "client %d's turn", state->client_id);
+    surface = TTF_RenderText_Solid(font, buffer, color);
+    textTexture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_RenderCopy(renderer, textTexture, NULL, &currentTurn);
+    SDL_FreeSurface(surface);
+    SDL_DestroyTexture(textTexture);
     SDL_Rect textRect;
     for (int i = 0; i < 4; i++) {
         if (others[i * 2] == client_id) {
@@ -198,7 +207,8 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
                             textTexture = SDL_CreateTextureFromSurface(renderer, surface);
                             textRect = first;
                             textRect.y -= HEIGHT / 8;
-                            textRect.w *= 1.5;
+                            textRect.h *= 0.5;
+                            textRect.w *= 1.75;
                             SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
                             SDL_FreeSurface(surface);
                             SDL_DestroyTexture(textTexture);
@@ -213,7 +223,8 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
                             textTexture = SDL_CreateTextureFromSurface(renderer, surface);
                             textRect = second;
                             textRect.y += HEIGHT / 8;
-                            textRect.w *= 1.5;
+                            textRect.h *= 0.5;
+                            textRect.w *= 1.75;
                             SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
                             SDL_FreeSurface(surface);
                             SDL_DestroyTexture(textTexture);
@@ -228,7 +239,8 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
                             textTexture = SDL_CreateTextureFromSurface(renderer, surface);
                             textRect = third;
                             textRect.y -= HEIGHT / 8;
-                            textRect.w *= 1.5;
+                            textRect.h *= 0.5;
+                            textRect.w *= 1.75;
                             textRect.x -= WIDTH / 32;
                             SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
                             SDL_FreeSurface(surface);
