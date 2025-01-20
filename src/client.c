@@ -164,28 +164,20 @@ char *get_username() {
     return username;
 }
 
-void input_for_cserver(BaseClient *client, BaseClient *gclient) {
+void handleInputForCServer(BaseClient *client, BaseClient *gclient, int action) {
     if (client_state == IN_GSERVER) {
         return;
     }
 
-    printf("TYPE c TO CREATE AND JOIN A SERVER. TYPE j {n} WHERE n IS A VISIBLE SERVER ID TO JOIN A SERVER\n");
-    char input[256];
-    fgets(input, sizeof(input), stdin);
+    if (action == SERVER_LIST_EVENT_NOTHING) {
+        return;
+    }
 
-    char option = input[0];
-    switch (option) {
-
-    case 'c':
+    if (action == SERVER_LIST_EVENT_RESERVE) {
         NetEvent *reserve_event = net_event_new(RESERVE_GSERVER, nargs_reserve_gserver());
         insert_event(client->send_queue, reserve_event);
-        break;
-
-    case 'j':
-        int which_server;
-        sscanf(input, "j %d", &which_server);
-
-        GServerInfo *gserver_info = gservers[which_server];
+    } else {
+        GServerInfo *gserver_info = gservers[action];
         GServerStatus status = gserver_info->status;
 
         // Server must be in the waiting for players phase and not be full
@@ -194,11 +186,6 @@ void input_for_cserver(BaseClient *client, BaseClient *gclient) {
         } else {
             printf("YOU CAN'T JOIN THAT ONE!\n");
         }
-
-        break;
-
-    default:
-        break;
     }
 }
 
@@ -401,12 +388,14 @@ void client_main(void) {
             handle_cserver_net_event(cclient, gclient, event);
         }
 
-        if (cclient->client_id >= 0) {
-            input_for_cserver(cclient, gclient);
+        if (client_state == IN_CSERVER) {
+            renderServerList(renderer, gservers);
+            int action = handleServerListEvent();
+            handleInputForCServer(cclient, gclient, action);
         }
 
-        if (!client_is_connected(gclient)) {
-            renderServerList(renderer, gservers);
+        if (cclient->client_id >= 0) {
+            // input_for_cserver(cclient, gclient);
         }
 
         if (client_is_connected(gclient)) {
@@ -430,9 +419,6 @@ void client_main(void) {
                     shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                     data = shmat(shmid, 0, 0);
                     generate_cards(deck, num_cards, width, height);
-                    // window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
-                    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-                    // SDLInitText(textures, renderer);
                 }
                 modCoords(deck, num_cards);
                 render(renderer, textures, deck, num_cards, data->lastCard, others, gclient->client_id, unoCalled, gclient);

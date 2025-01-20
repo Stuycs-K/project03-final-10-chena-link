@@ -116,28 +116,36 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
     SDL_RenderPresent(renderer);
 }
 
-int handleServerListEvent(SDL_Event event) {
-    switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
-        SDL_Point clickPosition;
-        clickPosition.x = event.button.x;
-        clickPosition.y = event.button.y;
+int handleServerListEvent() {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_MOUSEBUTTONDOWN:
+            SDL_Point clickPosition;
+            clickPosition.x = event.button.x;
+            clickPosition.y = event.button.y;
 
-        for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-            GServerInfoPanel panel = gserverPanels[i];
-
-            if (panel.isEnabled == SDL_FALSE) {
-                continue;
+            if (SDL_PointInRect(&clickPosition, &reserveButton)) {
+                return SERVER_LIST_EVENT_RESERVE; // Reserve
             }
 
-            if (SDL_PointInRect(&clickPosition, &panel.joinButton)) {
-                printf("join %d\n", i);
-                return i; // We're joining this server
+            for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+                GServerInfoPanel panel = gserverPanels[i];
+
+                if (panel.isEnabled == SDL_FALSE) {
+                    continue;
+                }
+
+                if (SDL_PointInRect(&clickPosition, &panel.joinButton)) {
+                    printf("join %d\n", i);
+                    return i; // We're joining this server
+                }
             }
+            break;
+        default:
+            break;
         }
-        break;
-    default:
-        break;
     }
-    return -1;
+
+    return SERVER_LIST_EVENT_NOTHING;
 }
