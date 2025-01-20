@@ -191,6 +191,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         if (data->currentUno == client->client_id) {
             if (draw[0] != client->client_id) {
                 drawUno = 1;
+                data->currentUno = -1;
             }
         }
         unoCalled = 0;
