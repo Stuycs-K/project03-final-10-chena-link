@@ -216,16 +216,16 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
     case CARD_COUNT:
         printf("RECV CARD_COUNT FROM %d\n", client_id);
         int *arg = args;
-        for(int i = 0; i < 4; i ++){
-          if(this->all_clients[i] == client_id){
-            this->decks[i*2 + 1] = arg[0];
-          }
+        for (int i = 0; i < 4; i++) {
+            if (this->all_clients[i] == client_id) {
+                this->decks[i * 2 + 1] = arg[0];
+            }
         }
         CardCountArray *cardcounts = nargs_card_count_array();
         for (int i = 0; i < 8; i++) {
             cardcounts[i] = this->decks[i];
         }
-        if(arg[0] == 1){
+        if (arg[0] == 1) {
             this->data->currentUno = client_id;
             this->firstUNO = -1;
             int *nargs = nargs_uno();
@@ -266,12 +266,12 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
 
     case UNO:
         int *uno = args;
-        if(this->firstUNO == -1){
+        if (this->firstUNO == -1) {
             this->firstUNO = uno[0];
             int *nargs = nargs_drawCards();
             *nargs = client_id;
             NetEvent *drawCards = net_event_new(DRAWCARDS, nargs);
-            server_send_event_to(this->server,this->data->currentUno ,drawCards);
+            server_send_event_to(this->server, this->data->currentUno, drawCards);
         }
     default:
         break;
@@ -355,12 +355,12 @@ void gserver_loop(GServer *this) {
     // Newly connected clients
     FOREACH_CLIENT(server) {
         if (client->recently_connected) {
-            for(int i = 0; i < 4; i ++){
-              if(this->all_clients[i] == -1){
-                this->all_clients[i] = client_id;
-                this->decks[i*2] = client_id;
-                break;
-              }
+            for (int i = 0; i < 4; i++) {
+                if (this->all_clients[i] == -1) {
+                    this->all_clients[i] = client_id;
+                    this->decks[i * 2] = client_id;
+                    break;
+                }
             }
             int *nargs = nargs_shmid();
             *nargs = this->SERVERSHMID;
