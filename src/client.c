@@ -252,7 +252,7 @@ static void sighandler(int signo) {
     }
 }
 
-int actions(card *deck, BaseClient *gclient) {
+int actions(card *deck, BaseClient *gclient, int action) {
     if (drawUno == 1) {
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
@@ -261,8 +261,7 @@ int actions(card *deck, BaseClient *gclient) {
         drawUno = 0;
         return 2;
     }
-    SDL_Event e;
-    int action = EventPoll(e, deck, num_cards);
+
     if (action == -2) {
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
@@ -364,8 +363,11 @@ void client_main(void) {
                 modCoords(deck, num_cards);
                 render(renderer, textures, deck, num_cards, data->lastCard, others, gclient->client_id, unoCalled, gclient);
 
+                SDL_Event e;
+                int action = EventPoll(e, deck, num_cards);
+
                 if (data->client_id == gclient->client_id) {
-                    int input = actions(deck, gclient);
+                    int input = actions(deck, gclient, action);
                     if (input == 3) { // We disconnected from GServer
                         continue;
                     }

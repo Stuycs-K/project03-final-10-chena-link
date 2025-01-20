@@ -194,6 +194,21 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     this->info_changed = 1;
 }
 
+void set_next_player_to_go(GServer *this, int current_id) {
+    for (int i = 0; i < 4; i++) {
+        if (this->all_clients[i] == current_id) {
+            int next = (i + 1) % 4;
+            while (this->all_clients[next] == -1 && next != i) {
+                next = (next + 1) % 4;
+            }
+            if (this->all_clients[next] != -1) {
+                this->data->client_id = this->all_clients[next];
+            }
+            break;
+        }
+    }
+}
+
 /*
     Handles all client NetEvents (i.e. playing the game, starting the game)
 
@@ -243,6 +258,8 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             server_send_event_to_all(this->server, newEvent);
         }
 
+        // set_next_player_to_go(this, client_id);
+
         for (int i = 0; i < 4; i++) {
             if (this->all_clients[i] == client_id) {
                 int next = (i + 1) % 4;
@@ -255,6 +272,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
                 break;
             }
         }
+
         /*FOREACH_CLIENT(this->server){
             if(this->data->client_id != client_id){
                 this->data->client_id = client_id;
