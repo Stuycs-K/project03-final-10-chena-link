@@ -5,17 +5,8 @@
 
 #include "../client/baseclient.h"
 #include "../shared.h"
-#include "SDL.h"
 #include "sdlutil.h"
 #include "serverlistui.h"
-
-const int startX = 40;
-const int startY = 60;
-
-const int sizeX = WIDTH - 2 * startX;
-const int sizeY = 55;
-
-const int yPadding = 4;
 
 int serverNameFontSize = 15;
 int serverListLabelFontSize = 20;
@@ -45,6 +36,12 @@ void drawServerListLabel(SDL_Renderer *renderer) {
 }
 
 void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
+    const int startX = 40;
+    const int startY = 60;
+    const int sizeX = WIDTH - 2 * startX;
+    const int sizeY = 55;
+    const int yPadding = 4;
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 

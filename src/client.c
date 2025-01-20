@@ -14,6 +14,7 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "sdl/SDL.h"
+#include "sdl/gserverwaitui.h"
 #include "sdl/serverlistui.h"
 #include "shared.h"
 #include "util/file.h"
@@ -64,63 +65,10 @@ void connect_to_cserver(BaseClient *cclient) {
     client_state = IN_CSERVER;
 }
 
-void print_gserver_list(GServerInfoList *recv_gserver_list) {
-    // Don't print the server list if we're in a game server.
-    if (client_state == IN_GSERVER) {
-        return;
-    }
-
-    printf("======= Game Server List\n");
-
-    int reserved_server_count = 0;
-    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *info = recv_gserver_list[i];
-        if (info->status != GSS_UNRESERVED) {
-            reserved_server_count++;
-        }
-    }
-    printf("Available game servers: %d\n", reserved_server_count);
-
-    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *info = recv_gserver_list[i];
-
-        if (info->status == GSS_UNRESERVED) { // Don't display unreserved servers
-            continue;
-        }
-
-        char status[100];
-        switch (info->status) {
-
-        case GSS_RESERVED:
-            strcpy(status, "RESERVED");
-            break;
-
-        case GSS_WAITING_FOR_PLAYERS:
-            strcpy(status, "WAITING FOR PLAYERS");
-            break;
-
-        case GSS_GAME_IN_PROGRESS:
-            strcpy(status, "GAME IN PROGRESS");
-            break;
-
-        default:
-            break;
-        }
-
-        printf("[%d] %s: %d / %d (%s)\n", info->id, info->name, info->current_clients, info->max_clients, status);
-    }
-    printf("========================\n");
-}
-
 void handle_cserver_net_event(BaseClient *cclient, BaseClient *gclient, NetEvent *event) {
     void *args = event->args;
 
     switch (event->protocol) {
-
-    case GSERVER_LIST: { // Print server list
-        print_gserver_list(args);
-        break;
-    }
 
     case RESERVE_GSERVER: { // The CServer has given us the GServer to join
         ReserveGServer *nargs = args;
@@ -257,6 +205,7 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         break;
 
     case GSERVER_CONFIG: // We're the host!
+        // return;
         GServerConfig *config = args;
 
         GServerConfig *new_config = nargs_gserver_config();
@@ -362,8 +311,6 @@ void client_main(void) {
 
     BaseClient *gclient = client_new(username);
 
-    // fcntl(STDIN_FILENO, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
-
     // Set up the networked server list
     gservers = nargs_gserver_info_list();
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
@@ -373,7 +320,6 @@ void client_main(void) {
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDLInitText(textures, renderer);
 
-    // Game stuff (should be in a separate function)
     srand(getpid());
 
     while (1) {
@@ -388,14 +334,10 @@ void client_main(void) {
             handle_cserver_net_event(cclient, gclient, event);
         }
 
-        if (client_state == IN_CSERVER) {
+        if (client_state == IN_CSERVER && cclient->client_id >= 0) {
             renderServerList(renderer, gservers);
             int action = handleServerListEvent();
             handleInputForCServer(cclient, gclient, action);
-        }
-
-        if (cclient->client_id >= 0) {
-            // input_for_cserver(cclient, gclient);
         }
 
         if (client_is_connected(gclient)) {
@@ -440,6 +382,9 @@ void client_main(void) {
                         }
                     }
                 }
+            } else if (gservers[connected_gserver_id]->status == GSS_WAITING_FOR_PLAYERS) {
+                printf("render \n");
+                renderGServerWait(renderer, gservers[connected_gserver_id], gclient);
             }
 
             client_send_to_server(gclient);
