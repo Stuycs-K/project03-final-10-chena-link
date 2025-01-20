@@ -245,11 +245,10 @@ void handleInputForGServerWait(GServerInfo *serverInfo, BaseClient *gclient, int
 
 static void sighandler(int signo) {
     if (signo == SIGINT) {
-        printf("SIGINT received\n");
         TTF_Quit();
         SDL_Quit();
         printf("EXIT\n");
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 }
 
@@ -326,7 +325,7 @@ void client_main(void) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
         if (!client_is_connected(cclient)) {
-            exit(EXIT_SUCCESS);
+            sighandler(SIGINT);
         }
 
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
