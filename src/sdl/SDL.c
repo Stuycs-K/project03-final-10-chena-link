@@ -12,6 +12,7 @@
 #define BLUE 9, 86, 191
 #define GREEN 55, 151, 17
 #define YELLOW 236, 212, 7
+#define WHITE 255, 255, 255
 
 #define width 800
 #define height 800
@@ -19,10 +20,56 @@
 SDL_Rect draw = {240, height / 2 - height / 16, width / 15, height / 8};
 SDL_Rect statecard = {width / 2 - width / 30, height / 2 - height / 16, width / 15, height / 8};
 SDL_Rect statenum = {width / 2 - width / 120, height / 2 - height / 64, width / 60, height / 32};
+
 SDL_Rect first = {40, height / 2 - height / 16, width / 16, height / 8};
 SDL_Rect second = {width / 2 - width / 32, 40, width / 16, height / 8};
 SDL_Rect third = {width - 40 - width / 16, height / 2 - height / 16, width / 16, height / 8};
+
+// Now this is ugly
+SDL_Rect otherPlayerRectList[3] = {
+    {40, height / 2 - height / 16, width / 16, height / 8},                       // First (left)
+    {width / 2 - width / 32, 40, width / 16, height / 8},                         // Second (above)
+    {width - 40 - width / 16, height / 2 - height / 16, width / 16, height / 8}}; // Third (right)
+
 SDL_Rect Uno = {3 * width / 4, 3 * height / 4, width / 6, height / 8};
+
+// Util
+void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Rect *rect, SDL_Color *color) {
+    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
+    if (!font) {
+        printf("Error loading font: %s\n", TTF_GetError());
+        return;
+    }
+
+    SDL_Surface *textSurface = NULL;
+
+    if (color == NULL) { // Default color is white
+        SDL_Color textColor = {WHITE};
+        textSurface = TTF_RenderText_Solid(font, text, textColor);
+    } else {
+        textSurface = TTF_RenderText_Solid(font, text, *color);
+    }
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, textSurface);
+
+    SDL_RenderCopy(renderer, texture, NULL, rect);
+
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(texture);
+
+    TTF_CloseFont(font);
+}
+
+void renderPlayerNameLabel(SDL_Renderer *renderer, char *name, int xCenter, int yCenter, SDL_Color *color) {
+    int w = 120;
+    int h = 35;
+
+    int x = xCenter - w / 2;
+    int y = yCenter - h / 2;
+
+    SDL_Rect nameRect = {x, y, w, h};
+    renderTextLabel(renderer, name, &nameRect, NULL);
+}
 
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
@@ -150,7 +197,8 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
         return;
     }
 
-    // Usernames
+    renderPlayerNameLabel(renderer, gclient->name, width * 0.5, 0.8 * height, NULL);
+    /*
     ClientInfoNode *node = gclient->client_info_list;
     while (node != NULL) {
         int current_client_id = node->id;
@@ -162,7 +210,9 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
 
             printf("Rendering username: %s\n", node->name);
 
-            struct SDL_Color color = {RED};
+            SDL_Color color = {RED};
+
+            renderTextLabel(renderer, node->name, NULL, &color);
 
             SDL_Surface *surface = TTF_RenderText_Solid(font, node->name, color);
             SDL_Texture *username = SDL_CreateTextureFromSurface(renderer, surface);
@@ -174,24 +224,19 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
 
         node = node->next;
     }
+    */
 
     SDL_Surface *surface;
     SDL_Color color = {255, 255, 255, 255};
     for (int i = 0; i < 4; i++) {
         if (others[i * 2] == client_id) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
             for (int offset = 1; offset <= 3; offset++) {
                 int a = (i - offset + 4) % 4;
-                if (offset == 1) {
-                    SDL_RenderFillRect(renderer, &first);
-                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &first);
-                } else if (offset == 2) {
-                    SDL_RenderFillRect(renderer, &second);
-                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &second);
-                } else if (offset == 3) {
-                    SDL_RenderFillRect(renderer, &third);
-                    SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &third);
-                }
+
+                SDL_RenderFillRect(renderer, &otherPlayerRectList[offset - 1]);
+                SDL_RenderCopy(renderer, textures[others[a * 2 + 1]], NULL, &otherPlayerRectList[offset - 1]);
             }
         }
     }

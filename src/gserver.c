@@ -287,8 +287,8 @@ void get_host_client_id(GServer *this) {
 
     Server *server = this->server;
     FOREACH_CLIENT(server) {
-        // Our host disconnected
-        if (client->recently_disconnected && this->host_client_id == client->id) {
+        // Our host disconnected while we're in the waiting phase. We must assign a new host to start the game
+        if (client->recently_disconnected && this->host_client_id == client->id && this->status == GSS_WAITING_FOR_PLAYERS) {
 
             if (this->server->current_clients == 0) { // No point. The server should be shutting down.
                 this->host_client_id = -1;
@@ -349,7 +349,8 @@ void gserver_loop(GServer *this) {
     get_host_client_id(this);
     check_update_gserver_info(this);
 
-    if (this->status == GSS_WAITING_FOR_PLAYERS) {
+    int current_clients = server->current_clients;
+    if (current_clients == 1) {
     }
 
     // Newly connected clients
@@ -376,7 +377,7 @@ void gserver_loop(GServer *this) {
     }
     END_FOREACH_CLIENT()
 
-    FOREACH_CLIENT(server) {
+    FOREACH_CLIENT(server) { // Each player's events
         NetEventQueue *queue = client->recv_queue;
         for (int i = 0; i < queue->event_count; ++i) {
             gserver_handle_net_event(this, client_id, queue->events[i]);
