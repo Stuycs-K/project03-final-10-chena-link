@@ -105,3 +105,8 @@ Moved SDL functions to different file. Done in class.
 ### 2024-01-18 - Added SDL for cards
 Loads card colors and numbers onto screen.
 Client doesn't quit despite receiving sigint. 3 hours
+
+### 2024-01-18 - Added mouse input
+Game uses mouse input
+Added sighandler and disconnect
+Displays other players' card counts 5 hours
