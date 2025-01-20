@@ -8,6 +8,7 @@
 #include "../game.h"
 #include "../shared.h"
 #include "SDL.h"
+#include "sdlutil.h"
 
 SDL_Rect draw = {240, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
 SDL_Rect statecard = {WIDTH / 2 - WIDTH / 30, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
@@ -25,7 +26,7 @@ SDL_Rect otherPlayerRectList[3] = {
 
 SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
-// Util
+/*
 void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPosition, SDL_Color *color, int *fontSize) {
     TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", (fontSize == NULL ? 18 : *fontSize));
     if (!font) {
@@ -57,29 +58,7 @@ void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPositi
 
     TTF_CloseFont(font);
 }
-
-void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
-    int startX = 40;
-    int startY = HEIGHT - 40;
-
-    int sizeX = WIDTH - 2 * startX;
-    int sizeY = 60;
-
-    int currentY = startY;
-
-    for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfo *currentInfo = serverList[i];
-
-        int shouldRender = (currentInfo->status != GSS_UNRESERVED || currentInfo->status != GSS_SHUTTING_DOWN);
-        if (!shouldRender) {
-            continue;
-        }
-
-        SDL_Rect serverInfoContainer;
-        serverInfoContainer.w = sizeX;
-        serverInfoContainer.y = sizeY;
-    }
-}
+*/
 
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
@@ -210,7 +189,7 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, card state
     SDL_Point usernamePosition;
     usernamePosition.x = WIDTH * 0.5;
     usernamePosition.y = HEIGHT * 0.8;
-    renderTextLabel(renderer, gclient->name, &usernamePosition, NULL, NULL);
+    renderTextLabel(renderer, gclient->name, &usernamePosition, X_CENTER | Y_CENTER, NULL, NULL);
     /*
     ClientInfoNode *node = gclient->client_info_list;
     while (node != NULL) {

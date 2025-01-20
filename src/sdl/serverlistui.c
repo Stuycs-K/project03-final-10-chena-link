@@ -58,11 +58,10 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
         joinButton.x = startX + 400;
         joinButton.y = mainPanel.h + mainPanel.y / 2; // Centered
 
-        GServerInfoPanel panel;
+        GServerInfoPanel panel = gserverPanels[i];
         panel.mainPanel = mainPanel;
         panel.joinButton = joinButton;
-
-        gserverPanels[i] = panel;
+        panel.isEnabled = SDL_TRUE;
     }
 
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
@@ -70,10 +69,20 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
         if (panel.isEnabled == SDL_FALSE) { // Don't render
             continue;
         }
+
+        // First, the main panel
+        SDL_SetRenderDrawColor(renderer, RED, 255);
+        SDL_RenderFillRect(renderer, &panel.mainPanel);
     }
 
     SDL_RenderPresent(renderer);
 }
 
-void pollServerListButtons(SDL_Event) {
+void handleServerListEvent(SDL_Event event) {
+    switch (event.type) {
+    case SDL_MOUSEBUTTONDOWN:
+        break;
+    default:
+        break;
+    }
 }
