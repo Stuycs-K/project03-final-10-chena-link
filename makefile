@@ -10,8 +10,8 @@ SRCS := $(shell find . -name "*.c")
 # Replace .c file paths by replacing .c with .o and ./src with ./obj
 OBJS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SRCS))
 
-INCLUDE_DIRS := /usr/include/SDL2 /usr/include/SDL2/SDL_ttf
-LIBRARIES := SDL2 SDL2_ttf
+INCLUDE_DIRS := /usr/include/SDL2 /usr/include/SDL2/SDL_ttf /usr/include/SDL2/SDL_image
+LIBRARIES := SDL2 SDL2_ttf SDL2_image
 
 LDLIBS := -lm
 LDLIBS += $(foreach library, $(LIBRARIES), -l$(library))

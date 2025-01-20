@@ -14,6 +14,7 @@ typedef struct gameState gameState;
 struct gameState{
   int client_id;
   card lastCard;
+  int currentUno;
 };
 //Makes a new random card
 card generate_card();

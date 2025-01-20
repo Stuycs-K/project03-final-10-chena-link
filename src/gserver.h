@@ -25,6 +25,7 @@ struct GServer {
     gameState *data;
     int decks[8];
     int all_clients[4];
+    int firstUNO;
 
     Server *server; // Internal Server object
 };

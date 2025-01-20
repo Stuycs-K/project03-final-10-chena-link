@@ -180,6 +180,8 @@ enum NetProtocol {
     CARD_COUNT,
     SHMID,
     GAME_OVER,
+    UNO,
+    DRAWCARDS,
     HANDSHAKE,
     CLIENT_LIST,
     GSERVER_INFO,

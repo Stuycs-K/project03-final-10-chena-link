@@ -305,3 +305,30 @@ END_HANDLER()
 DECLARE_DESTRUCTOR(int, gameover) {
 }
 END_DESTRUCTOR()
+
+//INIATE UNO
+DECLARE_CONSTRUCTOR(int, uno) {
+    nargs = malloc(sizeof(int));
+    *nargs = 0;
+}
+END_CONSTRUCTOR()
+DECLARE_HANDLER(int, uno) {
+    VALUE(*nargs);
+}
+END_HANDLER()
+DECLARE_DESTRUCTOR(int, uno) {
+}
+END_DESTRUCTOR()
+//DRAW UNO CARDS WHEN YOU FAIL
+DECLARE_CONSTRUCTOR(int, drawCards) {
+    nargs = malloc(sizeof(int));
+    *nargs = 0;
+}
+END_CONSTRUCTOR()
+DECLARE_HANDLER(int, drawCards) {
+    VALUE(*nargs);
+}
+END_HANDLER()
+DECLARE_DESTRUCTOR(int, drawCards) {
+}
+END_DESTRUCTOR()

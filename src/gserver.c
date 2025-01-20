@@ -136,6 +136,7 @@ GServer *gserver_new(int id) {
     for (int a = 0; a < 4; a++) {
         this->all_clients[a] = -1;
     }
+    this->firstUNO = -1;
 
     update_gserver_info(this);
 
@@ -224,7 +225,14 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         for (int i = 0; i < 8; i++) {
             cardcounts[i] = this->decks[i];
         }
-
+        if(arg[0] == 1){
+            this->data->currentUno = client_id;
+            this->firstUNO = -1;
+            int *nargs = nargs_uno();
+            *nargs = client_id;
+            NetEvent *uno = net_event_new(UNO, nargs);
+            server_send_event_to_all(this->server, uno);
+        }
         if (arg[0] == 0) {
             int *nargs = nargs_gameover();
             *nargs = client_id;
@@ -256,6 +264,15 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         END_FOREACH_CLIENT()*/
         break;
 
+    case UNO:
+        int *uno = args;
+        if(this->firstUNO == -1){
+            this->firstUNO = uno[0];
+            int *nargs = nargs_drawCards();
+            *nargs = client_id;
+            NetEvent *drawCards = net_event_new(DRAWCARDS, nargs);
+            server_send_event_to(this->server,this->data->currentUno ,drawCards);
+        }
     default:
         break;
     }

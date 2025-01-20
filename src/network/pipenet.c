@@ -35,6 +35,8 @@ void net_init() {
     BIND(SHMID, shmid);
     BIND(GSERVER_CONFIG, gserver_config);
     BIND(GAME_OVER, gameover);
+    BIND(UNO,uno);
+    BIND(DRAWCARDS,drawCards);
 }
 
 /*

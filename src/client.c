@@ -35,13 +35,14 @@ int width = 800;
 int height = 800;
 SDL_Window *window;
 SDL_Renderer *renderer;
-SDL_Event e;
-SDL_Texture * textures[10];
+SDL_Texture * textures[100];
 int num_cards = 7;
 gameState *data;
 int others[8] = {7,7,7,7,7,7,7,7};
 int shmid = 0;
 card deck[100];
+int unoCalled = 0;
+int drawUno = 0;
 
 void connect_to_gserver(BaseClient *gclient, GServerInfo *server_info) {
     int connected_to_gserver = client_connect(gclient, server_info->wkp_name);
@@ -244,6 +245,23 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         SERVERSHMID = *shmid;
         break;
 
+    case UNO:
+        int *uno = args;
+        printf("%d has uno.\n",uno[0]);
+        unoCalled = 1;
+        break;
+
+    case DRAWCARDS:
+        int *draw = args;
+        printf("%d called uno.\n",draw[0]);
+        if(data->currentUno == client->client_id){
+            if(draw[0] != client->client_id){
+                drawUno = 1;
+            }
+        }
+        unoCalled = 0;
+        break;
+
     case GAME_OVER:
         int *winner = args;
         printf("client %d has won\n", winner[0]);
@@ -302,6 +320,15 @@ static void sighandler(int signo){
 }
 
 int actions(card * deck,BaseClient *gclient){
+    if(drawUno == 1){
+        deck[num_cards] = add_card(deck,num_cards,width,height);
+        num_cards++;
+        deck[num_cards] = add_card(deck,num_cards,width,height);
+        num_cards++;
+        drawUno = 0;
+        return 2;
+    }
+    SDL_Event e;
     int action = EventPoll(e,deck,num_cards);
     if(action == -2){
         deck[num_cards] = add_card(deck,num_cards,width,height);
@@ -312,6 +339,9 @@ int actions(card * deck,BaseClient *gclient){
         disconnectSDL(gclient);
         printf("disconnected from game\n");
         return 3;
+    }
+    if(action == -4){
+        return -4;
     }
     card picked = deck[action];
     if(action != -1){
@@ -349,6 +379,7 @@ void client_main(void) {
     srand(getpid());
 
     SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+    printf("LOADING ... \n");
     SDLInit();
 
     signal(SIGINT,sighandler);
@@ -391,14 +422,23 @@ void client_main(void) {
                 SDLInitText(textures, renderer);
             }
             modCoords(deck,num_cards);
-            render(renderer, textures, deck, num_cards,data->lastCard,others,gclient->client_id);
+            render(renderer, textures, deck, num_cards,data->lastCard,others,gclient->client_id,unoCalled,gclient);
             if (data->client_id == gclient->client_id && gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
-                printf("gamestate card:%d gamestate color: %d gamestate turn:%d\n", data->lastCard.num, data->lastCard.color, data->client_id);
-                for (int i = 0; i < num_cards; i++) {
-                    printf("%d: color: %d num: %d\n", i, deck[i].color, deck[i].num);
-                }
-                e = (SDL_Event){0};
-                while(actions(deck,gclient) == 0){
+                int input = actions(deck,gclient);
+                if(input != 0){
+                    if(input == -4){
+                        int *unoEvent = nargs_uno();
+                        *unoEvent = gclient->client_id;
+                        NetEvent *uno = net_event_new(UNO, unoEvent);
+                        client_send_event(gclient, uno);
+                        unoCalled = 0;
+                    }
+                    else{
+                        CardCountArray *cardcounts = nargs_card_count_array();
+                        cardcounts[0] = num_cards;
+                        NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
+                        client_send_event(gclient, card_counts);
+                    }
                 }
                 /*if (input[0] == 'l') {
                     deck[num_cards] = generate_card();
@@ -417,10 +457,6 @@ void client_main(void) {
                         num_cards--;
                     }
                 }*/
-                CardCountArray *cardcounts = nargs_card_count_array();
-                cardcounts[0] = num_cards;
-                NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);
-                client_send_event(gclient, card_counts);
             }
 
             client_send_to_server(gclient);
