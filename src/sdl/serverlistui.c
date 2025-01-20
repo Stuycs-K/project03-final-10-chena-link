@@ -10,14 +10,15 @@
 #include "serverlistui.h"
 
 const int startX = 40;
-const int startY = 40;
+const int startY = 60;
 
 const int sizeX = WIDTH - 2 * startX;
-const int sizeY = 60;
+const int sizeY = 55;
 
 const int yPadding = 4;
 
 int serverNameFontSize = 15;
+int serverListLabelFontSize = 20;
 
 typedef struct GServerInfoPanel GServerInfoPanel;
 struct GServerInfoPanel {
@@ -27,7 +28,21 @@ struct GServerInfoPanel {
 };
 
 GServerInfoPanel gserverPanels[MAX_CSERVER_GSERVERS];
-SDL_Rect reserveButton = {WIDTH / 2, HEIGHT / 2, 100, 100};
+
+SDL_Rect reserveButton = {WIDTH - 120, 5, 110, 40}; // Top right
+
+void drawReserveButton(SDL_Renderer *renderer) {
+    SDL_SetRenderDrawColor(renderer, BLUE, 255);
+    SDL_RenderFillRect(renderer, &reserveButton);
+
+    SDL_Point buttonPosition = {reserveButton.x, reserveButton.y};
+    renderTextLabel(renderer, "CREATE LOBBY", &buttonPosition, X_LEFT | Y_TOP, NULL, &serverNameFontSize);
+}
+
+void drawServerListLabel(SDL_Renderer *renderer) {
+    SDL_Point position = {0, 5};
+    renderTextLabel(renderer, "Server List", &position, X_LEFT | Y_TOP, NULL, &serverListLabelFontSize);
+}
 
 void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -36,7 +51,9 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
         gserverPanels[i].isEnabled = SDL_FALSE;
     }
-    printf("to dust i guess\n");
+
+    drawReserveButton(renderer);
+    drawServerListLabel(renderer);
 
     int currentY = startY;
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
@@ -59,7 +76,7 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
         joinButton.w = mainPanel.w / 8;
         joinButton.h = 0.8 * mainPanel.h;
 
-        joinButton.x = startX + 500;
+        joinButton.x = WIDTH - joinButton.w - 50;
         joinButton.y = mainPanel.y;
 
         gserverPanels[i].mainPanel = mainPanel;
