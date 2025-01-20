@@ -14,6 +14,7 @@
 #include "network/pipenet.h"
 #include "network/pipenetevents.h"
 #include "sdl/SDL.h"
+#include "sdl/serverlistui.h"
 #include "shared.h"
 #include "util/file.h"
 
@@ -381,12 +382,20 @@ void client_main(void) {
     NetEvent *info_list_event = net_event_new(GSERVER_LIST, gservers);
     attach_event(cclient->recv_queue, info_list_event);
 
+    window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDLInitText(textures, renderer);
+
     // Game stuff (should be in a separate function)
     srand(getpid());
 
     while (1) {
         // 1) Receive NetEvents from CServer
         client_recv_from_server(cclient);
+        if (!client_is_connected(cclient)) {
+            exit(EXIT_SUCCESS);
+        }
+
         for (int i = 0; i < cclient->recv_queue->event_count; ++i) {
             NetEvent *event = cclient->recv_queue->events[i];
             handle_cserver_net_event(cclient, gclient, event);
@@ -394,6 +403,10 @@ void client_main(void) {
 
         if (cclient->client_id >= 0) {
             input_for_cserver(cclient, gclient);
+        }
+
+        if (!client_is_connected(gclient)) {
+            renderServerList(renderer, gservers);
         }
 
         if (client_is_connected(gclient)) {
@@ -417,9 +430,9 @@ void client_main(void) {
                     shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                     data = shmat(shmid, 0, 0);
                     generate_cards(deck, num_cards, width, height);
-                    window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
-                    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-                    SDLInitText(textures, renderer);
+                    // window = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
+                    // renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+                    // SDLInitText(textures, renderer);
                 }
                 modCoords(deck, num_cards);
                 render(renderer, textures, deck, num_cards, data->lastCard, others, gclient->client_id, unoCalled, gclient);

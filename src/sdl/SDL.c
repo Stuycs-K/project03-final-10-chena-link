@@ -26,40 +26,6 @@ SDL_Rect otherPlayerRectList[3] = {
 
 SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
-/*
-void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *centerPosition, SDL_Color *color, int *fontSize) {
-    TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", (fontSize == NULL ? 18 : *fontSize));
-    if (!font) {
-        printf("Error loading font: %s\n", TTF_GetError());
-        return;
-    }
-
-    SDL_Surface *textSurface = NULL;
-
-    if (color == NULL) { // Default color is white
-        SDL_Color textColor = {WHITE};
-        textSurface = TTF_RenderText_Solid(font, text, textColor);
-    } else {
-        textSurface = TTF_RenderText_Solid(font, text, *color);
-    }
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, textSurface);
-
-    SDL_Rect destinationRect;
-    destinationRect.w = textSurface->w;
-    destinationRect.h = textSurface->h;
-    destinationRect.x = centerPosition->x - destinationRect.w / 2;
-    destinationRect.y = centerPosition->y - destinationRect.h / 2;
-
-    SDL_RenderCopy(renderer, texture, NULL, &destinationRect);
-
-    SDL_FreeSurface(textSurface);
-    SDL_DestroyTexture(texture);
-
-    TTF_CloseFont(font);
-}
-*/
-
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, card state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
