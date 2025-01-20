@@ -27,6 +27,7 @@ struct GServerInfoPanel {
 };
 
 GServerInfoPanel gserverPanels[MAX_CSERVER_GSERVERS];
+SDL_Rect reserveButton = {WIDTH / 2, HEIGHT / 2, 100, 100};
 
 void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -58,42 +59,40 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
         joinButton.w = mainPanel.w / 8;
         joinButton.h = 0.8 * mainPanel.h;
 
-        joinButton.x = startX + 400;
-        joinButton.y = mainPanel.h + mainPanel.y / 2; // Centered
+        joinButton.x = startX + 500;
+        joinButton.y = mainPanel.y;
 
-        GServerInfoPanel panel = gserverPanels[i];
-        panel.mainPanel = mainPanel;
-        panel.joinButton = joinButton;
-        panel.isEnabled = SDL_TRUE;
+        gserverPanels[i].mainPanel = mainPanel;
+        gserverPanels[i].joinButton = joinButton;
+        gserverPanels[i].isEnabled = SDL_TRUE;
     }
 
     for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
-        GServerInfoPanel panel;
         GServerInfo *currentInfo = serverList[i];
 
-        if (panel.isEnabled == SDL_FALSE) { // Don't render
+        if (gserverPanels[i].isEnabled == SDL_FALSE) { // Don't render
             continue;
         }
 
         // First, the main panel
         SDL_SetRenderDrawColor(renderer, RED, 255);
-        SDL_RenderFillRect(renderer, &panel.mainPanel);
+        SDL_RenderFillRect(renderer, &gserverPanels[i].mainPanel);
 
         // Server name
-        SDL_Point namePosition = {panel.mainPanel.x, panel.mainPanel.y};
+        SDL_Point namePosition = {gserverPanels[i].mainPanel.x, gserverPanels[i].mainPanel.y};
         renderTextLabel(renderer, currentInfo->name, &namePosition, X_LEFT | Y_TOP, NULL, &serverNameFontSize);
 
         // Player status
         char playerStatus[32];
         snprintf(playerStatus, sizeof(playerStatus), "%d / %d", currentInfo->current_clients, currentInfo->max_clients);
 
-        SDL_Point playersPosition = {panel.mainPanel.x, panel.mainPanel.y};
+        SDL_Point playersPosition = {gserverPanels[i].mainPanel.x, gserverPanels[i].mainPanel.y};
         renderTextLabel(renderer, playerStatus, &playersPosition, X_RIGHT | Y_BOTTOM, NULL, &serverNameFontSize);
 
         SDL_SetRenderDrawColor(renderer, GREEN, 255);
-        SDL_RenderFillRect(renderer, &panel.joinButton);
+        SDL_RenderFillRect(renderer, &gserverPanels[i].joinButton);
 
-        SDL_Point joinLabelPosition = {panel.joinButton.x, panel.joinButton.y};
+        SDL_Point joinLabelPosition = {gserverPanels[i].joinButton.x + gserverPanels[i].joinButton.w / 2, gserverPanels[i].joinButton.y + gserverPanels[i].joinButton.h / 2};
         renderTextLabel(renderer, "Join", &joinLabelPosition, X_CENTER | Y_CENTER, NULL, &serverNameFontSize);
     }
 
@@ -103,8 +102,25 @@ void renderServerList(SDL_Renderer *renderer, GServerInfoList *serverList) {
 int handleServerListEvent(SDL_Event event) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
+        SDL_Point clickPosition;
+        clickPosition.x = event.button.x;
+        clickPosition.y = event.button.y;
+
+        for (int i = 0; i < MAX_CSERVER_GSERVERS; ++i) {
+            GServerInfoPanel panel = gserverPanels[i];
+
+            if (panel.isEnabled == SDL_FALSE) {
+                continue;
+            }
+
+            if (SDL_PointInRect(&clickPosition, &panel.joinButton)) {
+                printf("join %d\n", i);
+                return i; // We're joining this server
+            }
+        }
         break;
     default:
         break;
     }
+    return -1;
 }

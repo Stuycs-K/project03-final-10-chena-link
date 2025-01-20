@@ -34,7 +34,7 @@ void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *position, in
     } else if (positionRelativeTo & X_CENTER) {
         destinationRect.x = position->x - destinationRect.w / 2;
     } else if (positionRelativeTo & X_RIGHT) {
-        destinationRect.x = position->x - destinationRect.w;
+        destinationRect.x = position->x + destinationRect.w;
     }
 
     if (positionRelativeTo & Y_TOP) {
@@ -42,7 +42,7 @@ void renderTextLabel(SDL_Renderer *renderer, char *text, SDL_Point *position, in
     } else if (positionRelativeTo & Y_CENTER) {
         destinationRect.y = position->y - destinationRect.h / 2;
     } else if (positionRelativeTo & Y_BOTTOM) {
-        destinationRect.y = position->y - destinationRect.h;
+        destinationRect.y = position->y + destinationRect.h;
     }
 
     SDL_RenderCopy(renderer, texture, NULL, &destinationRect);
