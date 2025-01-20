@@ -181,13 +181,13 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case UNO:
         int *uno = args;
-        printf("%d has uno.\n", uno[0]);
+        // printf("%d has uno.\n", uno[0]);
         unoCalled = 1;
         break;
 
     case DRAWCARDS:
         int *draw = args;
-        printf("%d called uno.\n", draw[0]);
+        // printf("%d called uno.\n", draw[0]);
         if (data->currentUno == client->client_id) {
             if (draw[0] != client->client_id) {
                 drawUno = 1;
@@ -199,7 +199,10 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
 
     case GAME_OVER:
         int *winner = args;
-        printf("client %d has won\n", winner[0]);
+        printf("CLIENT %d HAS WON\n", winner[0]);
+        if (*winner == client->client_id) {
+            printf("THAT'S YOU! CONGRATULATIONS, UNO CHAMPION!!!\n");
+        }
         disconnectSDL(client);
         break;
 
@@ -370,7 +373,6 @@ void client_main(void) {
                     *unoEvent = gclient->client_id;
                     NetEvent *uno = net_event_new(UNO, unoEvent);
                     client_send_event(gclient, uno);
-                    printf("WE CALLED UNO!\n");
                     unoCalled = 0;
                 }
 
@@ -378,15 +380,6 @@ void client_main(void) {
                     int input = actions(deck, gclient, action);
 
                     if (input != 0) {
-                        /*
-                            if (input == -4) {
-                            int *unoEvent = nargs_uno();
-                            *unoEvent = gclient->client_id;
-                            NetEvent *uno = net_event_new(UNO, unoEvent);
-                            client_send_event(gclient, uno);
-                            unoCalled = 0;
-                        } else {
-                        */
                         CardCountArray *cardcounts = nargs_card_count_array();
                         cardcounts[0] = num_cards;
                         NetEvent *card_counts = net_event_new(CARD_COUNT, cardcounts);

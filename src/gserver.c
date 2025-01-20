@@ -194,19 +194,16 @@ void recv_gserver_config(GServer *this, int client_id, NetEvent *event) {
     this->info_changed = 1;
 }
 
-void set_next_player_to_go(GServer *this, int current_id) {
-    for (int i = 0; i < 4; i++) {
-        if (this->all_clients[i] == current_id) {
-            int next = (i + 1) % 4;
-            while (this->all_clients[next] == -1 && next != i) {
-                next = (next + 1) % 4;
-            }
-            if (this->all_clients[next] != -1) {
-                this->data->client_id = this->all_clients[next];
-            }
-            break;
-        }
-    }
+void send_winner_event(GServer *this, int client_id) {
+    int *nargs = nargs_gameover();
+    *nargs = client_id;
+    NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
+    server_send_event_to_all(this->server, winnerClient);
+
+    this->status = GSS_SHUTTING_DOWN;
+    this->server->current_clients = 0;
+    update_gserver_info(this);
+    this->info_changed = 1;
 }
 
 /*
@@ -249,16 +246,11 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             server_send_event_to_all(this->server, uno);
         }
         if (arg[0] == 0) {
-            int *nargs = nargs_gameover();
-            *nargs = client_id;
-            NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
-            server_send_event_to_all(this->server, winnerClient);
+            send_winner_event(this, client_id);
         } else {
             NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
             server_send_event_to_all(this->server, newEvent);
         }
-
-        // set_next_player_to_go(this, client_id);
 
         for (int i = 0; i < 4; i++) {
             if (this->all_clients[i] == client_id) {
@@ -272,14 +264,6 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
                 break;
             }
         }
-
-        /*FOREACH_CLIENT(this->server){
-            if(this->data->client_id != client_id){
-                this->data->client_id = client_id;
-                break;
-            }
-        }
-        END_FOREACH_CLIENT()*/
         break;
 
     case UNO:
@@ -376,22 +360,21 @@ void gserver_loop(GServer *this) {
     get_host_client_id(this);
     check_update_gserver_info(this);
 
-    // 1 player remaining and we're still in the game, so whoever is last standing wins
     int current_clients = server->current_clients;
-    if (current_clients == 1 && this->status == GSS_GAME_IN_PROGRESS) {
-        int *nargs = nargs_gameover();
 
+    // 1 player remaining and we're still in the game, so whoever is last standing wins
+    if (current_clients == 1 && this->status == GSS_GAME_IN_PROGRESS) {
+        int remainingId = -1;
         FOREACH_CLIENT(server) {
             if (client->recently_disconnected) {
                 continue;
             }
-            *nargs = client_id;
+            remainingId = client_id;
             break;
         }
         END_FOREACH_CLIENT()
 
-        NetEvent *winnerClient = net_event_new(GAME_OVER, nargs);
-        server_send_event_to_all(this->server, winnerClient);
+        send_winner_event(this, remainingId);
     }
 
     // Newly connected clients
@@ -429,9 +412,6 @@ void gserver_loop(GServer *this) {
         }
     }
     END_FOREACH_CLIENT()
-
-    // Last
-    send_to_cserver(this);
 }
 
 static void handle_sigint(int signo) {
@@ -477,15 +457,8 @@ void gserver_run(GServer *this) {
 
         gserver_loop(this);
 
-        /* SERVER SHUTDOWN TEST
-        counter++;
-        printf("%d\n", counter);
-        if (counter == 30) { //
-            gserver_shutdown(this);
-        }
-        */
-
         server_send_events(server);
+        send_to_cserver(this);
         usleep(TICK_TIME_MICROSECONDS);
     }
 }

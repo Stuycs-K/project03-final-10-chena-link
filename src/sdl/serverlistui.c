@@ -156,7 +156,6 @@ int handleServerListEvent() {
                 }
 
                 if (SDL_PointInRect(&clickPosition, &panel.joinButton)) {
-                    printf("join %d\n", i);
                     return i; // We're joining this server
                 }
             }

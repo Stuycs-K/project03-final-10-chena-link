@@ -20,7 +20,7 @@ SDL_Rect third = {WIDTH - 40 - WIDTH / 16, HEIGHT / 2 - HEIGHT / 16, WIDTH / 16,
 
 SDL_Rect leaveButton = {WIDTH - 125, 20, 120, 40};
 
-SDL_Rect currentTurn = {WIDTH/2-WIDTH/12,HEIGHT/4,WIDTH/5,HEIGHT/15};
+SDL_Rect currentTurn = {WIDTH / 2 - WIDTH / 12, HEIGHT / 4, WIDTH / 5, HEIGHT / 15};
 
 // Now this is ugly
 SDL_Rect otherPlayerRectList[3] = {
@@ -30,7 +30,7 @@ SDL_Rect otherPlayerRectList[3] = {
 
 SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
-void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, gameState * state, int *others, int client_id, int uno, BaseClient *gclient) {
+void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, gameState *state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -110,7 +110,7 @@ int EventPoll(SDL_Event event, card *deck, int num) {
             clickPosition.x = event.button.x;
             clickPosition.y = event.button.y;
 
-            printf("Mouse button %d released at (%d, %d)\n", event.button.button, event.button.x, event.button.y);
+            // printf("Mouse button %d released at (%d, %d)\n", event.button.button, event.button.x, event.button.y);
             if (SDL_PointInRect(&clickPosition, &leaveButton)) {
                 return -3;
             }
@@ -150,7 +150,7 @@ void modCoords(card *deck, int num) {
     }
 }
 
-void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState * state, int *others, int client_id, BaseClient *gclient) {
+void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState *state, int *others, int client_id, BaseClient *gclient) {
     if (state->lastCard.color == 0) {
         SDL_SetRenderDrawColor(renderer, RED, 255);
     }

@@ -345,7 +345,7 @@ void server_recv_events(Server *this) {
         struct pollfd poll_request = get_pollfd_for_client(pollfds, this->current_clients, client->recv_fd);
 
         if (poll_request.revents & POLLERR || poll_request.revents & POLLHUP || poll_request.revents & POLLNVAL) {
-            printf("CLIENT DISCONNECT\n");
+            printf("CLIENT DISCONNECT FROM %s, ID: %d\n", this->name, client_id);
             handle_client_disconnect(this, client_id);
             continue;
         }
