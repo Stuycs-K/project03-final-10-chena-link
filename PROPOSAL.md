@@ -20,9 +20,9 @@ Clients will render the game using SDL2, and process and send keyboard and mouse
 
 3. Pipes to perform handshakes and then handle client to server communication
 
-4. Semaphores to lock turns
+4. Processes, specifically forking, to handle multiple game servers
 
-5. Processes, specifically forking, to handle multiple game servers
+5. Signals to handle disconnects
 
 ## Responsibilities
 
@@ -56,9 +56,7 @@ The project can be broken down into general client-server networking (Alan) and 
 
 * Server list and related UI
 
-* Game server modifications (e.g. passwords, player count)
-
-* Game server terminal commands
+* Game server modifications (e.g. player count)
 
 ### Monday, January 20
 

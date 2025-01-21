@@ -16,12 +16,34 @@ When the game ends, the game server shuts down, and all players are booted back 
 ### Instructions
 
 #### Dependencies
-We render UI with SDL2. To install, run the following commands before compilation: `sudo apt-get install libsdl2-2.0`, `sudo apt-get install libsdl2-dev`, and `sudo apt-get install libsdl2-ttf-dev`.
+We render UI with SDL2. To install, run the following commands before compilation: `sudo apt-get install libsdl2-2.0`, `sudo apt-get install libsdl2-dev`, `sudo apt-get install libsdl2-ttf-dev`, and `sudo apt-get install libsdl2-image-dev` (in case it's not already installed).
 
 #### Compilation
 First, run `make clean` just in case.
+
 Then, run `make` or `make compile` to compile the project. Hopefully, there shouldn't be any problems.
-Next, set up a server with `make server`.
-Finally, to play, open up a new terminal and run `make client`.
+
+Next, set up a server with `make server`. Wait 3 seconds, just in case.
+
+Finally, to play, open up a new terminal and run `make client`. You should see a "Loading..." message, and a prompt to enter your username should appear after a few seconds.
 
 #### Usage
+The only terminal-based input required is entering your username when you create a client.
+
+Afterwards, all client inputs are made through the SDL window.
+
+To start playing, you must either create or join a game server. If there's no servers available on the server list (and there won't be at first), click the green "Create Lobby" button on the top right. This should put the client in the waiting menu for the newly created game server.
+
+Now, the client is considered the host of the game server. You should see a list of players and options to disconnect, start the game, or change the maximum players the server will allow. You can't start the game without 2 players, so it's time to get a second client in.
+
+The second client should see the first client's game server on their server list. Click the green "Join" button to join the server. Both clients now should be in the waiting menu and see the updated player list with 2 players. Now, the host can start the game.
+
+If the host decides to not start the game and bails out by disconnecting, the second client becomes the new host.
+
+At this point, both players should be in the Uno game. Both players should see their hand and the starting card. The white rectangle next to the starting card is the draw button. There are 2 options to disconnect from the game: either close out of the window with the "x" or click the red "Disconnect" button. 
+
+Each turn, players can either play a valid card or draw from the pile. Drawing from the pile is always a valid move, which should hopefully make it easier to make someone win. You can see the other players' number of cards and their names around the board (this only shows up after the first move is played).
+
+When one player has one card remaining, a button to call Uno appears on the bottom right. If another player hits it, the player with one card draws 2 cards. If the player with one card hits it first, they suffer no penalty. 
+
+When a player plays all of their cards, they become the winner (if all players but one disconnect, the remaining player will be deemed the winner), and the server shuts down. All clients should be brought back to the central server and the server list, where they should be able to play another game.

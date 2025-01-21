@@ -137,7 +137,7 @@ void client_setup(char *client_to_server_fifo, NetEvent *handshake_event) {
     Handshake *handshake_args = handshake_event->args;
     strcpy(handshake_args->to_client_pipe_name, pid_string);
 
-    int mkfifo_ret = mkfifo(pid_string, 0644);
+    int mkfifo_ret = mkfifo(pid_string, 0666);
 
     int to_server = open(client_to_server_fifo, O_WRONLY, 0);
     handshake_args->client_to_server_fd = to_server;

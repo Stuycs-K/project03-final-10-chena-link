@@ -69,6 +69,11 @@ This document must be updated daily by EACH group member.
 * Server list in SDL. 3 hours.
 * GServer player list in SDL. Unfinished. 1 hour.
 
+### 2025-01-20: Finishing up
+* Complete GServer player list and host menu in SDL. 2 hours.
+* Various segfaults related to the Uno game. 1 hour.
+* Improve disconnecting. 1 hour.
+
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
