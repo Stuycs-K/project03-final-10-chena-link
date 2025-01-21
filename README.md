@@ -12,7 +12,7 @@ Uno game state is replicated via shared memory, which the server initializes and
 When the game ends, the game server shuts down, and all players are booted back to the central server. Games can end if someone wins, or if everyone realizes their time is better spent elsewhere and willfully disconnects.
 
 ## Video Demonstration
-[Click me](https://drive.google.com/file/d/1rWW0WJ6KO1SzjpCnKmS39PxEXY3yj6FO/view). Needed quite a few cuts due to less-than-ideal Uno RNG. Also, Kevin's camera wasn't working.
+[Click me](https://drive.google.com/file/d/1rWW0WJ6KO1SzjpCnKmS39PxEXY3yj6FO/view). It's a Google Drive video. Don't think you can watch it signed into your nycstudents.net account, so watch it signed out. Needed quite a few cuts due to less-than-ideal Uno RNG. Also, Kevin's camera wasn't working.
   
 ## Instructions
 
@@ -43,8 +43,7 @@ The second client should see the first client's game server on their server list
 If the host decides to not start the game and bails out by disconnecting, the second client becomes the new host.
 
 ### Playing the Game
-
-At this point, both players should be in the Uno game. Both players should see their hand and the starting card. The white rectangle next to the starting card is the draw button. There are 2 options to disconnect from the game: either close out of the window with the "x" or click the red "Disconnect" button. 
+At this point, both players should be in the Uno game. Both players should see their hand and the starting card. The white rectangle to the left of the starting card is the draw button. There are 2 options to disconnect from the game: either close out of the window with the "x" or click the red "Disconnect" button. 
 
 Each turn, players can either play a valid card or draw from the pile. Drawing from the pile is always a valid move, which should hopefully make it easier to make someone win. You can see the other players' number of cards and their names around the board (this only shows up after the first move is played).
 
@@ -52,6 +51,11 @@ When one player has one card remaining, a button to call Uno appears on the bott
 
 When a player plays all of their cards, they become the winner (if all players but one disconnect, the remaining player will be deemed the winner), and the server shuts down. All clients should be brought back to the central server and the server list, where they should be able to play another game.
 
+### Interrupts
+Interrupting a client will cause it to disconnect from both the game server (if they're in one) and central server. Interrupting the server terminal will shut down the central server and all game servers, causing all clients to exit.
+
 ### Other Notes
-- You should be able to have multiple 2-player games running at the same time.
+- You should be able to have multiple 2-player games running at the same time. The server list will also display multiple active game servers.
 - 3+ player games were not tested extensively because having 4 terminals and 3 windows open kinda drove us to our breaking points. The only issues we can predict with 3+ player games are players disconnecting mid-game on their turn.
+- You will have to double click on windows to click buttons (if you're switching between them to play on different clients). The first click is to put the window into focus. The second click should be fine.
+- Not tested with having other computers ssh-ing into one's temp directory and running the binary there, so will it work? That is a great question, and the great answer to the great question is "No."
