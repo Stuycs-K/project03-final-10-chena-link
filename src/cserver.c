@@ -207,7 +207,6 @@ void cserver_handle_gserver_net_event(CServer *this, int gserver_id, NetEvent *e
             server_info->current_clients = 0;
         }
 
-        printf("SERVER LIST UPDATED\n");
         update_gserver_list(this, server_info);
     }
 

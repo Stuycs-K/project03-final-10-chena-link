@@ -9,7 +9,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "../debug/debug.h"
 #include "pipehandshake.h"
 #include "pipenet.h"
 #include "pipenetevents.h"

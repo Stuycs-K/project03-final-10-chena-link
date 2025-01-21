@@ -3,11 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
-// #include <SDL2/SDL.h>
-
 #include "client.h"
-#include "debug/debug.h"
-#include "server.h"
+#include "cserver.h"
 
 #include "network/pipenet.h"
 
@@ -16,21 +13,16 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    /*if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("Failed to initialize the SDL2 library\n");
-        exit(EXIT_FAILURE);
-    }*/
-
-    // SDL_Window *window = SDL_CreateWindow("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, 0);
-
     net_init();
 
     char *mode = argv[1];
     if (!strcmp(mode, "client")) {
         client_main();
     } else if (!strcmp(mode, "gserver")) {
-        server_main();
-    } else if (!strcmp(mode, "cserver")) {
+        CServer *cserver = cserver_new(1);
+        printf("CServer initialized\n");
+
+        cserver_run(cserver);
     }
 
     return 0;

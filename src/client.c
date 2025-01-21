@@ -33,18 +33,18 @@ ClientState client_state;
 GServerInfoList *gservers; // Global server list
 int connected_gserver_id = -1;
 int SERVERSHMID;
-int width = 800;//Width of SDL
-int height = 800;//Height of SDL
+int width = 800;  // Width of SDL
+int height = 800; // Height of SDL
 SDL_Window *window;
 SDL_Renderer *renderer;
-SDL_Texture *textures[100];//Textures for numbers 0-99;
+SDL_Texture *textures[100]; // Textures for numbers 0-99;
 int num_cards = 7;
-gameState *data;//Struct for game info that will be stored in shared memory
-int others[8] = {7, 7, 7, 7, 7, 7, 7, 7};//Array to store other client info, client_id and number of cards
+gameState *data;                          // Struct for game info that will be stored in shared memory
+int others[8] = {7, 7, 7, 7, 7, 7, 7, 7}; // Array to store other client info, client_id and number of cards
 int shmid = 0;
-card deck[100];//Array of cards that the client has
-int unoCalled = 0;//Display uno button if true
-int drawUno = 0;//Draw cards if failed uno
+card deck[100];    // Array of cards that the client has
+int unoCalled = 0; // Display uno button if true
+int drawUno = 0;   // Draw cards if failed uno
 
 GServerConfig *currentConfig;
 
@@ -152,8 +152,8 @@ void disconnect_from_gserver(BaseClient *client) {
     client_state = IN_CSERVER;
 }
 
-//Disconnects from game and detaches shared memory and resets variables
-//Will probably break if there's more than 2 people
+// Disconnects from game and detaches shared memory and resets variables
+// Will probably break if there's more than 2 people
 void disconnectSDL(BaseClient *gclient) {
     shmdt(data);
     shmctl(shmid, IPC_RMID, 0);
@@ -176,15 +176,15 @@ void handle_gserver_net_event(BaseClient *client, NetEvent *event) {
         // printf("client %d has %d cards, client %d has %d cards\n", arg[0], arg[1], arg[2], arg[3]);
         break;
 
-    case SHMID://Receives shmid from server
+    case SHMID: // Receives shmid from server
         int *shmid = args;
         SERVERSHMID = *shmid;
         break;
 
-    case UNO://Receives notification that someone has 1 card
+    case UNO: // Receives notification that someone has 1 card
         int *uno = args;
         // printf("%d has uno.\n", uno[0]);
-        unoCalled = 1;//Uno variable that controls if uno button shows up
+        unoCalled = 1; // Uno variable that controls if uno button shows up
         break;
 
     case DRAWCARDS:
@@ -253,9 +253,9 @@ static void sighandler(int signo) {
         exit(EXIT_SUCCESS);
     }
 }
-//Client mouse input, determines actions and what they do
+// Client mouse input, determines actions and what they do
 int actions(card *deck, BaseClient *gclient, int action) {
-    if (drawUno == 1) {//Draw two cards if failed uno
+    if (drawUno == 1) { // Draw two cards if failed uno
         deck[num_cards] = add_card(deck, num_cards, width, height);
         num_cards++;
         deck[num_cards] = add_card(deck, num_cards, width, height);
@@ -270,7 +270,7 @@ int actions(card *deck, BaseClient *gclient, int action) {
         return 2;
     }
 
-    if (action == -4) {//Clicked uno button
+    if (action == -4) { // Clicked uno button
         return -4;
     }
     card picked = deck[action]; // Play card
@@ -315,7 +315,7 @@ void client_main(void) {
     char windowName[100];
     snprintf(windowName, sizeof(windowName), "Game (%s)", username);
 
-    //Initializes game for SDL rendering
+    // Initializes game for SDL rendering
     window = SDL_CreateWindow(windowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDLInitText(textures, renderer);
@@ -356,7 +356,7 @@ void client_main(void) {
             }
 
             if (gservers[connected_gserver_id]->status == GSS_GAME_IN_PROGRESS) {
-                if (shmid == 0) { //Gets shared memory once
+                if (shmid == 0) { // Gets shared memory once
                     shmid = shmget(SERVERSHMID, sizeof(gameState), 0);
                     data = shmat(shmid, 0, 0);
                     generate_cards(deck, num_cards, width, height);
@@ -364,7 +364,7 @@ void client_main(void) {
                 modCoords(deck, num_cards);
                 render(renderer, textures, deck, num_cards, data, others, gclient->client_id, unoCalled, gclient);
 
-                //Checks user mouse input
+                // Checks user mouse input
                 SDL_Event e;
                 int action = EventPoll(e, deck, num_cards);
                 if (action == -3) { // Always check for disconnects even when its not our turn
@@ -380,7 +380,7 @@ void client_main(void) {
                     unoCalled = 0;
                 }
 
-                //Checks if it's the client's turn then does actions
+                // Checks if it's the client's turn then does actions
                 if (data->client_id == gclient->client_id) {
                     int input = actions(deck, gclient, action);
 
