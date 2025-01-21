@@ -122,4 +122,5 @@ Displays other players' card counts 5 hours
 
 ### 2024-01-19 - Added turn indicator
 Game displays which client's turn it is
+Added function descriptions for game
 Recorded presentation. 3 hours
