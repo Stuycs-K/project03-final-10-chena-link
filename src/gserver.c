@@ -226,6 +226,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
         recv_gserver_config(this, client_id, event);
         break;
 
+    //Receives card count and puts it into decks array
     case CARD_COUNT:
         int *arg = args;
         for (int i = 0; i < 4; i++) {
@@ -233,10 +234,12 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
                 this->decks[i * 2 + 1] = arg[0];
             }
         }
+        //Sends the entire decks array back to client
         CardCountArray *cardcounts = nargs_card_count_array();
         for (int i = 0; i < 8; i++) {
             cardcounts[i] = this->decks[i];
         }
+        //Checks for uno
         if (arg[0] == 1) {
             this->data->currentUno = client_id;
             this->firstUNO = -1;
@@ -245,13 +248,14 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             NetEvent *uno = net_event_new(UNO, nargs);
             server_send_event_to_all(this->server, uno);
         }
+        //Checks for a winner
         if (arg[0] == 0) {
             send_winner_event(this, client_id);
         } else {
             NetEvent *newEvent = net_event_new(CARD_COUNT, cardcounts);
             server_send_event_to_all(this->server, newEvent);
         }
-
+        //Sets the next turn based on all_clients array
         for (int i = 0; i < 4; i++) {
             if (this->all_clients[i] == client_id) {
                 int next = (i + 1) % 4;
@@ -265,7 +269,7 @@ void gserver_handle_net_event(GServer *this, int client_id, NetEvent *event) {
             }
         }
         break;
-
+    //Sends the client_id of the client who sent uno back the fastest to everyone
     case UNO:
         int *uno = args;
         if (this->firstUNO == -1) {

@@ -10,6 +10,8 @@
 #include "SDL.h"
 #include "sdlutil.h"
 
+
+//These are rectangles for features that will not change locations which will be used for rendering
 SDL_Rect draw = {240, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
 SDL_Rect statecard = {WIDTH / 2 - WIDTH / 30, HEIGHT / 2 - HEIGHT / 16, WIDTH / 15, HEIGHT / 8};
 SDL_Rect statenum = {WIDTH / 2 - WIDTH / 120, HEIGHT / 2 - HEIGHT / 64, WIDTH / 60, HEIGHT / 32};
@@ -30,6 +32,7 @@ SDL_Rect otherPlayerRectList[3] = {
 
 SDL_Rect Uno = {3 * WIDTH / 4, 3 * HEIGHT / 4, WIDTH / 6, HEIGHT / 8};
 
+//Renders everything onto the window
 void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num, gameState *state, int *others, int client_id, int uno, BaseClient *gclient) {
     modCoords(deck, num);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -41,6 +44,8 @@ void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num,
     SDL_Point disconnectTextPosition = {leaveButton.x + leaveButton.w / 2, leaveButton.y + leaveButton.h / 2};
     renderTextLabel(renderer, "Disconnect", &disconnectTextPosition, X_CENTER | Y_CENTER, NULL, NULL);
 
+    //Decides card color
+    //Could be switch statement
     for (int i = 0; i < num; i++) {
         if (deck[i].color == 0) {
             SDL_SetRenderDrawColor(renderer, RED, 255);
@@ -57,6 +62,7 @@ void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num,
         SDL_RenderFillRect(renderer, &deck[i].rect);
         SDL_RenderCopy(renderer, textures[deck[i].num], NULL, &deck[i].textRect);
     }
+    //Loads uno image in bottom right corner
     if (uno == 1) {
         SDL_Texture *unoIMG = IMG_LoadTexture(renderer, "src/sdl/uno.png");
         if (unoIMG == NULL) {
@@ -68,6 +74,7 @@ void render(SDL_Renderer *renderer, SDL_Texture **textures, card *deck, int num,
     SDL_RenderPresent(renderer);
 }
 
+//Initializes SDL for use in rendering and making textures
 void SDLInit() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Error: %s\n", SDL_GetError());
@@ -80,6 +87,7 @@ void SDLInit() {
     }
 }
 
+//Creates textures for integers 0 - 99
 void SDLInitText(SDL_Texture **textures, SDL_Renderer *renderer) {
     TTF_Font *font = TTF_OpenFont("OpenSans-Regular.ttf", 18);
     if (font == NULL) {
@@ -102,6 +110,7 @@ void SDLInitText(SDL_Texture **textures, SDL_Renderer *renderer) {
     TTF_CloseFont(font);
 }
 
+//Actually checks for mouse input and returns an int based on what user clicked
 int EventPoll(SDL_Event event, card *deck, int num) {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -140,6 +149,7 @@ int EventPoll(SDL_Event event, card *deck, int num) {
     return -1;
 }
 
+//Centers card positions so it looks better whenever client plays or draws a card
 void modCoords(card *deck, int num) {
     int increment = (WIDTH - deck[0].rect.w * num) / 2 - deck[0].rect.x;
     if (increment != 0) {
@@ -150,6 +160,7 @@ void modCoords(card *deck, int num) {
     }
 }
 
+//Renders background like game state, current turn, other users
 void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState *state, int *others, int client_id, BaseClient *gclient) {
     if (state->lastCard.color == 0) {
         SDL_SetRenderDrawColor(renderer, RED, 255);
@@ -195,6 +206,8 @@ void renderBackground(SDL_Renderer *renderer, SDL_Texture **textures, gameState 
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(textTexture);
     SDL_Rect textRect;
+    //Badly written but displays usernames in the right order
+    //Usernames are displayed clockwise
     for (int i = 0; i < 4; i++) {
         if (others[i * 2] == client_id) {
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);

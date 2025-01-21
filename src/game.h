@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 
+//Card struct for uno cards
 typedef struct card card;
 struct card{
   int color;
@@ -10,6 +11,7 @@ struct card{
   SDL_Rect rect;
   SDL_Rect textRect;
 };
+//Used for shared memory to record gamestate
 typedef struct gameState gameState;
 struct gameState{
   int client_id;
