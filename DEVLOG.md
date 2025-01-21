@@ -77,50 +77,50 @@ This document must be updated daily by EACH group member.
 ## Kevin Lin
 
 ### 2024-01-06 - Added new file and functions
-Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
+* Added game.c which will contain game rules like drawing and playing cards. Spent 40 minutes.
 
 ### 2024-01-07 - Game functions
-Added uno game functions to game server, added card array to server struct. Done in class
+* Added uno game functions to game server, added card array to server struct. Done in class
 
 ### 2024-01-08 - Client using game functions
-Clients can use functions and see cards they have. 1.5 hour
-Added shared memory to see last card placed. 20 minutes
-Added dynamic deck size.10 minutes
+* Clients can use functions and see cards they have. 1.5 hour
+* Added shared memory to see last card placed. 20 minutes
+* Added dynamic deck size.10 minutes
 
 ### 2024-01-09 - Client functions to send card count to server
-Added functions to send card count to server. Done in class
+* Added functions to send card count to server. Done in class
 
 ### 2024-01-10 - Client server interaction functions
-Added functions for client to send card count to server.
+* Added functions for client to send card count to server.
 
 ### 2024-01-13 - Setting up shmid and gamedata send
-Added shmid to server(sending it causes client to segfault)
-Added client sending cards
-Added server sending cards. 2 hours
+* Added shmid to server(sending it causes client to segfault)
+* Added client sending cards
+* Added server sending cards. 2 hours total
 
 ### 2024-01-14 - Changing shared memory
-Changed shared memory to have id and card
-SHMId gets sent at the start of connection
-Tried to fix bug for client turns. 3 hours
+* Changed shared memory to have id and card
+* SHMId gets sent at the start of connection
+* Tried to fix bug for client turns. 3 hours total
 
 ### 2024-01-16 - Added some basic functions for SDL
-Tried getting approval for sdl on lab machines
-Wrote some basic function for SDL
+* Tried getting approval for sdl on lab machines
+* Wrote some basic function for SDL
 
 ### 2024-01-17 - Added 4 players
-Server can now handle up to 4 players, should work fine even if server isn't full
-Moved SDL functions to different file. Done in class.
+* Server can now handle up to 4 players, should work fine even if server isn't full
+* Moved SDL functions to different file. Done in class.
 
 ### 2024-01-18 - Added SDL for cards
-Loads card colors and numbers onto screen.
-Client doesn't quit despite receiving sigint. 3 hours
+* Loads card colors and numbers onto screen.
+* Client doesn't quit despite receiving sigint. 3 hours total
 
 ### 2024-01-18 - Added mouse input
-Game uses mouse input
-Added sighandler and disconnect
-Displays other players' card counts 5 hours
+* Game uses mouse input
+* Added sighandler and disconnect
+* Displays other players' card counts 5 hours total
 
 ### 2024-01-19 - Added turn indicator
-Game displays which client's turn it is
-Added function descriptions for game
-Recorded presentation. 3 hours
+* Game displays which client's turn it is
+* Added function descriptions for game
+* Recorded presentation. 3 hours total
