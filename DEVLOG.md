@@ -119,3 +119,7 @@ Client doesn't quit despite receiving sigint. 3 hours
 Game uses mouse input
 Added sighandler and disconnect
 Displays other players' card counts 5 hours
+
+### 2024-01-19 - Added turn indicator
+Game displays which client's turn it is
+Recorded presentation. 3 hours
